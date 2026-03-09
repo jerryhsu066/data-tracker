@@ -30,8 +30,21 @@ class Stock extends Model
         ];
     }
 
-    public function holdings(): HasMany
+    public function transactions(): HasMany
     {
-        return $this->hasMany(Holding::class);
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function priceHistories(): HasMany
+    {
+        return $this->hasMany(StockPriceHistory::class)->orderBy('date');
+    }
+
+    public function netShares(): float
+    {
+        $bought = (float) $this->transactions()->where('type', 'buy')->sum('shares');
+        $sold = (float) $this->transactions()->where('type', 'sell')->sum('shares');
+
+        return $bought - $sold;
     }
 }

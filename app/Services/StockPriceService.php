@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Stock;
+use App\Models\StockPriceHistory;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -26,11 +27,21 @@ class StockPriceService
             return;
         }
 
+        $price = (float) $quote['05. price'];
+
         $stock->update([
-            'current_price' => (float) $quote['05. price'],
+            'current_price' => $price,
             'previous_close' => (float) $quote['08. previous close'],
             'change_percent' => (float) rtrim($quote['10. change percent'], '%'),
             'last_fetched_at' => now(),
         ]);
+
+        // Record daily closing price (Taiwan market timezone)
+        $today = now()->timezone('Asia/Taipei')->toDateString();
+
+        StockPriceHistory::updateOrCreate(
+            ['stock_id' => $stock->id, 'date' => $today],
+            ['close_price' => $price],
+        );
     }
 }

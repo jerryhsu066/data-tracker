@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class StockController extends Controller
 {
@@ -21,7 +22,7 @@ class StockController extends Controller
         $request->merge(['symbol' => strtoupper($request->input('symbol', ''))]);
 
         $validated = $request->validate([
-            'symbol' => ['required', 'string', 'max:10', Rule::unique('stocks', 'symbol')],
+            'symbol' => ['required', 'string', 'max:15', 'regex:/^[A-Z0-9]+(\.[A-Z]+)?$/', Rule::unique('stocks', 'symbol')],
             'name' => ['required', 'string', 'max:255'],
         ]);
 
@@ -42,6 +43,15 @@ class StockController extends Controller
         Stock::where('symbol', strtoupper($symbol))->firstOrFail()->delete();
 
         return response()->noContent();
+    }
+
+    public function transactions(string $symbol): JsonResponse
+    {
+        $stock = Stock::where('symbol', strtoupper($symbol))->firstOrFail();
+
+        return response()->json(
+            $stock->transactions()->with('stock')->orderByDesc('transacted_at')->get()
+        );
     }
 
     public function fetch(string $symbol): JsonResponse
