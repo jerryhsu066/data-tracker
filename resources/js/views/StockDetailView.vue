@@ -67,7 +67,7 @@
                 <div>
                     <label class="block text-xs text-slate-500 mb-1">
                         Handling Fee
-                        <span class="text-slate-400">({{ feeRates.handling }}%)</span>
+                        <RouterLink to="/settings" class="text-slate-400 hover:text-indigo-500 transition-colors">({{ feeRates.handling }}%)</RouterLink>
                     </label>
                     <input v-model.number="txForm.handling_fee" type="number" step="1" min="0"
                         class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -181,12 +181,15 @@ const submitting = ref(false);
 const refreshing = ref(false);
 
 // Auto-calculate fees whenever trade value or rates change.
+// feeRates is destructured BEFORE the early return so Vue always tracks it
+// as a reactive dependency — even when no trade value has been entered yet.
 watchEffect(() => {
+    const { handling: handlingRate, tax: taxRate } = feeRates.value;
     const tradeValue = Number(txForm.value.shares) * Number(txForm.value.price_per_share);
     if (!tradeValue) return;
-    txForm.value.handling_fee = Math.max(20, Math.floor(tradeValue * feeRates.value.handling / 100));
+    txForm.value.handling_fee = Math.max(20, Math.floor(tradeValue * handlingRate / 100));
     txForm.value.transaction_tax = txForm.value.type === 'sell'
-        ? Math.floor(tradeValue * feeRates.value.tax / 100)
+        ? Math.floor(tradeValue * taxRate / 100)
         : 0;
 });
 
