@@ -7,11 +7,17 @@
                     <h1 class="text-3xl font-bold text-slate-900">{{ stock.symbol }}</h1>
                     <p class="text-slate-400">{{ stock.name }}</p>
                 </div>
-                <div v-if="stock.current_price" class="ml-auto text-right">
-                    <div class="text-3xl font-semibold text-slate-900">{{ fmt(stock.current_price) }}</div>
-                    <div v-if="stock.change_percent" class="text-sm font-medium mt-0.5" :class="stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                        {{ stock.change_percent >= 0 ? '+' : '' }}{{ Number(stock.change_percent).toFixed(2) }}%
+                <div class="ml-auto text-right">
+                    <div v-if="stock.current_price">
+                        <div class="text-3xl font-semibold text-slate-900">{{ fmt(stock.current_price) }}</div>
+                        <div v-if="stock.change_percent" class="text-sm font-medium mt-0.5" :class="stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                            {{ stock.change_percent >= 0 ? '+' : '' }}{{ Number(stock.change_percent).toFixed(2) }}%
+                        </div>
                     </div>
+                    <button @click="refreshPrice" :disabled="refreshing"
+                        class="mt-2 px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-600 rounded-lg transition-colors">
+                        {{ refreshing ? 'Refreshing…' : '↻ Refresh price' }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -137,6 +143,7 @@ const txForm = ref({ type: 'buy', shares: '', price_per_share: '', transacted_at
 const txErrors = ref({});
 const txError = ref('');
 const submitting = ref(false);
+const refreshing = ref(false);
 
 const txTotal = computed(() => {
     const s = Number(txForm.value.shares);
@@ -197,6 +204,21 @@ function renderChart() {
             },
         },
     });
+}
+
+async function refreshPrice() {
+    refreshing.value = true;
+    try {
+        const { data } = await api.post(`/stocks/${symbol.value}/fetch`);
+        stock.value = data;
+        // Reload price history and re-render chart
+        const { data: history } = await api.get(`/stocks/${symbol.value}/prices`);
+        priceHistory.value = history;
+        await nextTick();
+        renderChart();
+    } finally {
+        refreshing.value = false;
+    }
 }
 
 async function submitTransaction() {

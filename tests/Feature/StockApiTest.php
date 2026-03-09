@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\FetchStockPrice;
 use App\Models\Stock;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class StockApiTest extends TestCase
@@ -93,13 +92,25 @@ class StockApiTest extends TestCase
         $this->assertDatabaseMissing('stocks', ['symbol' => 'AAPL']);
     }
 
-    public function test_fetch_endpoint_dispatches_fetch_stock_price_job(): void
+    public function test_fetch_endpoint_updates_price_synchronously(): void
     {
-        Queue::fake();
+        Http::fake([
+            '*alphavantage*' => Http::response([
+                'Global Quote' => [
+                    '05. price' => '195.5000',
+                    '08. previous close' => '190.0000',
+                    '10. change percent' => '2.8947%',
+                ],
+            ]),
+        ]);
+
         Stock::factory()->create(['symbol' => 'AAPL']);
 
-        $this->actingAs($this->user)->postJson('/api/stocks/AAPL/fetch')->assertAccepted();
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/AAPL/fetch');
 
-        Queue::assertPushed(FetchStockPrice::class, fn ($job) => $job->stock->symbol === 'AAPL');
+        $response->assertOk()
+            ->assertJsonFragment(['symbol' => 'AAPL', 'current_price' => '195.5000']);
+
+        $this->assertDatabaseHas('stocks', ['symbol' => 'AAPL', 'current_price' => 195.5]);
     }
 }

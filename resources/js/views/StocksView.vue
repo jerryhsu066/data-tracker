@@ -158,15 +158,10 @@ async function deleteStock(symbol) {
 async function fetchPrice(symbol) {
     fetching.value = symbol;
     try {
-        await api.post(`/stocks/${symbol}/fetch`);
-        // Poll for updated price after a short delay
-        setTimeout(async () => {
-            const { data } = await api.get(`/stocks/${symbol}`);
-            const idx = stocks.value.findIndex(s => s.symbol === symbol);
-            if (idx !== -1) stocks.value[idx] = data;
-            fetching.value = null;
-        }, 3000);
-    } catch {
+        const { data } = await api.post(`/stocks/${symbol}/fetch`);
+        const idx = stocks.value.findIndex(s => s.symbol === symbol);
+        if (idx !== -1) stocks.value[idx] = data;
+    } finally {
         fetching.value = null;
     }
 }

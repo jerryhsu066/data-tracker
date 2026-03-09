@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\FetchStockPrice;
 use App\Models\Stock;
+use App\Services\StockPriceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -58,12 +58,12 @@ class StockController extends Controller
         );
     }
 
-    public function fetch(string $symbol): JsonResponse
+    public function fetch(string $symbol, StockPriceService $service): JsonResponse
     {
         $stock = Stock::where('symbol', strtoupper($symbol))->firstOrFail();
 
-        FetchStockPrice::dispatch($stock);
+        $service->updatePrice($stock);
 
-        return response()->json(['message' => 'Price fetch queued.'], 202);
+        return response()->json($stock->fresh());
     }
 }
