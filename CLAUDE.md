@@ -103,6 +103,20 @@ Standard Laravel MVC structure:
 - `docker/nginx/default.conf` — Nginx config routing to PHP-FPM on port 9000
 - `docker-compose.yml` — defines `app`, `nginx`, and `mysql` services; MySQL data persisted in `mysql_data` volume
 
+## Queue Worker & Scheduler
+
+Jobs are stored in the database (`QUEUE_CONNECTION=database`). To process them:
+
+```bash
+# Start queue worker
+docker compose exec app php artisan queue:work
+
+# Run scheduler (processes every-minute jobs like FetchAllStockPrices)
+docker compose exec app php artisan schedule:work
+```
+
+Set `ALPHAVANTAGE_API_KEY` in `.env` to enable live price fetching (free key at alphavantage.co).
+
 ## Environment
 
 The `.env` file is pre-configured for Docker with `DB_HOST=mysql` (the Docker service name). Do not use `127.0.0.1` for DB_HOST inside containers.
