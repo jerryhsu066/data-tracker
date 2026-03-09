@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\FetchStockPrice;
 use App\Models\Stock;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -12,14 +13,21 @@ class StockApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_can_list_tracked_stocks(): void
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::factory()->create();
+    }
+
+    public function test_can_list_tracked_stocks_without_auth(): void
     {
         Stock::factory()->create(['symbol' => 'AAPL', 'name' => 'Apple Inc.', 'current_price' => 150.00]);
         Stock::factory()->create(['symbol' => 'TSLA', 'name' => 'Tesla Inc.', 'current_price' => 200.00]);
 
-        $response = $this->getJson('/api/stocks');
-
-        $response->assertOk()
+        $this->getJson('/api/stocks')
+            ->assertOk()
             ->assertJsonCount(2)
             ->assertJsonFragment(['symbol' => 'AAPL'])
             ->assertJsonFragment(['symbol' => 'TSLA']);
@@ -27,25 +35,21 @@ class StockApiTest extends TestCase
 
     public function test_can_add_a_stock_to_track(): void
     {
-        $response = $this->postJson('/api/stocks', [
+        $this->actingAs($this->user)->postJson('/api/stocks', [
             'symbol' => 'AAPL',
             'name' => 'Apple Inc.',
-        ]);
-
-        $response->assertCreated()
-            ->assertJsonFragment(['symbol' => 'AAPL']);
+        ])->assertCreated()->assertJsonFragment(['symbol' => 'AAPL']);
 
         $this->assertDatabaseHas('stocks', ['symbol' => 'AAPL']);
     }
 
     public function test_symbol_is_stored_uppercase(): void
     {
-        $response = $this->postJson('/api/stocks', [
+        $this->actingAs($this->user)->postJson('/api/stocks', [
             'symbol' => 'aapl',
             'name' => 'Apple Inc.',
-        ]);
+        ])->assertCreated();
 
-        $response->assertCreated();
         $this->assertDatabaseHas('stocks', ['symbol' => 'AAPL']);
     }
 
@@ -53,30 +57,25 @@ class StockApiTest extends TestCase
     {
         Stock::factory()->create(['symbol' => 'AAPL']);
 
-        $response = $this->postJson('/api/stocks', [
+        $this->actingAs($this->user)->postJson('/api/stocks', [
             'symbol' => 'AAPL',
             'name' => 'Apple Inc.',
-        ]);
-
-        $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['symbol']);
+        ])->assertUnprocessable()->assertJsonValidationErrors(['symbol']);
     }
 
     public function test_symbol_and_name_are_required(): void
     {
-        $response = $this->postJson('/api/stocks', []);
-
-        $response->assertUnprocessable()
+        $this->actingAs($this->user)->postJson('/api/stocks', [])
+            ->assertUnprocessable()
             ->assertJsonValidationErrors(['symbol', 'name']);
     }
 
-    public function test_can_show_a_stock_by_symbol(): void
+    public function test_can_show_a_stock_by_symbol_without_auth(): void
     {
         Stock::factory()->create(['symbol' => 'AAPL', 'name' => 'Apple Inc.', 'current_price' => 150.00]);
 
-        $response = $this->getJson('/api/stocks/AAPL');
-
-        $response->assertOk()
+        $this->getJson('/api/stocks/AAPL')
+            ->assertOk()
             ->assertJsonFragment(['symbol' => 'AAPL', 'name' => 'Apple Inc.']);
     }
 
@@ -89,7 +88,7 @@ class StockApiTest extends TestCase
     {
         Stock::factory()->create(['symbol' => 'AAPL']);
 
-        $this->deleteJson('/api/stocks/AAPL')->assertNoContent();
+        $this->actingAs($this->user)->deleteJson('/api/stocks/AAPL')->assertNoContent();
 
         $this->assertDatabaseMissing('stocks', ['symbol' => 'AAPL']);
     }
@@ -99,7 +98,7 @@ class StockApiTest extends TestCase
         Queue::fake();
         Stock::factory()->create(['symbol' => 'AAPL']);
 
-        $this->postJson('/api/stocks/AAPL/fetch')->assertAccepted();
+        $this->actingAs($this->user)->postJson('/api/stocks/AAPL/fetch')->assertAccepted();
 
         Queue::assertPushed(FetchStockPrice::class, fn ($job) => $job->stock->symbol === 'AAPL');
     }

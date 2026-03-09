@@ -40,10 +40,10 @@ class Stock extends Model
         return $this->hasMany(StockPriceHistory::class)->orderBy('date');
     }
 
-    public function netShares(): float
+    public function netSharesForUser(int $userId): float
     {
-        $bought = (float) $this->transactions()->where('type', 'buy')->sum('shares');
-        $sold = (float) $this->transactions()->where('type', 'sell')->sum('shares');
+        $bought = (float) $this->transactions()->where('type', 'buy')->where('user_id', $userId)->sum('shares');
+        $sold = (float) $this->transactions()->where('type', 'sell')->where('user_id', $userId)->sum('shares');
 
         return $bought - $sold;
     }

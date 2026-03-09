@@ -45,12 +45,16 @@ class StockController extends Controller
         return response()->noContent();
     }
 
-    public function transactions(string $symbol): JsonResponse
+    public function transactions(Request $request, string $symbol): JsonResponse
     {
         $stock = Stock::where('symbol', strtoupper($symbol))->firstOrFail();
 
         return response()->json(
-            $stock->transactions()->with('stock')->orderByDesc('transacted_at')->get()
+            $stock->transactions()
+                ->where('user_id', $request->user()->id)
+                ->with('stock')
+                ->orderByDesc('transacted_at')
+                ->get()
         );
     }
 

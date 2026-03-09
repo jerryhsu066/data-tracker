@@ -4,14 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Stock;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class PortfolioController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $positions = Stock::with('transactions')
-            ->whereHas('transactions')
+        $userId = $request->user()->id;
+
+        $positions = Stock::with(['transactions' => fn ($q) => $q->where('user_id', $userId)])
+            ->whereHas('transactions', fn ($q) => $q->where('user_id', $userId))
             ->get()
             ->map(fn (Stock $stock) => $this->buildPosition($stock))
             ->filter(fn (array $pos) => (float) $pos['net_shares'] > 0)
@@ -35,7 +37,6 @@ class PortfolioController extends Controller
 
         $netShares = $totalBuyShares - $totalSellShares;
 
-        // Weighted average cost (buy side only — doesn't change on sell)
         $averageCost = $totalBuyShares > 0 ? $totalBuyCost / $totalBuyShares : 0;
 
         $currentPrice = (float) ($stock->current_price ?? 0);

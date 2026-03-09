@@ -24,7 +24,7 @@ class TransactionController extends Controller
 
         if ($validated['type'] === 'sell') {
             $stock = Stock::find($validated['stock_id']);
-            $netShares = $stock->netShares();
+            $netShares = $stock->netSharesForUser($request->user()->id);
 
             if ($validated['shares'] > $netShares) {
                 return response()->json([
@@ -36,14 +36,22 @@ class TransactionController extends Controller
             }
         }
 
-        $transaction = Transaction::create($validated);
+        $transaction = Transaction::create([
+            ...$validated,
+            'user_id' => $request->user()->id,
+        ]);
+
         $transaction->load('stock');
 
         return response()->json($transaction, 201);
     }
 
-    public function destroy(Transaction $transaction): Response
+    public function destroy(Request $request, Transaction $transaction): Response
     {
+        if ($transaction->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
         $transaction->delete();
 
         return response()->noContent();
