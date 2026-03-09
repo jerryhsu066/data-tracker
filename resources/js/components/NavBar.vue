@@ -23,6 +23,11 @@
             <div class="flex items-center gap-3">
                 <span class="text-slate-400 text-sm">{{ auth.state.user?.name }}</span>
                 <button
+                    @click="theme.toggle()"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 transition-colors text-base leading-none"
+                    :title="theme.dark.value ? 'Switch to light mode' : 'Switch to dark mode'"
+                >{{ theme.dark.value ? '☀' : '☾' }}</button>
+                <button
                     @click="handleLogout"
                     class="px-3 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 rounded-md transition-colors"
                 >
@@ -35,9 +40,11 @@
 
 <script setup>
 import { useAuth } from '../stores/auth';
+import { useTheme } from '../stores/theme';
 import { useRouter } from 'vue-router';
 
 const auth = useAuth();
+const theme = useTheme();
 const router = useRouter();
 
 const links = [

@@ -1,24 +1,24 @@
 <template>
     <div class="max-w-lg mx-auto px-4 py-8">
-        <h1 class="text-2xl font-bold text-slate-900 mb-6">Settings</h1>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">Settings</h1>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 space-y-6">
-            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide">Brokerage Fees</h2>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-6">
+            <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Brokerage Fees</h2>
 
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Handling Fee Discount</label>
-                <p class="text-xs text-slate-400 mb-3">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Handling Fee Discount</label>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">
                     Standard rate is 0.1425%. Enter your broker's discount (e.g. 40 for 40% off).
-                    Effective rate: <span class="font-medium text-slate-600">{{ effectiveRate }}%</span>
+                    Effective rate: <span class="font-medium text-slate-600 dark:text-slate-300">{{ effectiveRate }}%</span>
                 </p>
                 <div class="flex items-center gap-3">
                     <input
                         v-model.number="discountPercent"
                         type="number" min="0" max="100" step="1"
-                        class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="0"
                     />
-                    <span class="text-sm text-slate-500">% off</span>
+                    <span class="text-sm text-slate-500 dark:text-slate-400">% off</span>
                 </div>
             </div>
 
@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import api from '../api';
 import { useAuth } from '../stores/auth';
 
@@ -43,8 +43,14 @@ const { state, updateUser } = useAuth();
 
 const STANDARD_RATE = 0.1425;
 
-// Convert stored decimal (0.40) → display percent (40)
 const discountPercent = ref(Math.round(Number(state.user?.handling_fee_discount ?? 0) * 100));
+
+onMounted(async () => {
+    try {
+        const { data } = await api.get('/settings');
+        discountPercent.value = Math.round(Number(data.handling_fee_discount ?? 0) * 100);
+    } catch {}
+});
 const saving = ref(false);
 const saved = ref(false);
 const error = ref('');
