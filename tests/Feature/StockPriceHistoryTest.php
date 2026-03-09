@@ -16,12 +16,11 @@ class StockPriceHistoryTest extends TestCase
     public function test_price_fetch_records_daily_price_history(): void
     {
         Http::fake([
-            '*alphavantage*' => Http::response([
-                'Global Quote' => [
-                    '05. price' => '875.0000',
-                    '08. previous close' => '860.0000',
-                    '10. change percent' => '1.7442%',
-                ],
+            '*finance.yahoo.com*' => Http::response([
+                'chart' => ['result' => [['meta' => [
+                    'regularMarketPrice' => 875.0,
+                    'chartPreviousClose' => 860.0,
+                ]]]],
             ]),
         ]);
 
@@ -31,16 +30,16 @@ class StockPriceHistoryTest extends TestCase
 
         $this->assertDatabaseHas('stock_price_histories', [
             'stock_id' => $stock->id,
-            'close_price' => 875.0000,
+            'close_price' => 875.0,
         ]);
     }
 
     public function test_repeated_fetch_on_same_day_upserts_price(): void
     {
         Http::fake([
-            '*alphavantage*' => Http::sequence()
-                ->push(['Global Quote' => ['05. price' => '870.0000', '08. previous close' => '860.0000', '10. change percent' => '1.1628%']])
-                ->push(['Global Quote' => ['05. price' => '875.0000', '08. previous close' => '860.0000', '10. change percent' => '1.7442%']]),
+            '*finance.yahoo.com*' => Http::sequence()
+                ->push(['chart' => ['result' => [['meta' => ['regularMarketPrice' => 870.0, 'chartPreviousClose' => 860.0]]]]])
+                ->push(['chart' => ['result' => [['meta' => ['regularMarketPrice' => 875.0, 'chartPreviousClose' => 860.0]]]]]),
         ]);
 
         $stock = Stock::factory()->create(['symbol' => '2330.TW']);

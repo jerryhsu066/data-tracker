@@ -9,9 +9,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(StockPriceService::class, fn () => new StockPriceService(
-            apiKey: config('services.alphavantage.key', ''),
-        ));
+        $this->app->singleton(StockPriceService::class, fn () => new StockPriceService());
     }
 
     /**

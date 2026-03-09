@@ -9,34 +9,36 @@ use Illuminate\Support\Facades\Log;
 
 class StockPriceService
 {
-    public function __construct(private readonly string $apiKey) {}
-
     public function updatePrice(Stock $stock): void
     {
-        $response = Http::get('https://www.alphavantage.co/query', [
-            'function' => 'GLOBAL_QUOTE',
-            'symbol' => $stock->symbol,
-            'apikey' => $this->apiKey,
+        $response = Http::withHeaders([
+            'User-Agent' => 'Mozilla/5.0',
+        ])->get('https://query1.finance.yahoo.com/v8/finance/chart/' . urlencode($stock->symbol), [
+            'interval' => '1d',
+            'range'    => '1d',
         ]);
 
-        $quote = $response->json('Global Quote');
+        $meta = $response->json('chart.result.0.meta');
 
-        if (empty($quote) || empty($quote['05. price'])) {
+        if (empty($meta) || ! isset($meta['regularMarketPrice'])) {
             Log::warning("StockPriceService: no price data returned for {$stock->symbol}");
 
             return;
         }
 
-        $price = (float) $quote['05. price'];
+        $price = (float) $meta['regularMarketPrice'];
+        $previousClose = (float) ($meta['chartPreviousClose'] ?? $meta['previousClose'] ?? 0);
+        $changePercent = $previousClose > 0
+            ? round(($price - $previousClose) / $previousClose * 100, 4)
+            : 0;
 
         $stock->update([
-            'current_price' => $price,
-            'previous_close' => (float) $quote['08. previous close'],
-            'change_percent' => (float) rtrim($quote['10. change percent'], '%'),
+            'current_price'  => $price,
+            'previous_close' => $previousClose,
+            'change_percent' => $changePercent,
             'last_fetched_at' => now(),
         ]);
 
-        // Record daily closing price (Taiwan market timezone)
         $today = now()->timezone('Asia/Taipei')->toDateString();
 
         StockPriceHistory::updateOrCreate(

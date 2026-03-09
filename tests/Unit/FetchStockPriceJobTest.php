@@ -18,12 +18,11 @@ class FetchStockPriceJobTest extends TestCase
     public function test_fetch_stock_price_job_updates_stock_price(): void
     {
         Http::fake([
-            '*alphavantage*' => Http::response([
-                'Global Quote' => [
-                    '05. price' => '175.5000',
-                    '08. previous close' => '172.0000',
-                    '10. change percent' => '2.0349%',
-                ],
+            '*finance.yahoo.com*' => Http::response([
+                'chart' => ['result' => [['meta' => [
+                    'regularMarketPrice' => 175.5,
+                    'chartPreviousClose' => 172.0,
+                ]]]],
             ]),
         ]);
 
@@ -34,16 +33,16 @@ class FetchStockPriceJobTest extends TestCase
 
         $stock->refresh();
 
-        $this->assertEquals('175.5000', $stock->current_price);
-        $this->assertEquals('172.0000', $stock->previous_close);
-        $this->assertEquals('2.0349', $stock->change_percent);
+        $this->assertEquals(175.5, $stock->current_price);
+        $this->assertEquals(172.0, $stock->previous_close);
+        $this->assertEquals(round((175.5 - 172.0) / 172.0 * 100, 4), $stock->change_percent);
         $this->assertNotNull($stock->last_fetched_at);
     }
 
     public function test_fetch_stock_price_job_handles_api_error_gracefully(): void
     {
         Http::fake([
-            '*alphavantage*' => Http::response(['Note' => 'API call limit reached'], 200),
+            '*finance.yahoo.com*' => Http::response(['chart' => ['result' => null]], 200),
         ]);
 
         $stock = Stock::factory()->create(['symbol' => 'AAPL', 'current_price' => 150.0000]);

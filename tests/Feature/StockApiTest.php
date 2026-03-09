@@ -95,12 +95,11 @@ class StockApiTest extends TestCase
     public function test_fetch_endpoint_updates_price_synchronously(): void
     {
         Http::fake([
-            '*alphavantage*' => Http::response([
-                'Global Quote' => [
-                    '05. price' => '195.5000',
-                    '08. previous close' => '190.0000',
-                    '10. change percent' => '2.8947%',
-                ],
+            '*finance.yahoo.com*' => Http::response([
+                'chart' => ['result' => [['meta' => [
+                    'regularMarketPrice' => 195.5,
+                    'chartPreviousClose' => 190.0,
+                ]]]],
             ]),
         ]);
 
