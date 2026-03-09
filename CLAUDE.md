@@ -115,8 +115,52 @@ docker compose exec app php artisan queue:work
 docker compose exec app php artisan schedule:work
 ```
 
-Set `ALPHAVANTAGE_API_KEY` in `.env` to enable live price fetching (free key at alphavantage.co).
+Stock prices are fetched from **Yahoo Finance** (no API key required). The scheduler runs `FetchAllStockPrices` every minute.
 
 ## Environment
 
 The `.env` file is pre-configured for Docker with `DB_HOST=mysql` (the Docker service name). Do not use `127.0.0.1` for DB_HOST inside containers.
+
+## Frontend Stack
+
+- **Vue 3** (Composition API) with `<script setup>` — all views use `ref`, `computed`, `watchEffect`, `watch`, `nextTick`
+- **Tailwind CSS v4** — utility-first styling; use `h-9` for all form inputs/selects for consistent height
+- **Chart.js** — tree-shaken imports; register only the controllers/elements/plugins you use
+- **Vite** — asset bundler; run via `npm run dev` or `npm run build` (inside the container or on host)
+
+Key frontend conventions:
+- Form error paragraphs use `h-[1.1rem]` (fixed height, no `mt-1`) to prevent layout shift
+- Number inputs suppress spinners via global CSS in `resources/css/app.css`
+- Dark mode is toggled via `document.documentElement.classList` — charts must re-render on toggle
+- All chart scales set `border.color` and `grid.color` from a `chartColors()` helper that reads dark mode at render time
+
+## Architecture (additional)
+
+- `resources/js/views/` — Vue page components (one per route)
+- `resources/js/components/` — shared Vue components
+- `resources/js/composables/` — shared Composition API logic (e.g. `useTheme`)
+- `app/Services/StockPriceService.php` — Yahoo Finance fetching with `.TW` → `.TWO` OTC fallback
+- `app/Jobs/` — queued jobs (e.g. `FetchHistoricalPrices`, `FetchAllStockPrices`)
+
+## Taiwan Market Rules
+
+- All trading day calculations use **Asia/Taipei (UTC+8)**
+- Price history is capped at **yesterday** (Taiwan time) — today's intraday data is excluded
+- Handling fee: `max(20, floor(tradeValue × 0.1425% × (1 − discount)))` — buy and sell
+- Transaction tax: `floor(tradeValue × 0.3%)` — sell only, 0 for buys
+- Yahoo Finance: TWSE symbols use `.TW` suffix; OTC (TWO) symbols use `.TWO`; the service auto-retries with `.TWO` on 404
+
+## Git Workflow
+
+Commit after every meaningful feature or fix — do not batch unrelated changes into one commit. Follow the TDD cycle commit pattern:
+
+```
+test: add test for transaction update endpoint       ← RED
+feat: add transaction update endpoint                ← GREEN
+refactor: extract fee calculation to helper          ← REFACTOR (optional)
+```
+
+Additional commit type prefixes:
+- `docs:` — documentation changes (e.g. API.md)
+- `style:` — CSS/UI-only changes with no logic change
+- `chore:` — dependency or config changes
