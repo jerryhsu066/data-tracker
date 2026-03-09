@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PortfolioController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\StockPriceHistoryController;
 use App\Http\Controllers\TransactionController;
@@ -37,4 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Portfolio
     Route::get('portfolio', [PortfolioController::class, 'index']);
+
+    // Settings
+    Route::get('settings', [SettingsController::class, 'show']);
+    Route::patch('settings', [SettingsController::class, 'update']);
 });

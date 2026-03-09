@@ -44,6 +44,7 @@ const links = [
     { to: '/dashboard', label: 'Portfolio' },
     { to: '/stocks', label: 'Stocks' },
     { to: '/transactions', label: 'Transactions' },
+    { to: '/settings', label: 'Settings' },
 ];
 
 async function handleLogout() {

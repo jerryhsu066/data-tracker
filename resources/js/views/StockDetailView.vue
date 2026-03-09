@@ -67,10 +67,7 @@
                 <div>
                     <label class="block text-xs text-slate-500 mb-1">
                         Handling Fee
-                        <span class="text-slate-400 font-normal">
-                            (<input v-model.number="feeRates.handling" type="number" step="0.001" min="0" max="1"
-                                class="w-16 border-0 border-b border-slate-300 text-xs text-center focus:outline-none focus:border-indigo-400 bg-transparent" />%)
-                        </span>
+                        <span class="text-slate-400">({{ feeRates.handling }}%)</span>
                     </label>
                     <input v-model.number="txForm.handling_fee" type="number" step="1" min="0"
                         class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -79,10 +76,7 @@
                 <div>
                     <label class="block text-xs text-slate-500 mb-1">
                         Transaction Tax
-                        <span class="text-slate-400 font-normal">
-                            (<input v-model.number="feeRates.tax" type="number" step="0.001" min="0" max="1"
-                                class="w-16 border-0 border-b border-slate-300 text-xs text-center focus:outline-none focus:border-indigo-400 bg-transparent" />%)
-                        </span>
+                        <span class="text-slate-400">({{ feeRates.tax }}%)</span>
                     </label>
                     <input v-model.number="txForm.transaction_tax" type="number" step="1" min="0"
                         class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -154,6 +148,7 @@
 import { ref, computed, onMounted, watch, watchEffect, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '../api';
+import { useAuth } from '../stores/auth';
 import { Chart, LineElement, PointElement, LinearScale, TimeScale, Filler, Tooltip, CategoryScale } from 'chart.js';
 
 Chart.register(LineElement, PointElement, LinearScale, Filler, Tooltip, CategoryScale);
@@ -167,8 +162,17 @@ const transactions = ref([]);
 const chartCanvas = ref(null);
 let chartInstance = null;
 
-// Default rates (%). Users can change these in the form to match their broker discount.
-const feeRates = ref({ handling: 0.1425, tax: 0.3 });
+const { state: authState } = useAuth();
+
+const STANDARD_HANDLING_RATE = 0.1425; // %
+// Effective rate accounts for the user's broker discount stored in their profile.
+const feeRates = computed(() => {
+    const discount = Number(authState.user?.handling_fee_discount ?? 0);
+    return {
+        handling: +(STANDARD_HANDLING_RATE * (1 - discount)).toFixed(4),
+        tax: 0.3,
+    };
+});
 
 const txForm = ref({ type: 'buy', shares: '', price_per_share: '', handling_fee: 0, transaction_tax: 0, transacted_at: today(), notes: '' });
 const txErrors = ref({});

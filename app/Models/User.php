@@ -28,6 +28,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'handling_fee_discount',
     ];
 
     /**
@@ -50,6 +51,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'handling_fee_discount' => 'decimal:4',
         ];
     }
 }

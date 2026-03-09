@@ -36,5 +36,10 @@ export function useAuth() {
         localStorage.removeItem('user');
     }
 
-    return { state: readonly(state), login, register, logout };
+    function updateUser(user) {
+        state.user = { ...state.user, ...user };
+        localStorage.setItem('user', JSON.stringify(state.user));
+    }
+
+    return { state: readonly(state), login, register, logout, updateUser };
 }
