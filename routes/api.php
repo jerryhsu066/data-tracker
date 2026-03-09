@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Portfolio
     Route::get('portfolio', [PortfolioController::class, 'index']);
+    Route::get('portfolio/history', [PortfolioController::class, 'history']);
 
     // Settings
     Route::get('settings', [SettingsController::class, 'show']);

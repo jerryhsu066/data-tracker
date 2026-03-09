@@ -62,8 +62,11 @@ class PortfolioApiTest extends TestCase
 
         $position = $this->actingAs($this->user)->getJson('/api/portfolio')->json()[0];
 
-        $this->assertEquals('80000.0000', $position['unrealized_gain']); // (900-800)*800
-        $this->assertEquals('10000.0000', $position['realized_gain']);   // (850-800)*200
+        // Net 800 shares @ 900 = 720,000 current value; avg cost = 800
+        // Estimated sell: fee = max(20, floor(720000 × 0.001425)) = 1026; tax = floor(720000 × 0.003) = 2160
+        // Unrealized = (900-800)×800 − 1026 − 2160 = 80000 − 3186 = 76814
+        $this->assertEqualsWithDelta(76814, (float) $position['unrealized_gain'], 1);
+        $this->assertEquals('10000.0000', $position['realized_gain']); // (850-800)×200
     }
 
     public function test_portfolio_excludes_fully_sold_positions(): void
