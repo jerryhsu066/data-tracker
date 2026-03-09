@@ -13,14 +13,17 @@ export default defineConfig({
         }),
     ],
     server: {
+        host: '0.0.0.0',
+        hmr: { host: 'localhost' },
         proxy: {
             '/api': {
-                target: 'http://localhost:8000',
+                target: 'http://nginx:80',
                 changeOrigin: true,
             },
         },
         watch: {
             ignored: ['**/storage/framework/views/**'],
+            usePolling: true,
         },
     },
 });

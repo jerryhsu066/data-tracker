@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\FetchHistoricalPrices;
 use App\Models\Stock;
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,8 +20,6 @@ class TransactionController extends Controller
             'type' => ['required', Rule::in(['buy', 'sell'])],
             'shares' => ['required', 'numeric', 'gt:0'],
             'price_per_share' => ['required', 'numeric', 'gt:0'],
-            'handling_fee' => ['nullable', 'numeric', 'gte:0'],
-            'transaction_tax' => ['nullable', 'numeric', 'gte:0'],
             'transacted_at' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -38,14 +38,27 @@ class TransactionController extends Controller
             }
         }
 
+        $tradeValue = $validated['shares'] * $validated['price_per_share'];
+        $discount = (float) ($request->user()->handling_fee_discount ?? 0);
+        $handlingFee = (int) max(20, floor($tradeValue * 0.001425 * (1 - $discount)));
+        $transactionTax = $validated['type'] === 'sell'
+            ? (int) floor($tradeValue * 0.003)
+            : 0;
+
         $transaction = Transaction::create([
             ...$validated,
             'user_id' => $request->user()->id,
-            'handling_fee' => $validated['handling_fee'] ?? 0,
-            'transaction_tax' => $validated['transaction_tax'] ?? 0,
+            'handling_fee' => $handlingFee,
+            'transaction_tax' => $transactionTax,
         ]);
 
         $transaction->load('stock');
+
+        $today = Carbon::today('Asia/Taipei')->toDateString();
+        $transactedAt = Carbon::parse($validated['transacted_at'])->toDateString();
+        if ($transactedAt !== $today) {
+            FetchHistoricalPrices::dispatch($transaction->stock, $transactedAt);
+        }
 
         return response()->json($transaction, 201);
     }
