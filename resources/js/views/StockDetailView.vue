@@ -62,65 +62,73 @@
                 <!-- Type -->
                 <div>
                     <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Type</label>
-                    <select v-model="txForm.type" class="border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select v-model="txForm.type" class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="buy">Buy</option>
                         <option value="sell">Sell</option>
                     </select>
+                    <p class="h-[1.1rem] text-xs text-red-500"></p>
                 </div>
                 <!-- Shares -->
                 <div>
                     <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Shares</label>
                     <input v-model="txForm.shares" type="number" step="1" min="1" required placeholder="1000"
-                        class="border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    <p v-if="txErrors.shares" class="text-xs text-red-500 mt-1">{{ txErrors.shares[0] }}</p>
+                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <p class="h-[1.1rem] text-xs text-red-500">{{ txErrors.shares?.[0] ?? '' }}</p>
                 </div>
                 <!-- Price -->
                 <div>
                     <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Price / Share</label>
                     <input v-model="txForm.price_per_share" type="number" step="0.01" min="0.01" required placeholder="850.00"
-                        class="border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    <p v-if="txErrors.price_per_share" class="text-xs text-red-500 mt-1">{{ txErrors.price_per_share[0] }}</p>
+                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <p class="h-[1.1rem] text-xs text-red-500">{{ txErrors.price_per_share?.[0] ?? '' }}</p>
                 </div>
                 <!-- Date -->
                 <div>
                     <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Date</label>
                     <input v-model="txForm.transacted_at" type="date" required
-                        class="border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <p class="h-[1.1rem] text-xs text-red-500"></p>
                 </div>
-                        <!-- Handling fee (auto-calculated server-side) -->
+                <!-- Handling fee (auto-calculated, overwritable) -->
                 <div>
-                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">
-                        Handling Fee
-                        <RouterLink to="/settings" class="text-slate-400 hover:text-indigo-500 transition-colors">({{ feeRates.handling }}%)</RouterLink>
-                    </label>
-                    <input :value="txForm.handling_fee" type="number" readonly
-                        class="border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 rounded-lg px-3 py-2 text-sm w-28 text-slate-400 cursor-default" />
+                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Handling Fee ({{ feeRates.handling }}%)</label>
+                    <input v-model="txForm.handling_fee" type="number" step="0.01" min="0"
+                        class="h-9 w-40 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <p class="h-[1.1rem] text-xs text-red-500"></p>
                 </div>
-                <!-- Transaction tax (auto-calculated server-side) -->
+                <!-- Transaction tax (auto-calculated, overwritable) -->
                 <div>
-                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">
-                        Transaction Tax
-                        <span class="text-slate-400">({{ feeRates.tax }}%)</span>
-                    </label>
-                    <input :value="txForm.transaction_tax" type="number" readonly
-                        class="border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 rounded-lg px-3 py-2 text-sm w-28 text-slate-400 cursor-default" />
+                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Transaction Tax ({{ feeRates.tax }}%)</label>
+                    <input v-model="txForm.transaction_tax" type="number" step="0.01" min="0"
+                        class="h-9 w-40 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <p class="h-[1.1rem] text-xs text-red-500"></p>
                 </div>
                 <!-- Notes -->
                 <div>
                     <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Notes (optional)</label>
                     <input v-model="txForm.notes" type="text" placeholder="optional"
-                        class="border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm w-40 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-40 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <p class="h-[1.1rem] text-xs text-red-500"></p>
                 </div>
                 <!-- Total preview -->
-                <div class="text-sm text-slate-500 dark:text-slate-400 self-center">
-                    Total: <span class="font-semibold text-slate-800 dark:text-slate-200">{{ txTotal }}</span>
+                <div>
+                    <label class="block text-xs mb-1 invisible">_</label>
+                    <div class="h-9 flex items-center text-sm text-slate-500 dark:text-slate-400 px-1">
+                        Total: <span class="ml-1 font-semibold text-slate-800 dark:text-slate-200">{{ txTotal }}</span>
+                    </div>
+                    <p class="h-[1.1rem]"></p>
                 </div>
-                <button type="submit" :disabled="submitting"
-                    :class="txForm.type === 'sell' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-600 hover:bg-emerald-700'"
-                    class="px-5 py-2 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors capitalize"
-                >
-                    {{ submitting ? '…' : txForm.type }}
-                </button>
+                <!-- Submit -->
+                <div>
+                    <label class="block text-xs mb-1 invisible">_</label>
+                    <button type="submit" :disabled="submitting"
+                        :class="txForm.type === 'sell' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-600 hover:bg-emerald-700'"
+                        class="h-9 px-5 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors capitalize"
+                    >
+                        {{ submitting ? '…' : txForm.type }}
+                    </button>
+                    <p class="h-[1.1rem]"></p>
+                </div>
             </form>
             <p v-if="txError" class="mt-2 text-sm text-red-500">{{ txError }}</p>
         </div>
@@ -145,27 +153,76 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
-                    <tr v-for="tx in transactions" :key="tx.id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ tx.transacted_at }}</td>
-                        <td class="px-4 py-3">
-                            <span class="px-2 py-0.5 rounded-full text-xs font-medium"
-                                :class="tx.type === 'buy' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400'">
-                                {{ tx.type.toUpperCase() }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ Number(tx.shares).toLocaleString() }}</td>
-                        <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ fmt(tx.price_per_share) }}</td>
-                        <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">{{ Number(tx.handling_fee) > 0 ? fmt(tx.handling_fee) : '—' }}</td>
-                        <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">{{ Number(tx.transaction_tax) > 0 ? fmt(tx.transaction_tax) : '—' }}</td>
-                        <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
-                            {{ tx.type === 'buy'
-                                ? fmt(tx.shares * tx.price_per_share + Number(tx.handling_fee))
-                                : fmt(tx.shares * tx.price_per_share - Number(tx.handling_fee) - Number(tx.transaction_tax)) }}
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            <button @click="deleteTransaction(tx.id)" class="text-slate-300 dark:text-slate-600 hover:text-red-400 transition-colors">✕</button>
-                        </td>
-                    </tr>
+                    <template v-for="tx in transactions" :key="tx.id">
+                        <!-- Edit row -->
+                        <tr v-if="editingId === tx.id" class="bg-slate-50 dark:bg-slate-700/50">
+                            <td colspan="8" class="px-4 py-3">
+                                <div class="flex flex-wrap gap-2 items-end">
+                                    <div>
+                                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Type</label>
+                                        <select v-model="editForm.type" class="h-8 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                            <option value="buy">Buy</option>
+                                            <option value="sell">Sell</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Shares</label>
+                                        <input v-model="editForm.shares" type="number" step="1" min="1"
+                                            class="h-8 w-24 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Price</label>
+                                        <input v-model="editForm.price_per_share" type="number" step="0.01" min="0.01"
+                                            class="h-8 w-28 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Handling Fee</label>
+                                        <input v-model="editForm.handling_fee" type="number" step="0.01" min="0"
+                                            class="h-8 w-24 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Tax</label>
+                                        <input v-model="editForm.transaction_tax" type="number" step="0.01" min="0"
+                                            class="h-8 w-24 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Date</label>
+                                        <input v-model="editForm.transacted_at" type="date"
+                                            class="h-8 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                                    </div>
+                                    <div class="ml-auto flex gap-2 items-end">
+                                        <button @click="saveEdit(tx.id)" :disabled="saving" class="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
+                                            {{ saving ? '…' : 'Save' }}
+                                        </button>
+                                        <button @click="editingId = null" class="h-8 px-3 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg">Cancel</button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Display row -->
+                        <tr v-else class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                            <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ tx.transacted_at }}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="tx.type === 'buy' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400'">
+                                    {{ tx.type.toUpperCase() }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ Number(tx.shares).toLocaleString() }}</td>
+                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ fmt(tx.price_per_share) }}</td>
+                            <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">{{ Number(tx.handling_fee) > 0 ? fmt(tx.handling_fee) : '—' }}</td>
+                            <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">{{ Number(tx.transaction_tax) > 0 ? fmt(tx.transaction_tax) : '—' }}</td>
+                            <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
+                                {{ tx.type === 'buy'
+                                    ? fmt(tx.shares * tx.price_per_share + Number(tx.handling_fee))
+                                    : fmt(tx.shares * tx.price_per_share - Number(tx.handling_fee) - Number(tx.transaction_tax)) }}
+                            </td>
+                            <td class="px-4 py-3 text-right whitespace-nowrap">
+                                <button @click="startEdit(tx)" class="text-slate-300 dark:text-slate-600 hover:text-indigo-400 transition-colors mr-2">✎</button>
+                                <button @click="deleteTransaction(tx.id)" class="text-slate-300 dark:text-slate-600 hover:text-red-400 transition-colors">✕</button>
+                            </td>
+                        </tr>
+                    </template>
                 </tbody>
             </table>
         </div>
@@ -194,12 +251,13 @@ const selectedPeriod = ref('3M');
 let chartInstance = null;
 
 const filteredHistory = computed(() => {
-    if (selectedPeriod.value === 'All') return priceHistory.value;
+    const valid = priceHistory.value.filter(p => Number(p.close_price) > 0);
+    if (selectedPeriod.value === 'All') return valid;
     const days = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 }[selectedPeriod.value];
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     const cutoffStr = cutoff.toISOString().slice(0, 10);
-    return priceHistory.value.filter(p => p.date >= cutoffStr);
+    return valid.filter(p => p.date >= cutoffStr);
 });
 
 const { state: authState } = useAuth();
@@ -219,6 +277,9 @@ const txErrors = ref({});
 const txError = ref('');
 const submitting = ref(false);
 const refreshing = ref(false);
+const editingId = ref(null);
+const editForm = ref({});
+const saving = ref(false);
 
 // Auto-calculate fees whenever trade value or rates change.
 // feeRates is destructured BEFORE the early return so Vue always tracks it
@@ -402,6 +463,30 @@ async function deleteTransaction(id) {
     if (!confirm('Delete this transaction?')) return;
     await api.delete(`/transactions/${id}`);
     transactions.value = transactions.value.filter(t => t.id !== id);
+}
+
+function startEdit(tx) {
+    editingId.value = tx.id;
+    editForm.value = {
+        type: tx.type,
+        shares: tx.shares,
+        price_per_share: tx.price_per_share,
+        handling_fee: tx.handling_fee,
+        transaction_tax: tx.transaction_tax,
+        transacted_at: String(tx.transacted_at).slice(0, 10),
+    };
+}
+
+async function saveEdit(id) {
+    saving.value = true;
+    try {
+        const { data } = await api.put(`/transactions/${id}`, editForm.value);
+        const idx = transactions.value.findIndex(t => t.id === id);
+        if (idx !== -1) transactions.value[idx] = data;
+        editingId.value = null;
+    } finally {
+        saving.value = false;
+    }
 }
 
 onMounted(load);
