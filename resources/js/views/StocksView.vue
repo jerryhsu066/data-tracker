@@ -19,25 +19,33 @@
                     <input
                         v-model="form.symbol"
                         placeholder="e.g. 2330.TW"
-                        class="border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
-                    <p v-if="errors.symbol" class="text-xs text-red-500 mt-1">{{ errors.symbol[0] }}</p>
+                    <p class="h-[1.1rem] text-xs text-red-500">{{ errors.symbol?.[0] ?? '' }}</p>
                 </div>
                 <div>
                     <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Name</label>
                     <input
                         v-model="form.name"
                         placeholder="e.g. TSMC"
-                        class="border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 py-2 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
-                    <p v-if="errors.name" class="text-xs text-red-500 mt-1">{{ errors.name[0] }}</p>
+                    <p class="h-[1.1rem] text-xs text-red-500">{{ errors.name?.[0] ?? '' }}</p>
                 </div>
-                <button type="submit" :disabled="adding" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
-                    {{ adding ? 'Adding…' : 'Add' }}
-                </button>
-                <button type="button" @click="showForm = false" class="px-4 py-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-                    Cancel
-                </button>
+                <div>
+                    <label class="block text-xs mb-1 invisible">_</label>
+                    <button type="submit" :disabled="adding" class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
+                        {{ adding ? 'Adding…' : 'Add' }}
+                    </button>
+                    <p class="h-[1.1rem]"></p>
+                </div>
+                <div>
+                    <label class="block text-xs mb-1 invisible">_</label>
+                    <button type="button" @click="showForm = false" class="h-9 px-4 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg">
+                        Cancel
+                    </button>
+                    <p class="h-[1.1rem]"></p>
+                </div>
             </form>
         </div>
 
