@@ -63,16 +63,28 @@
                     <input v-model="txForm.transacted_at" type="date" required
                         class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
-                <!-- Handling fee -->
+                        <!-- Handling fee -->
                 <div>
-                    <label class="block text-xs text-slate-500 mb-1">Handling Fee</label>
-                    <input v-model="txForm.handling_fee" type="number" step="1" min="0" placeholder="0"
+                    <label class="block text-xs text-slate-500 mb-1">
+                        Handling Fee
+                        <span class="text-slate-400 font-normal">
+                            (<input v-model.number="feeRates.handling" type="number" step="0.001" min="0" max="1"
+                                class="w-16 border-0 border-b border-slate-300 text-xs text-center focus:outline-none focus:border-indigo-400 bg-transparent" />%)
+                        </span>
+                    </label>
+                    <input v-model.number="txForm.handling_fee" type="number" step="1" min="0"
                         class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
                 <!-- Transaction tax -->
                 <div>
-                    <label class="block text-xs text-slate-500 mb-1">Transaction Tax</label>
-                    <input v-model="txForm.transaction_tax" type="number" step="1" min="0" placeholder="0"
+                    <label class="block text-xs text-slate-500 mb-1">
+                        Transaction Tax
+                        <span class="text-slate-400 font-normal">
+                            (<input v-model.number="feeRates.tax" type="number" step="0.001" min="0" max="1"
+                                class="w-16 border-0 border-b border-slate-300 text-xs text-center focus:outline-none focus:border-indigo-400 bg-transparent" />%)
+                        </span>
+                    </label>
+                    <input v-model.number="txForm.transaction_tax" type="number" step="1" min="0"
                         class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
                 <!-- Notes -->
@@ -139,7 +151,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, watchEffect, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '../api';
 import { Chart, LineElement, PointElement, LinearScale, TimeScale, Filler, Tooltip, CategoryScale } from 'chart.js';
@@ -155,11 +167,24 @@ const transactions = ref([]);
 const chartCanvas = ref(null);
 let chartInstance = null;
 
+// Default rates (%). Users can change these in the form to match their broker discount.
+const feeRates = ref({ handling: 0.1425, tax: 0.3 });
+
 const txForm = ref({ type: 'buy', shares: '', price_per_share: '', handling_fee: 0, transaction_tax: 0, transacted_at: today(), notes: '' });
 const txErrors = ref({});
 const txError = ref('');
 const submitting = ref(false);
 const refreshing = ref(false);
+
+// Auto-calculate fees whenever trade value or rates change.
+watchEffect(() => {
+    const tradeValue = Number(txForm.value.shares) * Number(txForm.value.price_per_share);
+    if (!tradeValue) return;
+    txForm.value.handling_fee = Math.max(20, Math.floor(tradeValue * feeRates.value.handling / 100));
+    txForm.value.transaction_tax = txForm.value.type === 'sell'
+        ? Math.floor(tradeValue * feeRates.value.tax / 100)
+        : 0;
+});
 
 const txTotal = computed(() => {
     const s = Number(txForm.value.shares);
@@ -244,7 +269,7 @@ async function submitTransaction() {
     try {
         const { data } = await api.post('/transactions', { stock_id: stock.value.id, ...txForm.value });
         transactions.value.unshift(data);
-        txForm.value = { type: 'buy', shares: '', price_per_share: '', handling_fee: 0, transaction_tax: 0, transacted_at: today(), notes: '' };
+        txForm.value = { type: txForm.value.type, shares: '', price_per_share: '', handling_fee: 0, transaction_tax: 0, transacted_at: today(), notes: '' };
     } catch (e) {
         if (e.response?.status === 422) {
             txErrors.value = e.response.data.errors ?? {};
