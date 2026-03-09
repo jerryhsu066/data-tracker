@@ -18,6 +18,8 @@ class Transaction extends Model
         'type',
         'shares',
         'price_per_share',
+        'handling_fee',
+        'transaction_tax',
         'transacted_at',
         'notes',
     ];
@@ -27,6 +29,8 @@ class Transaction extends Model
         return [
             'shares' => 'decimal:4',
             'price_per_share' => 'decimal:4',
+            'handling_fee' => 'decimal:4',
+            'transaction_tax' => 'decimal:4',
             'transacted_at' => 'date:Y-m-d',
         ];
     }

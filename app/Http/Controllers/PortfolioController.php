@@ -30,10 +30,10 @@ class PortfolioController extends Controller
         $sells = $transactions->where('type', 'sell');
 
         $totalBuyShares = $buys->sum('shares');
-        $totalBuyCost = $buys->sum(fn ($t) => (float) $t->shares * (float) $t->price_per_share);
+        $totalBuyCost = $buys->sum(fn ($t) => (float) $t->shares * (float) $t->price_per_share + (float) $t->handling_fee);
 
         $totalSellShares = $sells->sum('shares');
-        $totalSellRevenue = $sells->sum(fn ($t) => (float) $t->shares * (float) $t->price_per_share);
+        $totalSellRevenue = $sells->sum(fn ($t) => (float) $t->shares * (float) $t->price_per_share - (float) $t->handling_fee - (float) $t->transaction_tax);
 
         $netShares = $totalBuyShares - $totalSellShares;
 

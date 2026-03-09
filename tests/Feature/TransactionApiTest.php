@@ -29,6 +29,7 @@ class TransactionApiTest extends TestCase
             'type' => 'buy',
             'shares' => 1000,
             'price_per_share' => 850.00,
+            'handling_fee' => 1212,
             'transacted_at' => '2025-01-15',
             'notes' => 'Initial position',
         ]);
@@ -38,13 +39,46 @@ class TransactionApiTest extends TestCase
                 'type' => 'buy',
                 'shares' => '1000.0000',
                 'price_per_share' => '850.0000',
+                'handling_fee' => '1212.0000',
+                'transaction_tax' => '0.0000',
             ]);
 
         $this->assertDatabaseHas('transactions', [
             'user_id' => $this->user->id,
             'stock_id' => $stock->id,
             'type' => 'buy',
+            'handling_fee' => 1212,
         ]);
+    }
+
+    public function test_fees_default_to_zero_when_omitted(): void
+    {
+        $stock = Stock::factory()->create();
+
+        $response = $this->actingAs($this->user)->postJson('/api/transactions', [
+            'stock_id' => $stock->id,
+            'type' => 'buy',
+            'shares' => 100,
+            'price_per_share' => 500,
+            'transacted_at' => '2025-01-15',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonFragment(['handling_fee' => '0.0000', 'transaction_tax' => '0.0000']);
+    }
+
+    public function test_fees_must_be_non_negative(): void
+    {
+        $stock = Stock::factory()->create();
+
+        $this->actingAs($this->user)->postJson('/api/transactions', [
+            'stock_id' => $stock->id,
+            'type' => 'buy',
+            'shares' => 100,
+            'price_per_share' => 500,
+            'handling_fee' => -1,
+            'transacted_at' => '2025-01-15',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['handling_fee']);
     }
 
     public function test_can_record_a_sell_transaction(): void

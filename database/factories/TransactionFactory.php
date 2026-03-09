@@ -20,6 +20,8 @@ class TransactionFactory extends Factory
             'type' => 'buy',
             'shares' => $this->faker->randomFloat(4, 100, 5000),
             'price_per_share' => $this->faker->randomFloat(4, 10, 2000),
+            'handling_fee' => 0,
+            'transaction_tax' => 0,
             'transacted_at' => $this->faker->dateTimeBetween('-2 years', 'now')->format('Y-m-d'),
             'notes' => null,
         ];

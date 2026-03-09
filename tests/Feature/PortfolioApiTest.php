@@ -77,6 +77,25 @@ class PortfolioApiTest extends TestCase
             ->assertOk()->assertJsonCount(0);
     }
 
+    public function test_fees_are_included_in_cost_and_deducted_from_revenue(): void
+    {
+        $stock = Stock::factory()->create(['current_price' => 900.0000]);
+
+        // Buy 1000 @ 800 + 1140 fee → total cost = 801140, avg cost = 801.14
+        Transaction::factory()->buy($stock, shares: 1000, price: 800)
+            ->create(['user_id' => $this->user->id, 'handling_fee' => 1140, 'transaction_tax' => 0]);
+
+        // Sell 200 @ 900 − 256 fee − 540 tax → net revenue = 180000 - 256 - 540 = 179204
+        // realized gain = 179204 − (200 × 801.14) = 179204 − 160228 = 18976
+        Transaction::factory()->sell($stock, shares: 200, price: 900)
+            ->create(['user_id' => $this->user->id, 'handling_fee' => 256, 'transaction_tax' => 540]);
+
+        $position = $this->actingAs($this->user)->getJson('/api/portfolio')->json()[0];
+
+        $this->assertEqualsWithDelta(801.14, (float) $position['average_cost'], 0.001);
+        $this->assertEqualsWithDelta(18976, (float) $position['realized_gain'], 1);
+    }
+
     public function test_portfolio_shows_multiple_stocks(): void
     {
         $tsmc = Stock::factory()->create(['symbol' => '2330.TW', 'current_price' => 900.0000]);

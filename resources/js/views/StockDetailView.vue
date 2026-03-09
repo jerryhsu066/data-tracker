@@ -63,6 +63,18 @@
                     <input v-model="txForm.transacted_at" type="date" required
                         class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
+                <!-- Handling fee -->
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1">Handling Fee</label>
+                    <input v-model="txForm.handling_fee" type="number" step="1" min="0" placeholder="0"
+                        class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <!-- Transaction tax -->
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1">Transaction Tax</label>
+                    <input v-model="txForm.transaction_tax" type="number" step="1" min="0" placeholder="0"
+                        class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
                 <!-- Notes -->
                 <div>
                     <label class="block text-xs text-slate-500 mb-1">Notes (optional)</label>
@@ -96,6 +108,8 @@
                         <th class="text-left px-4 py-3 font-medium text-slate-500">Type</th>
                         <th class="text-right px-4 py-3 font-medium text-slate-500">Shares</th>
                         <th class="text-right px-4 py-3 font-medium text-slate-500">Price</th>
+                        <th class="text-right px-4 py-3 font-medium text-slate-500">Fee</th>
+                        <th class="text-right px-4 py-3 font-medium text-slate-500">Tax</th>
                         <th class="text-right px-4 py-3 font-medium text-slate-500">Total</th>
                         <th class="px-4 py-3"></th>
                     </tr>
@@ -111,6 +125,8 @@
                         </td>
                         <td class="px-4 py-3 text-right text-slate-700">{{ Number(tx.shares).toLocaleString() }}</td>
                         <td class="px-4 py-3 text-right text-slate-700">{{ fmt(tx.price_per_share) }}</td>
+                        <td class="px-4 py-3 text-right text-slate-500">{{ Number(tx.handling_fee) > 0 ? fmt(tx.handling_fee) : '—' }}</td>
+                        <td class="px-4 py-3 text-right text-slate-500">{{ Number(tx.transaction_tax) > 0 ? fmt(tx.transaction_tax) : '—' }}</td>
                         <td class="px-4 py-3 text-right font-medium text-slate-900">{{ fmt(tx.shares * tx.price_per_share) }}</td>
                         <td class="px-4 py-3 text-right">
                             <button @click="deleteTransaction(tx.id)" class="text-slate-300 hover:text-red-400 transition-colors">✕</button>
@@ -139,7 +155,7 @@ const transactions = ref([]);
 const chartCanvas = ref(null);
 let chartInstance = null;
 
-const txForm = ref({ type: 'buy', shares: '', price_per_share: '', transacted_at: today(), notes: '' });
+const txForm = ref({ type: 'buy', shares: '', price_per_share: '', handling_fee: 0, transaction_tax: 0, transacted_at: today(), notes: '' });
 const txErrors = ref({});
 const txError = ref('');
 const submitting = ref(false);
@@ -228,7 +244,7 @@ async function submitTransaction() {
     try {
         const { data } = await api.post('/transactions', { stock_id: stock.value.id, ...txForm.value });
         transactions.value.unshift(data);
-        txForm.value = { type: 'buy', shares: '', price_per_share: '', transacted_at: today(), notes: '' };
+        txForm.value = { type: 'buy', shares: '', price_per_share: '', handling_fee: 0, transaction_tax: 0, transacted_at: today(), notes: '' };
     } catch (e) {
         if (e.response?.status === 422) {
             txErrors.value = e.response.data.errors ?? {};
