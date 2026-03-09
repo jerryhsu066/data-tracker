@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stock;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 
 class StockPriceHistoryController extends Controller
@@ -11,8 +12,10 @@ class StockPriceHistoryController extends Controller
     {
         $stock = Stock::where('symbol', strtoupper($symbol))->firstOrFail();
 
+        $yesterday = Carbon::yesterday('Asia/Taipei')->toDateString();
+
         return response()->json(
-            $stock->priceHistories()->orderBy('date')->get()
+            $stock->priceHistories()->where('date', '<=', $yesterday)->orderBy('date')->get()
         );
     }
 }

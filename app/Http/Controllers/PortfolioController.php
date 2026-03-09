@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Stock;
 use App\Models\StockPriceHistory;
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -52,40 +53,51 @@ class PortfolioController extends Controller
             return response()->json([]);
         }
 
-        // Build a sorted list of all available dates across all stocks
-        $allDates = $histories->flatten()->pluck('date')->map(fn ($d) => (string) $d)->unique()->sort()->values();
+        $yesterday = Carbon::yesterday('Asia/Taipei')->toDateString();
+
+        // Build a sorted list of all available dates across all stocks, capped at yesterday
+        $allDates = $histories->flatten()->pluck('date')->map(fn ($d) => (string) $d)->filter(fn ($d) => $d <= $yesterday)->unique()->sort()->values();
 
         // For each date, compute sum(sharesHeld × closePrice) for each stock
         $result = [];
         foreach ($allDates as $date) {
             $totalValue = 0.0;
+            $totalCostBasis = 0.0;
 
             foreach ($stockIds as $stockId) {
-                // Net shares held on this date (all transactions up to and including this date)
                 $txUpToDate = $transactions
                     ->where('stock_id', $stockId)
                     ->filter(fn ($t) => (string) $t->transacted_at <= $date);
 
-                $netShares = $txUpToDate->sum(fn ($t) => $t->type === 'buy'
-                    ? (float) $t->shares
-                    : -(float) $t->shares
-                );
+                $buysUpToDate  = $txUpToDate->where('type', 'buy');
+                $sellsUpToDate = $txUpToDate->where('type', 'sell');
+
+                $totalBuyShares  = (float) $buysUpToDate->sum('shares');
+                $totalSellShares = (float) $sellsUpToDate->sum('shares');
+                $netShares = $totalBuyShares - $totalSellShares;
 
                 if ($netShares <= 0) {
                     continue;
                 }
 
-                // Close price on this date for this stock
                 $priceRecord = ($histories[$stockId] ?? collect())
-                    ->first(fn ($h) => (string) $h->date === $date);
+                    ->first(fn ($h) => (string) $h->date === $date && (float) $h->close_price > 0);
 
                 if ($priceRecord) {
                     $totalValue += $netShares * (float) $priceRecord->close_price;
+
+                    $totalBuyCost = $buysUpToDate->sum(fn ($t) => (float) $t->shares * (float) $t->price_per_share + (float) $t->handling_fee);
+                    $avgCost = $totalBuyShares > 0 ? $totalBuyCost / $totalBuyShares : 0;
+                    $totalCostBasis += $avgCost * $netShares;
                 }
             }
 
             if ($totalValue > 0) {
-                $result[] = ['date' => $date, 'value' => round($totalValue, 2)];
+                $result[] = [
+                    'date'       => $date,
+                    'value'      => round($totalValue, 2),
+                    'cost_basis' => round($totalCostBasis, 2),
+                ];
             }
         }
 
