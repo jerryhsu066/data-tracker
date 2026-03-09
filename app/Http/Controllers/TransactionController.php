@@ -63,6 +63,34 @@ class TransactionController extends Controller
         return response()->json($transaction, 201);
     }
 
+    public function update(Request $request, Transaction $transaction): JsonResponse
+    {
+        if ($transaction->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'type'             => ['required', Rule::in(['buy', 'sell'])],
+            'shares'           => ['required', 'numeric', 'gt:0'],
+            'price_per_share'  => ['required', 'numeric', 'gt:0'],
+            'handling_fee'     => ['required', 'numeric', 'gte:0'],
+            'transaction_tax'  => ['required', 'numeric', 'gte:0'],
+            'transacted_at'    => ['required', 'date'],
+            'notes'            => ['nullable', 'string'],
+        ]);
+
+        $transaction->update($validated);
+        $transaction->load('stock');
+
+        $today = Carbon::today('Asia/Taipei')->toDateString();
+        $transactedAt = Carbon::parse($validated['transacted_at'])->toDateString();
+        if ($transactedAt !== $today) {
+            FetchHistoricalPrices::dispatch($transaction->stock, $transactedAt);
+        }
+
+        return response()->json($transaction);
+    }
+
     public function destroy(Request $request, Transaction $transaction): Response
     {
         if ($transaction->user_id !== $request->user()->id) {

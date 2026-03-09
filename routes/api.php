@@ -34,6 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Transactions
     Route::post('transactions', [TransactionController::class, 'store']);
+    Route::put('transactions/{transaction}', [TransactionController::class, 'update']);
     Route::delete('transactions/{transaction}', [TransactionController::class, 'destroy']);
 
     // Portfolio
