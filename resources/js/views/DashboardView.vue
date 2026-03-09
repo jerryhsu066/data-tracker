@@ -130,10 +130,11 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
-import { Chart, DoughnutController, BarController, LineController, ArcElement, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler } from 'chart.js';
+import { Chart, DoughnutController, BarController, LineController, ArcElement, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler, Legend } from 'chart.js';
 import api from '../api';
+import { useTheme } from '../stores/theme';
 
-Chart.register(DoughnutController, BarController, LineController, ArcElement, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler);
+Chart.register(DoughnutController, BarController, LineController, ArcElement, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler, Legend);
 
 const PALETTE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'];
 
@@ -151,20 +152,30 @@ let barChart = null;
 let lineChart = null;
 
 const filteredHistory = computed(() => {
-    if (selectedPeriod.value === 'All') return portfolioHistory.value.map(p => ({ ...p, date: String(p.date).slice(0, 10) }));
+    const valid = portfolioHistory.value
+        .map(p => ({ ...p, date: String(p.date).slice(0, 10) }))
+        .filter(p => p.value > 0 && p.cost_basis > 0);
+    if (selectedPeriod.value === 'All') return valid;
     const days = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 }[selectedPeriod.value];
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     const cutoffStr = cutoff.toISOString().slice(0, 10);
-    return portfolioHistory.value
-        .map(p => ({ ...p, date: String(p.date).slice(0, 10) }))
-        .filter(p => p.date >= cutoffStr);
+    return valid.filter(p => p.date >= cutoffStr);
 });
 
 const totalValue      = computed(() => positions.value.reduce((s, p) => s + Number(p.current_value),   0));
 const totalUnrealized = computed(() => positions.value.reduce((s, p) => s + Number(p.unrealized_gain), 0));
 const totalCostBasis  = computed(() => positions.value.reduce((s, p) => s + Number(p.average_cost) * Number(p.net_shares), 0));
 const gainPct         = computed(() => totalCostBasis.value > 0 ? (totalUnrealized.value / totalCostBasis.value) * 100 : 0);
+
+function chartColors() {
+    const dark = document.documentElement.classList.contains('dark');
+    return {
+        grid: dark ? '#334155' : '#f1f5f9',
+        border: dark ? '#334155' : '#e2e8f0',
+        tick: '#94a3b8',
+    };
+}
 
 function allocationPct(pos) {
     if (!totalValue.value) return '0.0';
@@ -187,31 +198,75 @@ function renderLineChart() {
         type: 'line',
         data: {
             labels: history.map(p => p.date),
-            datasets: [{
-                data: history.map(p => p.value),
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99,102,241,0.08)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 0,
-                pointHoverRadius: 4,
-                borderWidth: 2,
-            }],
+            datasets: [
+                {
+                    label: 'Portfolio Value',
+                    data: history.map(p => p.value),
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99,102,241,0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#6366f1',
+                    pointBorderWidth: 0,
+                    borderWidth: 2,
+                },
+                {
+                    label: 'Cost Basis',
+                    data: history.map(p => p.cost_basis),
+                    borderColor: '#f59e0b',
+                    borderWidth: 1.5,
+                    borderDash: [6, 4],
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    fill: false,
+                    tension: 0,
+                },
+            ],
         },
         options: {
             responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        boxWidth: 24,
+                        boxHeight: 2,
+                        padding: 12,
+                        font: { size: 11 },
+                        color: '#94a3b8',
+                    },
+                },
                 tooltip: {
                     callbacks: {
                         title: (items) => items[0].label,
-                        label: (item) => ` ${fmt(item.raw)}`,
+                        label: (item) => {
+                            if (item.datasetIndex === 1) {
+                                return ` Cost Basis: ${fmt(item.raw)}`;
+                            }
+                            const p = history[item.dataIndex];
+                            const gain = p.value - p.cost_basis;
+                            const pct = p.cost_basis > 0 ? (gain / p.cost_basis) * 100 : 0;
+                            const sign = gain >= 0 ? '+' : '';
+                            return [
+                                ` Portfolio:  ${fmt(p.value)}`,
+                                ` Gain/Loss: ${sign}${fmt(gain)}  (${sign}${pct.toFixed(2)}%)`,
+                            ];
+                        },
                     },
                 },
             },
             scales: {
                 x: {
                     grid: { display: false },
+                    border: { color: chartColors().border },
                     ticks: {
                         font: { size: 11 }, color: '#94a3b8',
                         maxTicksLimit: 8,
@@ -222,7 +277,8 @@ function renderLineChart() {
                     },
                 },
                 y: {
-                    grid: { color: '#f1f5f9' },
+                    grid: { color: chartColors().grid },
+                    border: { color: chartColors().border },
                     ticks: {
                         font: { size: 11 }, color: '#94a3b8',
                         callback(value) {
@@ -276,6 +332,30 @@ function renderCharts() {
     barChart?.destroy();
     if (barCanvas.value && pos.length > 0) {
         const gains = pos.map(p => Number(p.unrealized_gain));
+        const pcts = pos.map(p => {
+            const cost = Number(p.average_cost) * Number(p.net_shares);
+            return cost > 0 ? (Number(p.unrealized_gain) / cost) * 100 : 0;
+        });
+
+        const pctLabelPlugin = {
+            id: 'pctLabels',
+            afterDraw(chart) {
+                const { ctx } = chart;
+                const zeroX = chart.scales.x.getPixelForValue(0);
+                ctx.save();
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'left';
+                chart.getDatasetMeta(0).data.forEach((bar, i) => {
+                    const pct = pcts[i];
+                    ctx.fillStyle = gains[i] >= 0 ? '#10b981' : '#ef4444';
+                    const xPos = Math.max(bar.x, zeroX) + 5;
+                    ctx.fillText(`${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`, xPos, bar.y);
+                });
+                ctx.restore();
+            },
+        };
+
         barChart = new Chart(barCanvas.value, {
             type: 'bar',
             data: {
@@ -290,30 +370,43 @@ function renderCharts() {
             options: {
                 indexAxis: 'y',
                 responsive: true,
+                layout: { padding: { left: 0, right: 52 } },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: (item) => ` ${sign(item.raw)}${fmt(Math.abs(item.raw))}`,
+                            label: (item) => ` ${sign(item.raw)}${fmt(Math.abs(item.raw))}  (${pcts[item.dataIndex] >= 0 ? '+' : ''}${pcts[item.dataIndex].toFixed(2)}%)`,
                         },
                     },
                 },
                 scales: {
                     x: {
-                        grid: { color: '#f1f5f9' },
-                        ticks: { font: { size: 11 }, color: '#94a3b8' },
+                        grid: { color: chartColors().grid },
+                        border: { color: chartColors().border },
+                        ticks: {
+                            font: { size: 11 }, color: '#94a3b8',
+                            callback(v) {
+                                if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+                                if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
+                                return v;
+                            },
+                        },
                     },
                     y: {
                         grid: { display: false },
+                        border: { color: chartColors().border },
                         ticks: { font: { size: 11 }, color: '#94a3b8' },
                     },
                 },
             },
+            plugins: [pctLabelPlugin],
         });
     }
 }
 
+const { dark } = useTheme();
 watch(selectedPeriod, () => nextTick(renderLineChart));
+watch(dark, () => nextTick(() => { renderCharts(); renderLineChart(); }));
 
 onMounted(async () => {
     try {
