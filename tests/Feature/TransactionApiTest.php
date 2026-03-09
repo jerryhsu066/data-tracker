@@ -222,6 +222,6 @@ class TransactionApiTest extends TestCase
 
         $this->actingAs($this->user)->deleteJson("/api/transactions/{$tx->id}")->assertNoContent();
 
-        $this->assertDatabaseMissing('transactions', ['id' => $tx->id]);
+        $this->assertSoftDeleted('transactions', ['id' => $tx->id]);
     }
 }

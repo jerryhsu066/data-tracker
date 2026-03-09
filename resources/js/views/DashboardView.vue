@@ -15,9 +15,9 @@
                 </p>
             </div>
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                <p class="text-sm text-slate-500 dark:text-slate-400">Realized Gain</p>
-                <p class="text-2xl font-bold mt-1" :class="totalRealized >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                    {{ sign(totalRealized) }}{{ fmt(Math.abs(totalRealized)) }}
+                <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss %</p>
+                <p class="text-2xl font-bold mt-1" :class="gainPct >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                    {{ sign(gainPct) }}{{ Math.abs(gainPct).toFixed(2) }}%
                 </p>
             </div>
         </div>
@@ -161,9 +161,10 @@ const filteredHistory = computed(() => {
         .filter(p => p.date >= cutoffStr);
 });
 
-const totalValue    = computed(() => positions.value.reduce((s, p) => s + Number(p.current_value),   0));
+const totalValue      = computed(() => positions.value.reduce((s, p) => s + Number(p.current_value),   0));
 const totalUnrealized = computed(() => positions.value.reduce((s, p) => s + Number(p.unrealized_gain), 0));
-const totalRealized   = computed(() => positions.value.reduce((s, p) => s + Number(p.realized_gain),  0));
+const totalCostBasis  = computed(() => positions.value.reduce((s, p) => s + Number(p.average_cost) * Number(p.net_shares), 0));
+const gainPct         = computed(() => totalCostBasis.value > 0 ? (totalUnrealized.value / totalCostBasis.value) * 100 : 0);
 
 function allocationPct(pos) {
     if (!totalValue.value) return '0.0';

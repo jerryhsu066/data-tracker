@@ -89,7 +89,7 @@ class StockApiTest extends TestCase
 
         $this->actingAs($this->user)->deleteJson('/api/stocks/AAPL')->assertNoContent();
 
-        $this->assertDatabaseMissing('stocks', ['symbol' => 'AAPL']);
+        $this->assertSoftDeleted('stocks', ['symbol' => 'AAPL']);
     }
 
     public function test_fetch_endpoint_updates_price_synchronously(): void

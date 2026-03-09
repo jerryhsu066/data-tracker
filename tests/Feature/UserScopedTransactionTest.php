@@ -81,7 +81,7 @@ class UserScopedTransactionTest extends TestCase
         $this->actingAs($user)->deleteJson("/api/transactions/{$tx->id}")
             ->assertNoContent();
 
-        $this->assertDatabaseMissing('transactions', ['id' => $tx->id]);
+        $this->assertSoftDeleted('transactions', ['id' => $tx->id]);
     }
 
     public function test_sell_validation_only_counts_users_own_shares(): void
