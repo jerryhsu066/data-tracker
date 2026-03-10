@@ -9,4 +9,4 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::job(FetchAllStockPrices::class)->everyMinute();
+Schedule::job(FetchAllStockPrices::class)->hourly()->weekdays();
