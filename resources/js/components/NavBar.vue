@@ -4,8 +4,8 @@
             <!-- App name -->
             <span class="font-bold text-base tracking-tight text-white select-none">MyTracker</span>
 
-            <!-- Module selector -->
-            <div class="flex items-center gap-1">
+            <!-- Module selector (desktop only) -->
+            <div class="hidden md:flex items-center gap-1">
                 <button
                     v-for="mod in modules"
                     :key="mod.id"
@@ -21,8 +21,8 @@
             </div>
 
             <!-- User controls -->
-            <div class="flex items-center gap-3">
-                <span class="text-slate-400 text-sm">{{ auth.state.user?.name }}</span>
+            <div class="flex items-center gap-2 sm:gap-3">
+                <span class="hidden sm:block text-slate-400 text-sm">{{ auth.state.user?.name }}</span>
                 <button
                     @click="privacy.toggle()"
                     class="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 transition-colors leading-none"
@@ -45,7 +45,38 @@
                 >{{ theme.dark.value ? '☀' : '☾' }}</button>
                 <button
                     @click="handleLogout"
-                    class="px-3 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 rounded-md transition-colors"
+                    class="hidden sm:block px-3 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 rounded-md transition-colors"
+                >Logout</button>
+                <!-- Hamburger (mobile only) -->
+                <button
+                    class="md:hidden p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                    @click="mobileMenuOpen = !mobileMenuOpen"
+                    aria-label="Toggle menu"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                        <path v-if="!mobileMenuOpen" fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+                        <path v-else d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile menu dropdown -->
+        <div v-if="mobileMenuOpen" class="md:hidden bg-slate-800 border-t border-slate-700">
+            <div class="px-3 py-2 flex flex-col gap-0.5">
+                <RouterLink
+                    v-for="link in activeLinks"
+                    :key="link.to"
+                    :to="link.to"
+                    class="px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                    active-class="text-white bg-slate-700"
+                    @click="mobileMenuOpen = false"
+                >
+                    {{ link.label }}
+                </RouterLink>
+                <button
+                    @click="handleLogout"
+                    class="sm:hidden text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors mt-1 border-t border-slate-700"
                 >Logout</button>
             </div>
         </div>
@@ -63,6 +94,8 @@ const auth = useAuth();
 const theme = useTheme();
 const privacy = usePrivacy();
 const router = useRouter();
+
+const mobileMenuOpen = ref(false);
 
 const modules = [
     {
@@ -89,6 +122,7 @@ const activeLinks = computed(() =>
 defineExpose({ activeLinks });
 
 async function handleLogout() {
+    mobileMenuOpen.value = false;
     await auth.logout();
     router.push('/login');
 }

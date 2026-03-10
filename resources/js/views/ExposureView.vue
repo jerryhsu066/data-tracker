@@ -6,7 +6,7 @@
 
         <template v-else>
             <!-- Bundle tabs -->
-            <div class="flex items-center gap-1 mb-6 border-b border-slate-200 dark:border-slate-700">
+            <div class="flex items-center gap-1 mb-6 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
                 <button
                     v-for="bundle in bundles"
                     :key="bundle.id"
@@ -63,7 +63,7 @@
 
             <template v-if="active">
                 <!-- Summary cards -->
-                <div class="grid grid-cols-4 gap-4 mb-6">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                         <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
                         <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(investValue) }}</p>
@@ -198,6 +198,7 @@
 
                 <!-- Positions table -->
                 <div v-if="active.entries.length > 0 || active.cash > 0" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
                             <tr>
@@ -362,6 +363,7 @@
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
                 <!-- Empty state -->

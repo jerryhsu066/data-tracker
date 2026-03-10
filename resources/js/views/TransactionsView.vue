@@ -101,6 +101,7 @@
         </div>
 
         <div v-else class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
                     <tr>
@@ -200,6 +201,7 @@
                     </template>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </template>

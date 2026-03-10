@@ -3,8 +3,8 @@
         <template v-if="auth.state.user">
             <NavBar ref="navBar" />
 
-            <!-- Left sidebar -->
-            <aside class="fixed top-13 left-0 bottom-0 w-40 bg-slate-800 border-r border-slate-700/60 z-40 flex flex-col pt-4 px-2">
+            <!-- Left sidebar (desktop only) -->
+            <aside class="hidden md:flex fixed top-13 left-0 bottom-0 w-40 bg-slate-800 border-r border-slate-700/60 z-40 flex-col pt-4 px-2">
                 <div class="flex flex-col gap-0.5">
                     <RouterLink
                         v-for="link in mainLinks"
@@ -30,7 +30,7 @@
                 </div>
             </aside>
 
-            <main class="pt-13 pl-40">
+            <main class="pt-13 md:pl-40">
                 <RouterView />
             </main>
         </template>

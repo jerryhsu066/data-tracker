@@ -139,7 +139,8 @@
                 <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">My Transactions</h2>
             </div>
             <div v-if="transactions.length === 0" class="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">No transactions yet.</div>
-            <table v-else class="w-full text-sm">
+            <div v-else class="overflow-x-auto">
+            <table class="w-full text-sm">
                 <thead class="bg-slate-50 dark:bg-slate-700/50">
                     <tr>
                         <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Date</th>
@@ -225,6 +226,7 @@
                     </template>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </template>
