@@ -5,7 +5,8 @@ const router = createRouter({
     routes: [
         { path: '/login', component: () => import('./views/LoginView.vue'), meta: { guest: true } },
         { path: '/register', component: () => import('./views/RegisterView.vue'), meta: { guest: true } },
-        { path: '/', redirect: '/dashboard' },
+        { path: '/', redirect: '/home' },
+        { path: '/home', component: () => import('./views/HomeView.vue'), meta: { auth: true } },
         { path: '/dashboard', component: () => import('./views/DashboardView.vue'), meta: { auth: true } },
         { path: '/stocks', component: () => import('./views/StocksView.vue'), meta: { auth: true } },
         { path: '/stocks/:symbol', component: () => import('./views/StockDetailView.vue'), meta: { auth: true } },

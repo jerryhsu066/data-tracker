@@ -53,6 +53,7 @@ const modules = [
         icon: '📈',
         label: 'Stocks',
         links: [
+            { to: '/home', label: 'Home' },
             { to: '/dashboard', label: 'Portfolio' },
             { to: '/stocks', label: 'Stocks' },
             { to: '/transactions', label: 'Transactions' },
