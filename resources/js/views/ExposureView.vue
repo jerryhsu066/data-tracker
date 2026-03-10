@@ -590,6 +590,7 @@ function startAddBundle() {
 }
 
 async function commitNewBundle() {
+    if (!addingBundle.value) return;
     addingBundle.value = false;
     const name = newBundleName.value.trim() || `Bundle ${bundles.value.length + 1}`;
     const res = await api.post('/stocks/exposure/bundles', { name });
