@@ -17,12 +17,14 @@ class TransactionController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'stock_id' => ['required', 'integer', 'exists:stocks,id'],
-            'type' => ['required', Rule::in(['buy', 'sell'])],
-            'shares' => ['required', 'numeric', 'gt:0'],
+            'stock_id'        => ['required', 'integer', 'exists:stocks,id'],
+            'type'            => ['required', Rule::in(['buy', 'sell'])],
+            'shares'          => ['required', 'numeric', 'gt:0'],
             'price_per_share' => ['required', 'numeric', 'gt:0'],
-            'transacted_at' => ['required', 'date'],
-            'notes' => ['nullable', 'string'],
+            'handling_fee'    => ['nullable', 'numeric', 'gte:0'],
+            'transaction_tax' => ['nullable', 'numeric', 'gte:0'],
+            'transacted_at'   => ['required', 'date'],
+            'notes'           => ['nullable', 'string'],
         ]);
 
         if ($validated['type'] === 'sell') {
@@ -38,15 +40,19 @@ class TransactionController extends Controller
 
         $tradeValue = $validated['shares'] * $validated['price_per_share'];
         $discount = (float) ($request->user()->handling_fee_discount ?? 0);
-        $handlingFee = (int) max(20, floor($tradeValue * 0.001425 * (1 - $discount)));
-        $transactionTax = $validated['type'] === 'sell'
-            ? (int) floor($tradeValue * 0.003)
-            : 0;
+
+        $handlingFee = isset($validated['handling_fee'])
+            ? (int) $validated['handling_fee']
+            : (int) max(20, floor($tradeValue * 0.001425 * (1 - $discount)));
+
+        $transactionTax = isset($validated['transaction_tax'])
+            ? (int) $validated['transaction_tax']
+            : ($validated['type'] === 'sell' ? (int) floor($tradeValue * 0.003) : 0);
 
         $transaction = Transaction::create([
             ...$validated,
-            'user_id' => $request->user()->id,
-            'handling_fee' => $handlingFee,
+            'user_id'         => $request->user()->id,
+            'handling_fee'    => $handlingFee,
             'transaction_tax' => $transactionTax,
         ]);
 

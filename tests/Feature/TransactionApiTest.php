@@ -215,6 +215,43 @@ class TransactionApiTest extends TestCase
         Queue::assertNotPushed(FetchHistoricalPrices::class);
     }
 
+    public function test_store_uses_provided_handling_fee_and_tax(): void
+    {
+        $stock = Stock::factory()->create();
+
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
+            'stock_id'        => $stock->id,
+            'type'            => 'buy',
+            'shares'          => 1000,
+            'price_per_share' => 100,
+            'handling_fee'    => 50,
+            'transaction_tax' => 0,
+            'transacted_at'   => '2025-01-15',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonFragment(['handling_fee' => '50.0000', 'transaction_tax' => '0.0000']);
+
+        $this->assertDatabaseHas('transactions', ['handling_fee' => 50, 'transaction_tax' => 0]);
+    }
+
+    public function test_store_auto_calculates_fees_when_not_provided(): void
+    {
+        $stock = Stock::factory()->create();
+
+        // 1000 × 100 = 100,000; fee = max(20, floor(100000 × 0.001425)) = 142; tax = 0
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
+            'stock_id'        => $stock->id,
+            'type'            => 'buy',
+            'shares'          => 1000,
+            'price_per_share' => 100,
+            'transacted_at'   => '2025-01-15',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonFragment(['handling_fee' => '142.0000', 'transaction_tax' => '0.0000']);
+    }
+
     public function test_can_delete_own_transaction(): void
     {
         $stock = Stock::factory()->create();
