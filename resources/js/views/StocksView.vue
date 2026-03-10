@@ -2,12 +2,50 @@
     <div class="max-w-7xl mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Tracked Stocks</h1>
-            <button
-                @click="showForm = !showForm"
-                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-                + Add Stock
-            </button>
+            <div class="flex gap-2">
+                <button
+                    @click="showHistoryForm = !showHistoryForm; showForm = false"
+                    class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg transition-colors"
+                >
+                    ↻ Sync History
+                </button>
+                <button
+                    @click="showForm = !showForm; showHistoryForm = false"
+                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                    + Add Stock
+                </button>
+            </div>
+        </div>
+
+        <!-- Sync history form -->
+        <div v-if="showHistoryForm" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 mb-6">
+            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Sync Price History</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Fetches daily closing prices for all tracked stocks from the specified start date up to yesterday.</p>
+            <div class="flex flex-wrap gap-3 items-end">
+                <div>
+                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Start Date</label>
+                    <input
+                        v-model="historyFromDate"
+                        type="date"
+                        :max="today()"
+                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+                <button
+                    @click="syncHistory"
+                    :disabled="syncing || !historyFromDate"
+                    class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                    {{ syncing ? 'Syncing…' : 'Sync All' }}
+                </button>
+                <button
+                    type="button"
+                    @click="showHistoryForm = false"
+                    class="h-9 px-4 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg"
+                >Cancel</button>
+                <p v-if="historyResult" class="text-sm text-emerald-600 dark:text-emerald-400 self-center">{{ historyResult }}</p>
+            </div>
         </div>
 
         <!-- Add stock form -->
@@ -110,23 +148,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import api from '../api';
 
 const stocks = ref([]);
 const loading = ref(true);
 const showForm = ref(false);
+const showHistoryForm = ref(false);
 const adding = ref(false);
 const fetching = ref(null);
+const syncing = ref(false);
+const historyFromDate = ref('');
+const historyResult = ref('');
 const form = ref({ symbol: '', name: '' });
 const errors = ref({});
+const now = ref(Date.now());
+let ticker = null;
+
+function today() {
+    return new Date().toISOString().slice(0, 10);
+}
 
 function fmt(v) {
     return Number(v).toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function timeAgo(dateStr) {
-    const diff = Math.floor((Date.now() - new Date(dateStr)) / 60000);
+    const diff = Math.floor((now.value - new Date(dateStr)) / 60000);
     if (diff < 1) return 'just now';
     if (diff < 60) return `${diff}m ago`;
     if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
@@ -163,6 +211,17 @@ async function deleteStock(symbol) {
     stocks.value = stocks.value.filter(s => s.symbol !== symbol);
 }
 
+async function syncHistory() {
+    syncing.value = true;
+    historyResult.value = '';
+    try {
+        const { data } = await api.post('/stocks/sync-history', { from_date: historyFromDate.value });
+        historyResult.value = `Done — synced ${data.synced} stock${data.synced !== 1 ? 's' : ''}.`;
+    } finally {
+        syncing.value = false;
+    }
+}
+
 async function fetchPrice(symbol) {
     fetching.value = symbol;
     try {
@@ -174,5 +233,10 @@ async function fetchPrice(symbol) {
     }
 }
 
-onMounted(load);
+onMounted(() => {
+    load();
+    ticker = setInterval(() => { now.value = Date.now(); }, 60_000);
+});
+
+onUnmounted(() => clearInterval(ticker));
 </script>

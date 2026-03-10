@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Stock write operations
     Route::post('stocks', [StockController::class, 'store']);
     Route::delete('stocks/{symbol}', [StockController::class, 'destroy']);
+    Route::post('stocks/sync-history', [StockController::class, 'syncHistory']);
     Route::post('stocks/{symbol}/fetch', [StockController::class, 'fetch']);
     Route::get('stocks/{symbol}/transactions', [StockController::class, 'transactions']);
 

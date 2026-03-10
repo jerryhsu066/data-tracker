@@ -22,7 +22,7 @@ class StockController extends Controller
         $request->merge(['symbol' => strtoupper($request->input('symbol', ''))]);
 
         $validated = $request->validate([
-            'symbol' => ['required', 'string', 'max:15', 'regex:/^[A-Z0-9]+(\.[A-Z]+)?$/', Rule::unique('stocks', 'symbol')],
+            'symbol' => ['required', 'string', 'max:15', 'regex:/^\^?[A-Z0-9]+(\.[A-Z]+)?$/', Rule::unique('stocks', 'symbol')],
             'name' => ['required', 'string', 'max:255'],
         ]);
 
@@ -65,5 +65,20 @@ class StockController extends Controller
         $service->updatePrice($stock);
 
         return response()->json($stock->fresh());
+    }
+
+    public function syncHistory(Request $request, StockPriceService $service): JsonResponse
+    {
+        $validated = $request->validate([
+            'from_date' => ['required', 'date', 'before_or_equal:today'],
+        ]);
+
+        $stocks = Stock::all();
+
+        foreach ($stocks as $stock) {
+            $service->fetchHistoricalPrices($stock, $validated['from_date']);
+        }
+
+        return response()->json(['synced' => $stocks->count()]);
     }
 }
