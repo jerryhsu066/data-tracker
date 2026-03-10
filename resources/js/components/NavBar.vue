@@ -2,7 +2,7 @@
     <nav class="fixed top-0 inset-x-0 z-50 bg-slate-900 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-13">
             <!-- App name -->
-            <span class="font-bold text-base tracking-tight text-white select-none">MyTracker</span>
+            <span class="font-bold text-base tracking-tight text-white select-none">data-tracker</span>
 
             <!-- Module selector (desktop only) -->
             <div class="hidden md:flex items-center gap-1">

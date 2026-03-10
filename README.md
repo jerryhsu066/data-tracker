@@ -1,4 +1,4 @@
-# MyTracker
+# data-tracker
 
 A personal stock portfolio tracker for Taiwan markets (TWSE / OTC), with support for US indices and other Yahoo Finance symbols. Tracks positions, cost basis, realized/unrealized gains, and market exposure across leveraged products.
 
@@ -50,8 +50,8 @@ No PHP, Node, or Composer installation required on the host — everything runs 
 ### 1. Clone the repository
 
 ```bash
-git clone <repo-url> mytracker
-cd mytracker
+git clone <repo-url> data-tracker
+cd data-tracker
 ```
 
 ### 2. Create the environment file
