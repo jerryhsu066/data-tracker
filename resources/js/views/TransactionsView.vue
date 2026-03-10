@@ -158,10 +158,15 @@
                                             class="h-8 w-32 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                                     </div>
                                     <div class="ml-auto flex gap-2 items-end">
-                                        <button @click="saveEdit(tx.id)" :disabled="saving" class="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
+                                        <button @click="saveEdit(tx.id)" :disabled="saving" class="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
                                             {{ saving ? '…' : 'Save' }}
                                         </button>
-                                        <button @click="editingId = null" class="h-8 px-3 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg">Cancel</button>
+                                        <button
+                                            @click="confirmingDelete ? del(tx.id) : (confirmingDelete = true)"
+                                            class="h-8 px-3 text-white text-sm font-medium rounded-lg transition-colors"
+                                            :class="confirmingDelete ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-red-500 hover:bg-red-600'"
+                                        >{{ confirmingDelete ? 'Confirm?' : 'Delete' }}</button>
+                                        <button @click="editingId = null; confirmingDelete = false" class="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg transition-colors">Cancel</button>
                                     </div>
                                 </div>
                             </td>
@@ -188,9 +193,8 @@
                                     : fmt(tx.shares * tx.price_per_share - Number(tx.handling_fee) - Number(tx.transaction_tax)) }}
                             </td>
                             <td class="px-4 py-3 text-slate-400 dark:text-slate-500 max-w-xs truncate">{{ tx.notes ?? '—' }}</td>
-                            <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <button @click="startEdit(tx)" class="text-slate-300 dark:text-slate-600 hover:text-indigo-400 transition-colors mr-2">✎</button>
-                                <button @click="del(tx.id)" class="text-slate-300 dark:text-slate-600 hover:text-red-400 transition-colors">✕</button>
+                            <td class="px-4 py-3 text-right">
+                                <button @click="startEdit(tx)" class="text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors text-sm leading-none" title="Edit">✎</button>
                             </td>
                         </tr>
                     </template>
@@ -225,6 +229,7 @@ const errors = ref({});
 const editingId = ref(null);
 const editForm = ref({});
 const saving = ref(false);
+const confirmingDelete = ref(false);
 
 const form = ref({ stock_id: '', type: 'buy', shares: '', price_per_share: '', handling_fee: 0, transaction_tax: 0, transacted_at: today(), notes: '' });
 
@@ -292,12 +297,13 @@ async function submit() {
 }
 
 async function del(id) {
-    if (!confirm('Delete this transaction?')) return;
     await api.delete(`/transactions/${id}`);
     transactions.value = transactions.value.filter(t => t.id !== id);
+    editingId.value = null;
 }
 
 function startEdit(tx) {
+    confirmingDelete.value = false;
     editingId.value = tx.id;
     editForm.value = {
         type: tx.type,
@@ -318,6 +324,7 @@ async function saveEdit(id) {
         if (idx !== -1) transactions.value[idx] = data;
         transactions.value.sort((a, b) => b.transacted_at.localeCompare(a.transacted_at));
         editingId.value = null;
+        confirmingDelete.value = false;
     } finally {
         saving.value = false;
     }

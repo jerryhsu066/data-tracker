@@ -294,9 +294,10 @@
                                                     class="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors"
                                                 >Save</button>
                                                 <button
-                                                    @click="removeEntry(entry.id)"
-                                                    class="h-8 px-3 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-md transition-colors"
-                                                >Delete</button>
+                                                    @click="confirmingDelete ? removeEntry(entry.id) : (confirmingDelete = true)"
+                                                    class="h-8 px-3 text-white text-sm font-medium rounded-md transition-colors"
+                                                    :class="confirmingDelete ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-red-500 hover:bg-red-600'"
+                                                >{{ confirmingDelete ? 'Confirm?' : 'Delete' }}</button>
                                                 <button
                                                     @click="cancelEdit"
                                                     class="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors"
@@ -408,6 +409,7 @@ const editingCash = ref(false);
 const cashInput = ref(0);
 
 const editingEntry = ref(null); // { id, shares, leverage, isCash }
+const confirmingDelete = ref(false);
 
 const active = computed(() => bundles.value.find(b => b.id === activeId.value) ?? null);
 
@@ -424,6 +426,7 @@ watch(active, () => {
     formError.value = '';
     editingEntry.value = null;
     editingCash.value = false;
+    confirmingDelete.value = false;
 }, { immediate: true });
 
 const totalValue = computed(() => {
@@ -519,6 +522,7 @@ async function addEntry() {
 }
 
 function startEdit(entry) {
+    confirmingDelete.value = false;
     editingEntry.value = {
         id: entry.id,
         shares: Number(entry.net_shares),
@@ -529,6 +533,7 @@ function startEdit(entry) {
 
 function cancelEdit() {
     editingEntry.value = null;
+    confirmingDelete.value = false;
 }
 
 async function saveEdit(entry) {
@@ -541,6 +546,7 @@ async function saveEdit(entry) {
     });
     replaceBundle(res.data);
     editingEntry.value = null;
+    confirmingDelete.value = false;
 }
 
 async function removeEntry(entryId) {

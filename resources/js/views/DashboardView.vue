@@ -37,20 +37,20 @@
             <!-- Charts -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                 <!-- Allocation doughnut -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 flex flex-col">
                     <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Allocation</h2>
-                    <div class="flex items-center gap-6">
-                        <div class="relative w-40 h-40 flex-shrink-0">
+                    <div class="flex flex-1 items-center justify-center gap-6">
+                        <div class="relative w-2/5 flex-shrink-0">
                             <canvas ref="donutCanvas"></canvas>
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                 <p class="text-xs text-slate-400">Total</p>
                                 <p class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ fmt(totalValue) }}</p>
                             </div>
                         </div>
-                        <ul class="flex flex-col gap-2 min-w-0">
-                            <li v-for="(pos, i) in positions" :key="pos.stock.symbol" class="flex items-center gap-2 text-sm min-w-0">
+                        <ul class="flex flex-col gap-2">
+                            <li v-for="(pos, i) in positions" :key="pos.stock.symbol" class="flex items-center gap-2 text-sm">
                                 <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="`background:${PALETTE[i % PALETTE.length]}`"></span>
-                                <span class="font-medium text-slate-700 dark:text-slate-300 truncate">{{ pos.stock.symbol }}</span>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">{{ pos.stock.symbol }}</span>
                                 <span class="text-slate-400 ml-auto pl-2 flex-shrink-0">{{ allocationPct(pos) }}%</span>
                             </li>
                         </ul>
