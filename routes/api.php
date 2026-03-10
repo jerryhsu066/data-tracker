@@ -20,20 +20,25 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-// Public stock reads
-Route::get('stocks', [StockController::class, 'index']);
-Route::get('stocks/{symbol}', [StockController::class, 'show']);
-Route::get('stocks/{symbol}/prices', [StockPriceHistoryController::class, 'index']);
+// Stocks
+Route::prefix('stocks')->group(function () {
+    // Public reads
+    Route::get('/', [StockController::class, 'index']);
+    Route::post('sync-history', [StockController::class, 'syncHistory'])->middleware('auth:sanctum');
+    Route::get('{symbol}', [StockController::class, 'show']);
+    Route::get('{symbol}/prices', [StockPriceHistoryController::class, 'index']);
+
+    // Protected writes
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/', [StockController::class, 'store']);
+        Route::delete('{symbol}', [StockController::class, 'destroy']);
+        Route::post('{symbol}/fetch', [StockController::class, 'fetch']);
+        Route::get('{symbol}/transactions', [StockController::class, 'transactions']);
+    });
+});
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
-    // Stock write operations
-    Route::post('stocks', [StockController::class, 'store']);
-    Route::delete('stocks/{symbol}', [StockController::class, 'destroy']);
-    Route::post('stocks/sync-history', [StockController::class, 'syncHistory']);
-    Route::post('stocks/{symbol}/fetch', [StockController::class, 'fetch']);
-    Route::get('stocks/{symbol}/transactions', [StockController::class, 'transactions']);
-
     // Transactions
     Route::post('transactions', [TransactionController::class, 'store']);
     Route::put('transactions/{transaction}', [TransactionController::class, 'update']);
