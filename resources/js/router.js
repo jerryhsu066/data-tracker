@@ -19,7 +19,7 @@ const router = createRouter({
 router.beforeEach((to) => {
     const token = localStorage.getItem('token');
     if (to.meta.auth && !token) return '/login';
-    if (to.meta.guest && token) return '/dashboard';
+    if (to.meta.guest && token) return '/home';
 });
 
 export default router;
