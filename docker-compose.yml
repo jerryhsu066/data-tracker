@@ -1,3 +1,5 @@
+name: data-tracker
+
 services:
   app:
     build:
