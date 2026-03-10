@@ -86,11 +86,13 @@ docker compose exec app composer install
 docker compose exec app php artisan key:generate
 ```
 
-### 5. Run database migrations
+### 5. Run database migrations and seed initial data
 
 ```bash
-docker compose exec app php artisan migrate
+docker compose exec app php artisan migrate --seed
 ```
+
+This migrates the schema and runs the seeder, which inserts the three market index stocks (`^TWII`, `^IXIC`, `^VIX`) and dispatches a background job to fetch their last 30 days of price history. The worker container processes the job automatically.
 
 ### 6. Open the app
 
