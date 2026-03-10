@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class TransactionController extends Controller
 {
@@ -29,12 +30,9 @@ class TransactionController extends Controller
             $netShares = $stock->netSharesForUser($request->user()->id);
 
             if ($validated['shares'] > $netShares) {
-                return response()->json([
-                    'message' => 'The given data was invalid.',
-                    'errors' => [
-                        'shares' => ["Cannot sell {$validated['shares']} shares — only {$netShares} owned."],
-                    ],
-                ], 422);
+                throw ValidationException::withMessages([
+                    'shares' => ["Cannot sell {$validated['shares']} shares — only {$netShares} owned."],
+                ]);
             }
         }
 
