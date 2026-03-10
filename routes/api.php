@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ExposureBundleController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StockController;
@@ -44,4 +45,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Settings
     Route::get('settings', [SettingsController::class, 'show']);
     Route::patch('settings', [SettingsController::class, 'update']);
+
+    // Exposure Bundles
+    Route::get('exposure/bundles', [ExposureBundleController::class, 'index']);
+    Route::post('exposure/bundles', [ExposureBundleController::class, 'store']);
+    Route::patch('exposure/bundles/{bundle}', [ExposureBundleController::class, 'update']);
+    Route::delete('exposure/bundles/{bundle}', [ExposureBundleController::class, 'destroy']);
+    Route::post('exposure/bundles/{bundle}/entries', [ExposureBundleController::class, 'addEntry']);
+    Route::delete('exposure/bundles/{bundle}/entries/{entry}', [ExposureBundleController::class, 'removeEntry']);
 });
