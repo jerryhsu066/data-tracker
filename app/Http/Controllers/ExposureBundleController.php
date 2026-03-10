@@ -19,11 +19,17 @@ class ExposureBundleController extends Controller
             'name'    => $bundle->name,
             'cash'    => (int) $bundle->cash,
             'entries' => $bundle->entries->map(fn (ExposureBundleEntry $entry) => [
-                'id'         => $entry->id,
-                'stock'      => $entry->stock,
-                'leverage'   => $entry->leverage,
-                'is_cash'    => $entry->is_cash,
-                'net_shares' => number_format($entry->stock->netSharesForUser($userId), 4, '.', ''),
+                'id'              => $entry->id,
+                'stock'           => $entry->stock,
+                'leverage'        => $entry->leverage,
+                'is_cash'         => $entry->is_cash,
+                'shares_override' => $entry->shares_override,
+                'net_shares'      => number_format(
+                    $entry->shares_override !== null
+                        ? (float) $entry->shares_override
+                        : $entry->stock->netSharesForUser($userId),
+                    4, '.', ''
+                ),
             ])->values()->all(),
         ];
     }
@@ -89,18 +95,38 @@ class ExposureBundleController extends Controller
         }
 
         $validated = $request->validate([
-            'stock_id' => ['required', 'integer', 'exists:stocks,id'],
-            'leverage' => ['required', 'numeric', 'min:0'],
-            'is_cash'  => ['required', 'boolean'],
+            'stock_id'        => ['required', 'integer', 'exists:stocks,id'],
+            'shares_override' => ['nullable', 'numeric', 'gte:0'],
+            'leverage'        => ['required', 'numeric', 'min:0'],
+            'is_cash'         => ['required', 'boolean'],
         ]);
 
         ExposureBundleEntry::create([
-            'bundle_id' => $bundle->id,
-            'stock_id'  => $validated['stock_id'],
-            'leverage'  => $validated['leverage'],
-            'is_cash'   => $validated['is_cash'],
+            'bundle_id'       => $bundle->id,
+            'stock_id'        => $validated['stock_id'],
+            'shares_override' => $validated['shares_override'] ?? null,
+            'leverage'        => $validated['leverage'],
+            'is_cash'         => $validated['is_cash'],
         ]);
 
+        $bundle->refresh();
+
+        return response()->json($this->bundleResource($bundle, $request->user()->id));
+    }
+
+    public function updateEntry(Request $request, ExposureBundle $bundle, ExposureBundleEntry $entry): JsonResponse
+    {
+        if ($bundle->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'shares_override' => ['nullable', 'numeric', 'gte:0'],
+            'leverage'        => ['sometimes', 'numeric', 'min:0'],
+            'is_cash'         => ['sometimes', 'boolean'],
+        ]);
+
+        $entry->update($validated);
         $bundle->refresh();
 
         return response()->json($this->bundleResource($bundle, $request->user()->id));

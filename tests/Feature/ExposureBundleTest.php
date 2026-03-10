@@ -148,6 +148,75 @@ class ExposureBundleTest extends TestCase
         $this->assertEquals('1000.0000', $entry['net_shares']);
     }
 
+    public function test_add_entry_with_shares_override(): void
+    {
+        $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'Bundle', 'cash' => 0]);
+        $stock = Stock::factory()->create(['symbol' => '0050.TW']);
+
+        Transaction::factory()->create([
+            'user_id' => $this->user->id,
+            'stock_id' => $stock->id,
+            'type' => 'buy',
+            'shares' => 1000,
+            'price_per_share' => 73,
+            'transacted_at' => '2026-01-01',
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson("/api/exposure/bundles/{$bundle->id}/entries", [
+            'stock_id'        => $stock->id,
+            'leverage'        => 1.0,
+            'is_cash'         => false,
+            'shares_override' => 500,
+        ]);
+
+        $response->assertOk();
+        $entry = collect($response->json('entries'))->firstWhere('stock.id', $stock->id);
+        $this->assertEquals('500.0000', $entry['net_shares']);
+        $this->assertEquals('500.0000', $entry['shares_override']);
+    }
+
+    public function test_update_entry_shares_override(): void
+    {
+        $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'Bundle', 'cash' => 0]);
+        $stock = Stock::factory()->create();
+
+        Transaction::factory()->create([
+            'user_id' => $this->user->id,
+            'stock_id' => $stock->id,
+            'type' => 'buy',
+            'shares' => 1000,
+            'price_per_share' => 73,
+            'transacted_at' => '2026-01-01',
+        ]);
+
+        $entry = ExposureBundleEntry::create([
+            'bundle_id' => $bundle->id,
+            'stock_id'  => $stock->id,
+            'leverage'  => 1.0,
+            'is_cash'   => false,
+        ]);
+
+        // Override to 300
+        $response = $this->actingAs($this->user)->patchJson(
+            "/api/exposure/bundles/{$bundle->id}/entries/{$entry->id}",
+            ['shares_override' => 300]
+        );
+        $response->assertOk();
+        $updated = collect($response->json('entries'))->firstWhere('id', $entry->id);
+        $this->assertEquals('300.0000', $updated['net_shares']);
+        $this->assertEquals('300.0000', $updated['shares_override']);
+
+        // Reset to auto (null)
+        $response = $this->actingAs($this->user)->patchJson(
+            "/api/exposure/bundles/{$bundle->id}/entries/{$entry->id}",
+            ['shares_override' => null]
+        );
+        $response->assertOk();
+        $updated = collect($response->json('entries'))->firstWhere('id', $entry->id);
+        $this->assertEquals('1000.0000', $updated['net_shares']);
+        $this->assertNull($updated['shares_override']);
+    }
+
     public function test_remove_entry_from_bundle(): void
     {
         $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'Bundle', 'cash' => 0]);

@@ -13,6 +13,7 @@ class ExposureBundleEntry extends Model
     protected $fillable = [
         'bundle_id',
         'stock_id',
+        'shares_override',
         'leverage',
         'is_cash',
     ];
@@ -20,8 +21,9 @@ class ExposureBundleEntry extends Model
     protected function casts(): array
     {
         return [
-            'leverage' => 'decimal:2',
-            'is_cash'  => 'boolean',
+            'shares_override' => 'decimal:4',
+            'leverage'        => 'decimal:2',
+            'is_cash'         => 'boolean',
         ];
     }
 

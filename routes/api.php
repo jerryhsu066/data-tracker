@@ -52,5 +52,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('exposure/bundles/{bundle}', [ExposureBundleController::class, 'update']);
     Route::delete('exposure/bundles/{bundle}', [ExposureBundleController::class, 'destroy']);
     Route::post('exposure/bundles/{bundle}/entries', [ExposureBundleController::class, 'addEntry']);
+    Route::patch('exposure/bundles/{bundle}/entries/{entry}', [ExposureBundleController::class, 'updateEntry']);
     Route::delete('exposure/bundles/{bundle}/entries/{entry}', [ExposureBundleController::class, 'removeEntry']);
 });

@@ -107,13 +107,30 @@
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-4">
                     <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Add Position</h2>
                     <form @submit.prevent="addEntry" class="flex gap-3 items-end flex-wrap">
-                        <div class="flex-1 min-w-32">
+                        <div class="flex-1 min-w-40">
                             <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Symbol</label>
-                            <input
-                                v-model="form.symbol"
-                                type="text"
-                                placeholder="e.g. 0050.TW"
+                            <select
+                                v-model="form.stockId"
                                 class="h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                                <option value="" disabled>Select a stock…</option>
+                                <option v-for="s in stocks" :key="s.id" :value="s.id">
+                                    {{ s.symbol }} — {{ s.name }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="w-32">
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                Shares
+                                <span v-if="form.sharesIsAuto" class="ml-1 text-indigo-400">(auto)</span>
+                            </label>
+                            <input
+                                v-model.number="form.shares"
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                class="h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                @input="form.sharesIsAuto = false"
                             />
                         </div>
                         <div class="w-28">
@@ -144,7 +161,7 @@
                         </div>
                         <button
                             type="submit"
-                            :disabled="!form.symbol || submitting"
+                            :disabled="!form.stockId || submitting"
                             class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium rounded-md transition-colors"
                         >
                             Add
@@ -160,7 +177,7 @@
                             <tr>
                                 <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Symbol</th>
                                 <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Price</th>
-                                <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Net Shares</th>
+                                <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Shares</th>
                                 <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Value</th>
                                 <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Leverage</th>
                                 <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Exposure</th>
@@ -179,8 +196,28 @@
                                 <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
                                     {{ fmt(entry.stock.current_price) }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
-                                    {{ Number(entry.net_shares).toLocaleString() }}
+                                <td class="px-4 py-3 text-right">
+                                    <!-- Inline shares editor -->
+                                    <div class="flex items-center justify-end gap-1">
+                                        <input
+                                            :value="editingShares[entry.id] ?? Number(entry.net_shares)"
+                                            type="number"
+                                            min="0"
+                                            class="h-7 w-24 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm text-right focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                            @focus="editingShares[entry.id] = Number(entry.net_shares)"
+                                            @input="editingShares[entry.id] = Number($event.target.value)"
+                                            @blur="commitSharesEdit(entry)"
+                                            @keydown.enter="$event.target.blur()"
+                                            @keydown.escape="cancelSharesEdit(entry, $event.target)"
+                                        />
+                                        <button
+                                            v-if="entry.shares_override !== null"
+                                            title="Reset to auto (from transactions)"
+                                            class="text-slate-400 hover:text-indigo-500 transition-colors text-xs leading-none"
+                                            @click="resetShares(entry)"
+                                        >↺</button>
+                                        <span v-else class="text-xs text-indigo-400 leading-none" title="Auto-computed from transactions">auto</span>
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
                                     {{ fmt(Number(entry.net_shares) * Number(entry.stock.current_price)) }}
@@ -260,10 +297,11 @@ import api from '../api';
 const bundles = ref([]);
 const activeId = ref(null);
 const stocks = ref([]);
+const portfolio = ref([]); // for auto-filling shares in add form
 const loading = ref(true);
 const submitting = ref(false);
 
-const form = ref({ symbol: '', leverage: 1, isCash: false });
+const form = ref({ stockId: '', shares: 0, sharesIsAuto: true, leverage: 1, isCash: false });
 const formError = ref('');
 
 const renamingId = ref(null);
@@ -277,7 +315,18 @@ const newBundleInput = ref(null);
 const localCash = ref(0);
 let cashTimer = null;
 
+// Map of entry.id → currently-being-edited shares value
+const editingShares = ref({});
+
 const active = computed(() => bundles.value.find(b => b.id === activeId.value) ?? null);
+
+// When stock is selected in form, auto-fill shares from portfolio
+watch(() => form.value.stockId, (stockId) => {
+    if (!stockId) { form.value.shares = 0; form.value.sharesIsAuto = true; return; }
+    const pos = portfolio.value.find(p => p.stock.id === stockId);
+    form.value.shares = pos ? Number(pos.net_shares) : 0;
+    form.value.sharesIsAuto = true;
+});
 
 watch(active, (b) => {
     if (b) localCash.value = b.cash;
@@ -330,26 +379,50 @@ async function saveCash() {
 
 async function addEntry() {
     formError.value = '';
-    const symbol = form.value.symbol.trim().toUpperCase();
-    if (!symbol) { formError.value = 'Symbol is required.'; return; }
+    if (!form.value.stockId) { formError.value = 'Please select a stock.'; return; }
 
-    const stock = stocks.value.find(s => s.symbol.toUpperCase() === symbol);
-    if (!stock) { formError.value = `"${symbol}" not found — add it to your stocks list first.`; return; }
+    // shares_override: null when auto (user didn't touch it), value when manually set
+    const sharesOverride = form.value.sharesIsAuto ? null : form.value.shares;
 
     submitting.value = true;
     try {
         const res = await api.post(`/exposure/bundles/${active.value.id}/entries`, {
-            stock_id: stock.id,
-            leverage: form.value.isCash ? 0 : (form.value.leverage ?? 1),
-            is_cash: form.value.isCash,
+            stock_id:        form.value.stockId,
+            shares_override: sharesOverride,
+            leverage:        form.value.isCash ? 0 : (form.value.leverage ?? 1),
+            is_cash:         form.value.isCash,
         });
         replaceBundle(res.data);
-        form.value = { symbol: '', leverage: 1, isCash: false };
+        form.value = { stockId: '', shares: 0, sharesIsAuto: true, leverage: 1, isCash: false };
     } catch (e) {
         formError.value = e.response?.data?.message ?? 'Failed to add entry.';
     } finally {
         submitting.value = false;
     }
+}
+
+async function commitSharesEdit(entry) {
+    const val = editingShares.value[entry.id];
+    delete editingShares.value[entry.id];
+    if (val === undefined) return;
+
+    const res = await api.patch(`/exposure/bundles/${active.value.id}/entries/${entry.id}`, {
+        shares_override: val,
+    });
+    replaceBundle(res.data);
+}
+
+function cancelSharesEdit(entry, input) {
+    delete editingShares.value[entry.id];
+    input.value = Number(entry.net_shares);
+    input.blur();
+}
+
+async function resetShares(entry) {
+    const res = await api.patch(`/exposure/bundles/${active.value.id}/entries/${entry.id}`, {
+        shares_override: null,
+    });
+    replaceBundle(res.data);
 }
 
 async function removeEntry(entryId) {
@@ -399,11 +472,13 @@ async function commitNewBundle() {
 
 onMounted(async () => {
     try {
-        const [, stocksRes] = await Promise.all([
+        const [, stocksRes, portfolioRes] = await Promise.all([
             loadBundles(),
             api.get('/stocks'),
+            api.get('/portfolio'),
         ]);
         stocks.value = stocksRes.data;
+        portfolio.value = portfolioRes.data;
     } finally {
         loading.value = false;
     }
