@@ -56,11 +56,29 @@ class PortfolioController extends Controller
         $today = Carbon::today('Asia/Taipei')->toDateString();
 
         // Build a sorted list of all available dates across all stocks, up to and including today.
-        // Dates are cast to YYYY-MM-DD strings (trimming any datetime suffix) before comparison.
-        $allDates = $histories->flatten()->pluck('date')->map(fn ($d) => substr((string) $d, 0, 10))->filter(fn ($d) => $d <= $today)->unique()->sort()->values();
+        $allDates = $histories->flatten()
+            ->pluck('date')
+            ->map(fn ($d) => (string) $d)
+            ->filter(fn ($d) => $d <= $today)
+            ->unique()->sort()->values();
+
+        // Pre-build a sorted price array per stock: [['date' => '...', 'price' => 0.0], ...]
+        // This allows O(1) carry-forward lookup per (stock, date) pair instead of O(n) re-scan.
+        $priceIndex = [];
+        foreach ($stockIds as $stockId) {
+            $priceIndex[$stockId] = ($histories[$stockId] ?? collect())
+                ->filter(fn ($h) => (float) $h->close_price > 0)
+                ->map(fn ($h) => ['date' => (string) $h->date, 'price' => (float) $h->close_price])
+                ->values()
+                ->all();
+        }
 
         // For each date, compute sum(sharesHeld × closePrice) for each stock
         $result = [];
+
+        // Cursor per stock pointing to the last known price index position
+        $cursors = array_fill_keys($stockIds->all(), 0);
+
         foreach ($allDates as $date) {
             $totalValue = 0.0;
             $totalCostBasis = 0.0;
@@ -81,13 +99,20 @@ class PortfolioController extends Controller
                     continue;
                 }
 
-                // Use the most recent price on or before $date (carry-forward for missing dates)
-                $priceRecord = ($histories[$stockId] ?? collect())
-                    ->filter(fn ($h) => substr((string) $h->date, 0, 10) <= $date && (float) $h->close_price > 0)
-                    ->last();
+                // Advance the cursor to the last price record on or before $date
+                $prices = $priceIndex[$stockId];
+                $cursor = $cursors[$stockId];
+                while ($cursor + 1 < count($prices) && $prices[$cursor + 1]['date'] <= $date) {
+                    $cursor++;
+                }
+                $cursors[$stockId] = $cursor;
 
-                if ($priceRecord) {
-                    $totalValue += $netShares * (float) $priceRecord->close_price;
+                $latestPrice = (isset($prices[$cursor]) && $prices[$cursor]['date'] <= $date)
+                    ? $prices[$cursor]['price']
+                    : null;
+
+                if ($latestPrice !== null) {
+                    $totalValue += $netShares * $latestPrice;
 
                     $totalBuyCost = $buysUpToDate->sum(fn ($t) => (float) $t->shares * (float) $t->price_per_share + (float) $t->handling_fee);
                     $avgCost = $totalBuyShares > 0 ? $totalBuyCost / $totalBuyShares : 0;
