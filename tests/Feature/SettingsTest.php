@@ -22,14 +22,14 @@ class SettingsTest extends TestCase
     {
         $this->user->update(['handling_fee_discount' => 0.4]);
 
-        $this->actingAs($this->user)->getJson('/api/settings')
+        $this->actingAs($this->user)->getJson('/api/stocks/settings')
             ->assertOk()
             ->assertJson(['handling_fee_discount' => '0.4000']);
     }
 
     public function test_can_update_handling_fee_discount(): void
     {
-        $this->actingAs($this->user)->patchJson('/api/settings', [
+        $this->actingAs($this->user)->patchJson('/api/stocks/settings', [
             'handling_fee_discount' => 0.4,
         ])->assertOk()->assertJson(['handling_fee_discount' => '0.4000']);
 
@@ -41,16 +41,16 @@ class SettingsTest extends TestCase
 
     public function test_discount_must_be_between_0_and_1(): void
     {
-        $this->actingAs($this->user)->patchJson('/api/settings', ['handling_fee_discount' => 1.5])
+        $this->actingAs($this->user)->patchJson('/api/stocks/settings', ['handling_fee_discount' => 1.5])
             ->assertUnprocessable()->assertJsonValidationErrors(['handling_fee_discount']);
 
-        $this->actingAs($this->user)->patchJson('/api/settings', ['handling_fee_discount' => -0.1])
+        $this->actingAs($this->user)->patchJson('/api/stocks/settings', ['handling_fee_discount' => -0.1])
             ->assertUnprocessable()->assertJsonValidationErrors(['handling_fee_discount']);
     }
 
     public function test_settings_require_auth(): void
     {
-        $this->getJson('/api/settings')->assertUnauthorized();
-        $this->patchJson('/api/settings', ['handling_fee_discount' => 0.4])->assertUnauthorized();
+        $this->getJson('/api/stocks/settings')->assertUnauthorized();
+        $this->patchJson('/api/stocks/settings', ['handling_fee_discount' => 0.4])->assertUnauthorized();
     }
 }

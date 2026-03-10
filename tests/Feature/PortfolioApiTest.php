@@ -28,7 +28,7 @@ class PortfolioApiTest extends TestCase
         Transaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
         Transaction::factory()->buy($stock, shares: 500, price: 820)->create(['user_id' => $this->user->id]);
 
-        $response = $this->actingAs($this->user)->getJson('/api/portfolio');
+        $response = $this->actingAs($this->user)->getJson('/api/stocks/portfolio');
 
         $response->assertOk()->assertJsonCount(1);
 
@@ -47,7 +47,7 @@ class PortfolioApiTest extends TestCase
         Transaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
         Transaction::factory()->sell($stock, shares: 300, price: 850)->create(['user_id' => $this->user->id]);
 
-        $position = $this->actingAs($this->user)->getJson('/api/portfolio')->json()[0];
+        $position = $this->actingAs($this->user)->getJson('/api/stocks/portfolio')->json()[0];
 
         $this->assertEquals('700.0000', $position['net_shares']);
         $this->assertEquals('800.0000', $position['average_cost']);
@@ -60,7 +60,7 @@ class PortfolioApiTest extends TestCase
         Transaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
         Transaction::factory()->sell($stock, shares: 200, price: 850)->create(['user_id' => $this->user->id]);
 
-        $position = $this->actingAs($this->user)->getJson('/api/portfolio')->json()[0];
+        $position = $this->actingAs($this->user)->getJson('/api/stocks/portfolio')->json()[0];
 
         // Net 800 shares @ 900 = 720,000 current value; avg cost = 800
         // Estimated sell: fee = max(20, floor(720000 × 0.001425)) = 1026; tax = floor(720000 × 0.003) = 2160
@@ -76,7 +76,7 @@ class PortfolioApiTest extends TestCase
         Transaction::factory()->buy($stock, shares: 500, price: 800)->create(['user_id' => $this->user->id]);
         Transaction::factory()->sell($stock, shares: 500, price: 850)->create(['user_id' => $this->user->id]);
 
-        $this->actingAs($this->user)->getJson('/api/portfolio')
+        $this->actingAs($this->user)->getJson('/api/stocks/portfolio')
             ->assertOk()->assertJsonCount(0);
     }
 
@@ -93,7 +93,7 @@ class PortfolioApiTest extends TestCase
         Transaction::factory()->sell($stock, shares: 200, price: 900)
             ->create(['user_id' => $this->user->id, 'handling_fee' => 256, 'transaction_tax' => 540]);
 
-        $position = $this->actingAs($this->user)->getJson('/api/portfolio')->json()[0];
+        $position = $this->actingAs($this->user)->getJson('/api/stocks/portfolio')->json()[0];
 
         $this->assertEqualsWithDelta(801.14, (float) $position['average_cost'], 0.001);
         $this->assertEqualsWithDelta(18976, (float) $position['realized_gain'], 1);
@@ -107,7 +107,7 @@ class PortfolioApiTest extends TestCase
         Transaction::factory()->buy($tsmc, shares: 100, price: 800)->create(['user_id' => $this->user->id]);
         Transaction::factory()->buy($foxconn, shares: 1000, price: 120)->create(['user_id' => $this->user->id]);
 
-        $this->actingAs($this->user)->getJson('/api/portfolio')
+        $this->actingAs($this->user)->getJson('/api/stocks/portfolio')
             ->assertOk()->assertJsonCount(2);
     }
 }

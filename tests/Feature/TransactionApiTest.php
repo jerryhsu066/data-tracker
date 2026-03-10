@@ -29,7 +29,7 @@ class TransactionApiTest extends TestCase
         // 1000 shares × 850 = 850,000 trade value
         // handling_fee = max(20, floor(850000 × 0.001425)) = 1211
         // transaction_tax = 0 (buy)
-        $response = $this->actingAs($this->user)->postJson('/api/transactions', [
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'buy',
             'shares' => 1000,
@@ -62,7 +62,7 @@ class TransactionApiTest extends TestCase
         // 100 shares × 500 = 50,000 trade value
         // handling_fee = max(20, floor(50000 × 0.001425)) = max(20, 71) = 71
         // transaction_tax = 0 (buy)
-        $response = $this->actingAs($this->user)->postJson('/api/transactions', [
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'buy',
             'shares' => 100,
@@ -82,7 +82,7 @@ class TransactionApiTest extends TestCase
         // 500 shares × 900 = 450,000 trade value
         // handling_fee = max(20, floor(450000 × 0.001425)) = 641
         // transaction_tax = floor(450000 × 0.003) = 1350
-        $response = $this->actingAs($this->user)->postJson('/api/transactions', [
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'sell',
             'shares' => 500,
@@ -104,7 +104,7 @@ class TransactionApiTest extends TestCase
 
         // 1000 shares × 850 = 850,000; rate = 0.001425 × 0.6 = 0.000855
         // handling_fee = max(20, floor(850000 × 0.000855)) = max(20, 726) = 726
-        $response = $this->actingAs($this->user)->postJson('/api/transactions', [
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'buy',
             'shares' => 1000,
@@ -120,7 +120,7 @@ class TransactionApiTest extends TestCase
         $stock = Stock::factory()->create();
         Transaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
 
-        $response = $this->actingAs($this->user)->postJson('/api/transactions', [
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'sell',
             'shares' => 500,
@@ -136,7 +136,7 @@ class TransactionApiTest extends TestCase
         $stock = Stock::factory()->create();
         Transaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $this->user->id]);
 
-        $this->actingAs($this->user)->postJson('/api/transactions', [
+        $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'sell',
             'shares' => 200,
@@ -147,7 +147,7 @@ class TransactionApiTest extends TestCase
 
     public function test_transaction_requires_valid_fields(): void
     {
-        $this->actingAs($this->user)->postJson('/api/transactions', [])
+        $this->actingAs($this->user)->postJson('/api/stocks/transactions', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['stock_id', 'type', 'shares', 'price_per_share', 'transacted_at']);
     }
@@ -156,7 +156,7 @@ class TransactionApiTest extends TestCase
     {
         $stock = Stock::factory()->create();
 
-        $this->actingAs($this->user)->postJson('/api/transactions', [
+        $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'hold',
             'shares' => 100,
@@ -186,7 +186,7 @@ class TransactionApiTest extends TestCase
         Queue::fake();
         $stock = Stock::factory()->create();
 
-        $this->actingAs($this->user)->postJson('/api/transactions', [
+        $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'buy',
             'shares' => 100,
@@ -204,7 +204,7 @@ class TransactionApiTest extends TestCase
         Queue::fake();
         $stock = Stock::factory()->create();
 
-        $this->actingAs($this->user)->postJson('/api/transactions', [
+        $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'buy',
             'shares' => 100,
@@ -220,7 +220,7 @@ class TransactionApiTest extends TestCase
         $stock = Stock::factory()->create();
         $tx = Transaction::factory()->buy($stock, shares: 500, price: 100)->create(['user_id' => $this->user->id]);
 
-        $this->actingAs($this->user)->deleteJson("/api/transactions/{$tx->id}")->assertNoContent();
+        $this->actingAs($this->user)->deleteJson("/api/stocks/transactions/{$tx->id}")->assertNoContent();
 
         $this->assertSoftDeleted('transactions', ['id' => $tx->id]);
     }

@@ -16,7 +16,7 @@ class UserScopedTransactionTest extends TestCase
     {
         $stock = Stock::factory()->create();
 
-        $this->postJson('/api/transactions', [
+        $this->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'buy',
             'shares' => 100,
@@ -30,7 +30,7 @@ class UserScopedTransactionTest extends TestCase
         $user = User::factory()->create();
         $stock = Stock::factory()->create();
 
-        $this->actingAs($user)->postJson('/api/transactions', [
+        $this->actingAs($user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'buy',
             'shares' => 100,
@@ -67,7 +67,7 @@ class UserScopedTransactionTest extends TestCase
 
         $bobsTx = Transaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $bob->id]);
 
-        $this->actingAs($alice)->deleteJson("/api/transactions/{$bobsTx->id}")
+        $this->actingAs($alice)->deleteJson("/api/stocks/transactions/{$bobsTx->id}")
             ->assertForbidden();
     }
 
@@ -78,7 +78,7 @@ class UserScopedTransactionTest extends TestCase
 
         $tx = Transaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $user->id]);
 
-        $this->actingAs($user)->deleteJson("/api/transactions/{$tx->id}")
+        $this->actingAs($user)->deleteJson("/api/stocks/transactions/{$tx->id}")
             ->assertNoContent();
 
         $this->assertSoftDeleted('transactions', ['id' => $tx->id]);
@@ -93,7 +93,7 @@ class UserScopedTransactionTest extends TestCase
         // Bob has 500 shares but Alice has 0
         Transaction::factory()->buy($stock, shares: 500, price: 800)->create(['user_id' => $bob->id]);
 
-        $this->actingAs($alice)->postJson('/api/transactions', [
+        $this->actingAs($alice)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
             'type' => 'sell',
             'shares' => 100,
@@ -112,7 +112,7 @@ class UserScopedTransactionTest extends TestCase
         Transaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $alice->id]);
         Transaction::factory()->buy($stock, shares: 500, price: 700)->create(['user_id' => $bob->id]);
 
-        $response = $this->actingAs($alice)->getJson('/api/portfolio');
+        $response = $this->actingAs($alice)->getJson('/api/stocks/portfolio');
 
         $response->assertOk()->assertJsonCount(1);
         $this->assertEquals('100.0000', $response->json()[0]['net_shares']);
@@ -120,7 +120,7 @@ class UserScopedTransactionTest extends TestCase
 
     public function test_unauthenticated_user_cannot_access_portfolio(): void
     {
-        $this->getJson('/api/portfolio')->assertUnauthorized();
+        $this->getJson('/api/stocks/portfolio')->assertUnauthorized();
     }
 
     public function test_stock_write_operations_require_auth(): void

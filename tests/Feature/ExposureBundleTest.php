@@ -24,7 +24,7 @@ class ExposureBundleTest extends TestCase
 
     public function test_guest_cannot_access_bundles(): void
     {
-        $this->getJson('/api/exposure/bundles')->assertUnauthorized();
+        $this->getJson('/api/stocks/exposure/bundles')->assertUnauthorized();
     }
 
     public function test_can_list_own_bundles(): void
@@ -34,7 +34,7 @@ class ExposureBundleTest extends TestCase
         ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'My Bundle', 'cash' => 0]);
         ExposureBundle::create(['user_id' => $other->id, 'name' => 'Other Bundle', 'cash' => 0]);
 
-        $response = $this->actingAs($this->user)->getJson('/api/exposure/bundles');
+        $response = $this->actingAs($this->user)->getJson('/api/stocks/exposure/bundles');
 
         $response->assertOk()->assertJsonCount(1);
         $response->assertJsonFragment(['name' => 'My Bundle']);
@@ -43,7 +43,7 @@ class ExposureBundleTest extends TestCase
 
     public function test_create_bundle(): void
     {
-        $response = $this->actingAs($this->user)->postJson('/api/exposure/bundles', [
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/exposure/bundles', [
             'name' => 'Main Portfolio',
         ]);
 
@@ -61,7 +61,7 @@ class ExposureBundleTest extends TestCase
     {
         $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'Old Name', 'cash' => 0]);
 
-        $response = $this->actingAs($this->user)->patchJson("/api/exposure/bundles/{$bundle->id}", [
+        $response = $this->actingAs($this->user)->patchJson("/api/stocks/exposure/bundles/{$bundle->id}", [
             'name' => 'New Name',
             'cash' => 100000,
         ]);
@@ -80,7 +80,7 @@ class ExposureBundleTest extends TestCase
     {
         $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'To Delete', 'cash' => 0]);
 
-        $this->actingAs($this->user)->deleteJson("/api/exposure/bundles/{$bundle->id}")
+        $this->actingAs($this->user)->deleteJson("/api/stocks/exposure/bundles/{$bundle->id}")
             ->assertNoContent();
 
         $this->assertSoftDeleted('exposure_bundles', ['id' => $bundle->id]);
@@ -91,10 +91,10 @@ class ExposureBundleTest extends TestCase
         $other = User::factory()->create();
         $bundle = ExposureBundle::create(['user_id' => $other->id, 'name' => 'Their Bundle', 'cash' => 0]);
 
-        $this->actingAs($this->user)->patchJson("/api/exposure/bundles/{$bundle->id}", ['name' => 'Hijacked'])
+        $this->actingAs($this->user)->patchJson("/api/stocks/exposure/bundles/{$bundle->id}", ['name' => 'Hijacked'])
             ->assertForbidden();
 
-        $this->actingAs($this->user)->deleteJson("/api/exposure/bundles/{$bundle->id}")
+        $this->actingAs($this->user)->deleteJson("/api/stocks/exposure/bundles/{$bundle->id}")
             ->assertForbidden();
     }
 
@@ -103,7 +103,7 @@ class ExposureBundleTest extends TestCase
         $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'Bundle', 'cash' => 0]);
         $stock = Stock::factory()->create(['symbol' => '0050.TW', 'name' => '元大台灣50']);
 
-        $response = $this->actingAs($this->user)->postJson("/api/exposure/bundles/{$bundle->id}/entries", [
+        $response = $this->actingAs($this->user)->postJson("/api/stocks/exposure/bundles/{$bundle->id}/entries", [
             'stock_id' => $stock->id,
             'leverage' => 1.0,
             'is_cash' => false,
@@ -135,7 +135,7 @@ class ExposureBundleTest extends TestCase
             'transacted_at' => '2026-01-01',
         ]);
 
-        $response = $this->actingAs($this->user)->postJson("/api/exposure/bundles/{$bundle->id}/entries", [
+        $response = $this->actingAs($this->user)->postJson("/api/stocks/exposure/bundles/{$bundle->id}/entries", [
             'stock_id' => $stock->id,
             'leverage' => 1.0,
             'is_cash' => false,
@@ -162,7 +162,7 @@ class ExposureBundleTest extends TestCase
             'transacted_at' => '2026-01-01',
         ]);
 
-        $response = $this->actingAs($this->user)->postJson("/api/exposure/bundles/{$bundle->id}/entries", [
+        $response = $this->actingAs($this->user)->postJson("/api/stocks/exposure/bundles/{$bundle->id}/entries", [
             'stock_id'        => $stock->id,
             'leverage'        => 1.0,
             'is_cash'         => false,
@@ -198,7 +198,7 @@ class ExposureBundleTest extends TestCase
 
         // Override to 300
         $response = $this->actingAs($this->user)->patchJson(
-            "/api/exposure/bundles/{$bundle->id}/entries/{$entry->id}",
+            "/api/stocks/exposure/bundles/{$bundle->id}/entries/{$entry->id}",
             ['shares_override' => 300]
         );
         $response->assertOk();
@@ -208,7 +208,7 @@ class ExposureBundleTest extends TestCase
 
         // Reset to auto (null)
         $response = $this->actingAs($this->user)->patchJson(
-            "/api/exposure/bundles/{$bundle->id}/entries/{$entry->id}",
+            "/api/stocks/exposure/bundles/{$bundle->id}/entries/{$entry->id}",
             ['shares_override' => null]
         );
         $response->assertOk();
@@ -228,7 +228,7 @@ class ExposureBundleTest extends TestCase
             'is_cash' => false,
         ]);
 
-        $this->actingAs($this->user)->deleteJson("/api/exposure/bundles/{$bundle->id}/entries/{$entry->id}")
+        $this->actingAs($this->user)->deleteJson("/api/stocks/exposure/bundles/{$bundle->id}/entries/{$entry->id}")
             ->assertNoContent();
 
         $this->assertSoftDeleted('exposure_bundle_entries', ['id' => $entry->id]);
