@@ -108,7 +108,7 @@
                             <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ num(pos.net_shares) }}</td>
                             <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(pos.average_cost) }}</td>
                             <td class="px-4 py-3 text-right">
-                                <div class="text-slate-900 dark:text-slate-100">{{ hidden ? '••••' : fmt(pos.stock.current_price) }}</div>
+                                <div class="text-slate-900 dark:text-slate-100">{{ fmt(pos.stock.current_price) }}</div>
                                 <div v-if="pos.stock.change_percent" class="text-xs" :class="pos.stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
                                     {{ pos.stock.change_percent >= 0 ? '+' : '' }}{{ Number(pos.stock.change_percent).toFixed(2) }}%
                                 </div>

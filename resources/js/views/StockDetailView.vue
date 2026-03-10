@@ -9,7 +9,7 @@
                 </div>
                 <div class="ml-auto text-right">
                     <div v-if="stock.current_price">
-                        <div class="text-3xl font-semibold text-slate-900 dark:text-slate-100">{{ hidden ? '••••' : fmt(stock.current_price) }}</div>
+                        <div class="text-3xl font-semibold text-slate-900 dark:text-slate-100">{{ fmt(stock.current_price) }}</div>
                         <div v-if="stock.change_percent" class="text-sm font-medium mt-0.5" :class="stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
                             {{ stock.change_percent >= 0 ? '+' : '' }}{{ Number(stock.change_percent).toFixed(2) }}%
                         </div>
@@ -396,9 +396,9 @@ function renderChart() {
                         title: ([item]) => item?.label ?? '',
                         label: (item) => {
                             if (item.raw === null) return null;
-                            if (item.datasetIndex === 0) return ` Close  ${hidden.value ? '••••' : fmt(item.raw)}`;
-                            if (item.datasetIndex === 1) return ` Buy ▲  ${hidden.value ? '••••' : fmt(item.raw)}`;
-                            return ` Sell ▼  ${hidden.value ? '••••' : fmt(item.raw)}`;
+                            if (item.datasetIndex === 0) return ` Close  ${fmt(item.raw)}`;
+                            if (item.datasetIndex === 1) return ` Buy ▲  ${fmt(item.raw)}`;
+                            return ` Sell ▼  ${fmt(item.raw)}`;
                         },
                         filter: (item) => item.raw !== null,
                     },

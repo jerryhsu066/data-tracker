@@ -222,7 +222,7 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
-                                        {{ hidden ? '••••' : fmt(entry.stock.current_price) }}
+                                        {{ fmt(entry.stock.current_price) }}
                                     </td>
                                     <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
                                         {{ Number(entry.net_shares).toLocaleString() }}

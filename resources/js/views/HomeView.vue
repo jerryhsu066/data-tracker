@@ -43,7 +43,7 @@
                     >
                         <p class="font-semibold text-sm text-slate-900 dark:text-slate-100">{{ idx.stock.name }}</p>
                         <div class="flex items-baseline gap-2 mb-3">
-                            <span class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ hidden ? '••••' : fmtPrice(idx.stock.current_price) }}</span>
+                            <span class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ fmtPrice(idx.stock.current_price) }}</span>
                             <span v-if="idx.stock.change_percent" class="text-xs font-medium" :class="idx.stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
                                 {{ idx.stock.change_percent >= 0 ? '+' : '' }}{{ Number(idx.stock.change_percent).toFixed(2) }}%
                             </span>
@@ -296,7 +296,7 @@ function renderIndexCharts() {
                     tooltip: {
                         callbacks: {
                             title: ([item]) => item?.label ?? '',
-                            label: (item) => ` ${hidden.value ? '••••' : fmtPrice(item.raw)}`,
+                            label: (item) => ` ${fmtPrice(item.raw)}`,
                         },
                     },
                 },
