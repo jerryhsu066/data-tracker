@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\FetchHistoricalPrices;
 use App\Models\Stock;
 use App\Services\StockPriceService;
 use Illuminate\Http\JsonResponse;
@@ -67,7 +68,7 @@ class StockController extends Controller
         return response()->json($stock->fresh());
     }
 
-    public function syncHistory(Request $request, StockPriceService $service): JsonResponse
+    public function syncHistory(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'from_date' => ['required', 'date', 'before_or_equal:today'],
@@ -76,7 +77,7 @@ class StockController extends Controller
         $stocks = Stock::all();
 
         foreach ($stocks as $stock) {
-            $service->fetchHistoricalPrices($stock, $validated['from_date']);
+            FetchHistoricalPrices::dispatch($stock, $validated['from_date']);
         }
 
         return response()->json(['synced' => $stocks->count()]);

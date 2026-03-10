@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\FetchHistoricalPrices;
 use App\Models\Stock;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class StockApiTest extends TestCase
@@ -111,5 +113,35 @@ class StockApiTest extends TestCase
             ->assertJsonFragment(['symbol' => 'AAPL', 'current_price' => '195.5000']);
 
         $this->assertDatabaseHas('stocks', ['symbol' => 'AAPL', 'current_price' => 195.5]);
+    }
+
+    public function test_sync_history_dispatches_job_per_stock(): void
+    {
+        Queue::fake();
+
+        Stock::factory()->create(['symbol' => 'AAPL']);
+        Stock::factory()->create(['symbol' => 'TSLA']);
+
+        $this->actingAs($this->user)->postJson('/api/stocks/sync-history', [
+            'from_date' => '2025-01-01',
+        ])->assertOk()->assertJson(['synced' => 2]);
+
+        Queue::assertPushed(FetchHistoricalPrices::class, 2);
+        Queue::assertPushed(FetchHistoricalPrices::class, fn ($job) =>
+            $job->fromDate === '2025-01-01'
+        );
+    }
+
+    public function test_sync_history_requires_from_date(): void
+    {
+        $this->actingAs($this->user)->postJson('/api/stocks/sync-history', [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['from_date']);
+    }
+
+    public function test_sync_history_requires_auth(): void
+    {
+        $this->postJson('/api/stocks/sync-history', ['from_date' => '2025-01-01'])
+            ->assertUnauthorized();
     }
 }
