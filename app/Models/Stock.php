@@ -43,9 +43,9 @@ class Stock extends Model
 
     public function netSharesForUser(int $userId): float
     {
-        $bought = (float) $this->transactions()->where('type', 'buy')->where('user_id', $userId)->sum('shares');
-        $sold = (float) $this->transactions()->where('type', 'sell')->where('user_id', $userId)->sum('shares');
-
-        return $bought - $sold;
+        return (float) $this->transactions()
+            ->where('user_id', $userId)
+            ->selectRaw("SUM(CASE WHEN type = 'buy' THEN shares ELSE -shares END) as net")
+            ->value('net');
     }
 }
