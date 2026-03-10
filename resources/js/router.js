@@ -11,6 +11,7 @@ const router = createRouter({
         { path: '/stocks/:symbol', component: () => import('./views/StockDetailView.vue'), meta: { auth: true } },
         { path: '/transactions', component: () => import('./views/TransactionsView.vue'), meta: { auth: true } },
         { path: '/settings', component: () => import('./views/SettingsView.vue'), meta: { auth: true } },
+        { path: '/exposure', component: () => import('./views/ExposureView.vue'), meta: { auth: true } },
     ],
 });
 

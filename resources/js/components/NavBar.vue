@@ -56,6 +56,7 @@ const modules = [
             { to: '/dashboard', label: 'Portfolio' },
             { to: '/stocks', label: 'Stocks' },
             { to: '/transactions', label: 'Transactions' },
+            { to: '/exposure', label: 'Exposure' },
             { to: '/settings', label: 'Settings' },
         ],
     },

@@ -63,49 +63,75 @@
 
             <template v-if="active">
                 <!-- Summary cards -->
-                <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="grid grid-cols-4 gap-4 mb-6">
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Total Value</p>
-                        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ fmt(totalValue) }}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
+                        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ fmt(investValue) }}</p>
                     </div>
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                         <p class="text-sm text-slate-500 dark:text-slate-400">Market Exposure</p>
                         <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ fmt(totalExposure) }}</p>
                     </div>
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Exposure Ratio</p>
-                        <p class="text-2xl font-bold mt-1" :class="exposureRatioPct > 100 ? 'text-amber-500' : 'text-indigo-600'">
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Exposure Rate</p>
+                        <p class="text-2xl font-bold mt-1" :class="exposureRatioPct > 100 ? 'text-amber-500' : 'text-indigo-500 dark:text-indigo-400'">
                             {{ exposureRatioPct.toFixed(1) }}%
+                        </p>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss</p>
+                        <p class="text-2xl font-bold mt-1" :class="gainLoss >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                            {{ gainLoss >= 0 ? '+' : '' }}{{ gainLossPct.toFixed(2) }}%
                         </p>
                     </div>
                 </div>
 
-                <!-- Exposure bar -->
+                <!-- Allocation bar -->
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-medium text-slate-600 dark:text-slate-400">Market Exposure Ratio</span>
-                        <span class="text-sm font-bold" :class="exposureRatioPct > 100 ? 'text-amber-500' : 'text-slate-900 dark:text-slate-100'">
-                            {{ exposureRatioPct.toFixed(1) }}%
-                        </span>
-                    </div>
-                    <div class="relative h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div class="absolute top-0 bottom-0 w-px bg-slate-400/60 dark:bg-slate-500/60" style="left: 50%"></div>
+                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Allocation</h2>
+                    <div class="flex h-8 rounded-lg overflow-hidden gap-px bg-slate-100 dark:bg-slate-700">
                         <div
-                            class="h-full rounded-full transition-all duration-300"
-                            :class="exposureRatioPct > 100 ? 'bg-amber-500' : 'bg-indigo-500'"
-                            :style="`width: ${Math.min(exposureRatioPct, 200) / 2}%`"
-                        ></div>
+                            v-for="(seg, i) in allocationSegments"
+                            :key="seg.label"
+                            :style="{ width: seg.pct + '%', backgroundColor: PALETTE[i % PALETTE.length] }"
+                            :title="`${seg.label}: ${seg.pct.toFixed(1)}%`"
+                            class="relative flex items-center justify-center transition-all duration-300 overflow-hidden"
+                        >
+                            <span
+                                v-if="seg.pct >= 7"
+                                class="text-white text-xs font-semibold leading-none select-none drop-shadow"
+                            >{{ seg.pct.toFixed(1) }}%</span>
+                        </div>
                     </div>
-                    <div class="flex justify-between text-xs text-slate-400 mt-1">
-                        <span>0%</span>
-                        <span>100%</span>
-                        <span>200%</span>
-                    </div>
+                    <ul class="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+                        <li
+                            v-for="(seg, i) in allocationSegments"
+                            :key="seg.label"
+                            class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400"
+                        >
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: PALETTE[i % PALETTE.length] }"></span>
+                            <span>{{ seg.label }}</span>
+                            <span class="text-slate-400 dark:text-slate-500">{{ seg.pct.toFixed(1) }}%</span>
+                        </li>
+                    </ul>
                 </div>
 
-                <!-- Add entry form -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-4">
-                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Add Position</h2>
+                <!-- Positions table header row with Add button -->
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Positions</span>
+                    <button
+                        @click="showAddForm = !showAddForm"
+                        class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
+                        :class="showAddForm
+                            ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                            : 'bg-indigo-600 hover:bg-indigo-500 text-white'"
+                    >
+                        <span>{{ showAddForm ? '✕ Cancel' : '+ Add Position' }}</span>
+                    </button>
+                </div>
+
+                <!-- Collapsible add entry form -->
+                <div v-if="showAddForm" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-3">
                     <form @submit.prevent="addEntry" class="flex gap-3 items-end flex-wrap">
                         <div class="flex-1 min-w-40">
                             <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Symbol</label>
@@ -186,89 +212,152 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
-                            <tr v-for="entry in active.entries" :key="entry.id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                                <td class="px-4 py-3">
-                                    <div class="font-semibold text-slate-900 dark:text-slate-100">{{ entry.stock.symbol }}</div>
-                                    <div class="text-xs" :class="entry.is_cash ? 'text-slate-400' : 'text-indigo-400'">
-                                        {{ entry.is_cash ? 'cash proxy' : entry.leverage + 'x leverage' }}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
-                                    {{ fmt(entry.stock.current_price) }}
-                                </td>
-                                <td class="px-4 py-3 text-right">
-                                    <!-- Inline shares editor -->
-                                    <div class="flex items-center justify-end gap-1">
-                                        <input
-                                            :value="editingShares[entry.id] ?? Number(entry.net_shares)"
-                                            type="number"
-                                            min="0"
-                                            class="h-7 w-24 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm text-right focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                            @focus="editingShares[entry.id] = Number(entry.net_shares)"
-                                            @input="editingShares[entry.id] = Number($event.target.value)"
-                                            @blur="commitSharesEdit(entry)"
-                                            @keydown.enter="$event.target.blur()"
-                                            @keydown.escape="cancelSharesEdit(entry, $event.target)"
-                                        />
+                            <template v-for="entry in active.entries" :key="entry.id">
+                                <!-- View row -->
+                                <tr v-if="editingEntry?.id !== entry.id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                    <td class="px-4 py-3">
+                                        <div class="font-semibold text-slate-900 dark:text-slate-100">{{ entry.stock.symbol }}</div>
+                                        <div class="text-xs" :class="entry.is_cash ? 'text-slate-400' : 'text-indigo-400'">
+                                            {{ entry.is_cash ? 'cash proxy' : entry.leverage + 'x leverage' }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+                                        {{ fmt(entry.stock.current_price) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+                                        {{ Number(entry.net_shares).toLocaleString() }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+                                        {{ fmt(Number(entry.net_shares) * Number(entry.stock.current_price)) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right">
+                                        <span v-if="entry.is_cash" class="text-slate-400">—</span>
+                                        <span v-else class="text-slate-700 dark:text-slate-300">{{ entry.leverage }}x</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
+                                        <span v-if="!entry.is_cash">
+                                            {{ fmt(Number(entry.net_shares) * Number(entry.stock.current_price) * Number(entry.leverage)) }}
+                                        </span>
+                                        <span v-else class="text-slate-400">—</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">
+                                        <span v-if="totalValue > 0">
+                                            {{ ((Number(entry.net_shares) * Number(entry.stock.current_price) / totalValue) * 100).toFixed(1) }}%
+                                        </span>
+                                        <span v-else>—</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right">
                                         <button
-                                            v-if="entry.shares_override !== null"
-                                            title="Reset to auto (from transactions)"
-                                            class="text-slate-400 hover:text-indigo-500 transition-colors text-xs leading-none"
-                                            @click="resetShares(entry)"
-                                        >↺</button>
-                                        <span v-else class="text-xs text-indigo-400 leading-none" title="Auto-computed from transactions">auto</span>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
-                                    {{ fmt(Number(entry.net_shares) * Number(entry.stock.current_price)) }}
-                                </td>
-                                <td class="px-4 py-3 text-right">
-                                    <span v-if="entry.is_cash" class="text-slate-400">—</span>
-                                    <span v-else class="text-slate-700 dark:text-slate-300">{{ entry.leverage }}x</span>
-                                </td>
-                                <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
-                                    <span v-if="!entry.is_cash">
-                                        {{ fmt(Number(entry.net_shares) * Number(entry.stock.current_price) * Number(entry.leverage)) }}
-                                    </span>
-                                    <span v-else class="text-slate-400">—</span>
-                                </td>
-                                <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">
-                                    <span v-if="totalValue > 0">
-                                        {{ ((Number(entry.net_shares) * Number(entry.stock.current_price) / totalValue) * 100).toFixed(1) }}%
-                                    </span>
-                                    <span v-else>—</span>
-                                </td>
-                                <td class="px-4 py-3 text-right">
-                                    <button
-                                        @click="removeEntry(entry.id)"
-                                        class="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-500 transition-colors text-base leading-none"
-                                    >✕</button>
-                                </td>
-                            </tr>
+                                            @click="startEdit(entry)"
+                                            class="text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors text-sm leading-none"
+                                            title="Edit"
+                                        >✎</button>
+                                    </td>
+                                </tr>
 
-                            <!-- Cash row -->
-                            <tr class="bg-slate-50/60 dark:bg-slate-700/20">
+                                <!-- Edit row -->
+                                <tr v-else class="bg-indigo-50/60 dark:bg-indigo-900/10">
+                                    <td colspan="8" class="px-4 py-3">
+                                        <div class="flex items-center gap-4 flex-wrap">
+                                            <span class="font-semibold text-slate-900 dark:text-slate-100 min-w-16">{{ entry.stock.symbol }}</span>
+                                            <div>
+                                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Shares</label>
+                                                <input
+                                                    v-model.number="editingEntry.shares"
+                                                    type="number"
+                                                    min="0"
+                                                    class="h-8 w-28 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Leverage</label>
+                                                <input
+                                                    v-model.number="editingEntry.leverage"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.5"
+                                                    :disabled="editingEntry.isCash"
+                                                    class="h-8 w-20 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-40"
+                                                />
+                                            </div>
+                                            <div class="flex flex-col gap-1">
+                                                <label class="text-xs font-medium text-slate-500 dark:text-slate-400">Cash proxy</label>
+                                                <label class="relative inline-flex items-center h-8 cursor-pointer">
+                                                    <input type="checkbox" v-model="editingEntry.isCash" class="sr-only" />
+                                                    <div class="w-10 h-5 rounded-full transition-colors" :class="editingEntry.isCash ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'"></div>
+                                                    <div class="absolute top-1.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" :class="editingEntry.isCash ? 'translate-x-5' : 'translate-x-0'"></div>
+                                                </label>
+                                            </div>
+                                            <div class="flex gap-2 ml-auto">
+                                                <button
+                                                    @click="saveEdit(entry)"
+                                                    class="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors"
+                                                >Save</button>
+                                                <button
+                                                    @click="removeEntry(entry.id)"
+                                                    class="h-8 px-3 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-md transition-colors"
+                                                >Delete</button>
+                                                <button
+                                                    @click="cancelEdit"
+                                                    class="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors"
+                                                >Cancel</button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+
+                            <!-- Cash row - view -->
+                            <tr v-if="!editingCash" class="bg-slate-50/60 dark:bg-slate-700/20 hover:bg-slate-100/60 dark:hover:bg-slate-700/40">
                                 <td class="px-4 py-3">
                                     <div class="font-semibold text-slate-900 dark:text-slate-100">Cash</div>
                                     <div class="text-xs text-slate-400">actual cash</div>
                                 </td>
                                 <td class="px-4 py-3 text-right text-slate-400">—</td>
-                                <td class="px-4 py-3 text-right">
-                                    <input
-                                        v-model.number="localCash"
-                                        type="number"
-                                        min="0"
-                                        placeholder="0"
-                                        class="h-7 w-28 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm text-right focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                    />
-                                </td>
-                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ fmt(localCash || 0) }}</td>
+                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ fmt(active.cash || 0) }}</td>
+                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ fmt(active.cash || 0) }}</td>
                                 <td class="px-4 py-3 text-right text-slate-400">—</td>
                                 <td class="px-4 py-3 text-right text-slate-400">—</td>
                                 <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">
-                                    {{ totalValue > 0 ? (((localCash || 0) / totalValue) * 100).toFixed(1) + '%' : '—' }}
+                                    {{ totalValue > 0 ? (((active.cash || 0) / totalValue) * 100).toFixed(1) + '%' : '—' }}
                                 </td>
-                                <td class="px-4 py-3"></td>
+                                <td class="px-4 py-3 text-right">
+                                    <button
+                                        @click="editingCash = true; cashInput = active.cash || 0"
+                                        class="text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors text-sm leading-none"
+                                        title="Edit"
+                                    >✎</button>
+                                </td>
+                            </tr>
+
+                            <!-- Cash row - edit -->
+                            <tr v-else class="bg-indigo-50/60 dark:bg-indigo-900/10">
+                                <td colspan="8" class="px-4 py-3">
+                                    <div class="flex items-center gap-4">
+                                        <span class="font-semibold text-slate-900 dark:text-slate-100">Cash</span>
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Amount</label>
+                                            <input
+                                                v-model.number="cashInput"
+                                                type="number"
+                                                min="0"
+                                                class="h-8 w-36 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                @keydown.enter="saveCash"
+                                                @keydown.escape="editingCash = false"
+                                            />
+                                        </div>
+                                        <div class="flex gap-2 ml-auto">
+                                            <button
+                                                @click="saveCash"
+                                                class="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors"
+                                            >Save</button>
+                                            <button
+                                                @click="editingCash = false"
+                                                class="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors"
+                                            >Cancel</button>
+                                        </div>
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -294,6 +383,8 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import api from '../api';
 
+const PALETTE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'];
+
 const bundles = ref([]);
 const activeId = ref(null);
 const stocks = ref([]);
@@ -303,6 +394,7 @@ const submitting = ref(false);
 
 const form = ref({ stockId: '', shares: 0, sharesIsAuto: true, leverage: 1, isCash: false });
 const formError = ref('');
+const showAddForm = ref(false);
 
 const renamingId = ref(null);
 const renameValue = ref('');
@@ -312,11 +404,10 @@ const addingBundle = ref(false);
 const newBundleName = ref('');
 const newBundleInput = ref(null);
 
-const localCash = ref(0);
-let cashTimer = null;
+const editingCash = ref(false);
+const cashInput = ref(0);
 
-// Map of entry.id → currently-being-edited shares value
-const editingShares = ref({});
+const editingEntry = ref(null); // { id, shares, leverage, isCash }
 
 const active = computed(() => bundles.value.find(b => b.id === activeId.value) ?? null);
 
@@ -328,22 +419,19 @@ watch(() => form.value.stockId, (stockId) => {
     form.value.sharesIsAuto = true;
 });
 
-watch(active, (b) => {
-    if (b) localCash.value = b.cash;
+watch(active, () => {
+    showAddForm.value = false;
+    formError.value = '';
+    editingEntry.value = null;
+    editingCash.value = false;
 }, { immediate: true });
-
-watch(localCash, () => {
-    if (!active.value) return;
-    clearTimeout(cashTimer);
-    cashTimer = setTimeout(saveCash, 600);
-});
 
 const totalValue = computed(() => {
     if (!active.value) return 0;
     const stockValue = active.value.entries.reduce((sum, e) => {
         return sum + Number(e.net_shares) * Number(e.stock.current_price);
     }, 0);
-    return stockValue + (localCash.value || 0);
+    return stockValue + (active.value.cash || 0);
 });
 
 const totalExposure = computed(() => {
@@ -357,6 +445,33 @@ const totalExposure = computed(() => {
 const exposureRatioPct = computed(() =>
     totalValue.value > 0 ? (totalExposure.value / totalValue.value) * 100 : 0
 );
+
+// Cost basis: sum of (net_shares × average_cost) from portfolio, plus cash
+const investValue = computed(() => {
+    if (!active.value) return 0;
+    const stockCost = active.value.entries.reduce((sum, e) => {
+        const pos = portfolio.value.find(p => p.stock.id === e.stock.id);
+        const avgCost = pos ? Number(pos.average_cost) : Number(e.stock.current_price);
+        return sum + Number(e.net_shares) * avgCost;
+    }, 0);
+    return stockCost + (active.value.cash || 0);
+});
+
+const gainLoss = computed(() => totalValue.value - investValue.value);
+const gainLossPct = computed(() => investValue.value > 0 ? (gainLoss.value / investValue.value) * 100 : 0);
+
+const allocationSegments = computed(() => {
+    if (!active.value || totalValue.value === 0) return [];
+    const segs = active.value.entries.map(e => ({
+        label: e.stock.symbol,
+        pct: (Number(e.net_shares) * Number(e.stock.current_price) / totalValue.value) * 100,
+    }));
+    const cash = active.value.cash || 0;
+    if (cash > 0) {
+        segs.push({ label: 'Cash', pct: (cash / totalValue.value) * 100 });
+    }
+    return segs;
+});
 
 async function loadBundles() {
     const res = await api.get('/exposure/bundles');
@@ -373,8 +488,9 @@ function replaceBundle(updated) {
 
 async function saveCash() {
     if (!active.value) return;
-    const res = await api.patch(`/exposure/bundles/${active.value.id}`, { cash: localCash.value || 0 });
+    const res = await api.patch(`/exposure/bundles/${active.value.id}`, { cash: cashInput.value || 0 });
     replaceBundle(res.data);
+    editingCash.value = false;
 }
 
 async function addEntry() {
@@ -394,6 +510,7 @@ async function addEntry() {
         });
         replaceBundle(res.data);
         form.value = { stockId: '', shares: 0, sharesIsAuto: true, leverage: 1, isCash: false };
+        showAddForm.value = false;
     } catch (e) {
         formError.value = e.response?.data?.message ?? 'Failed to add entry.';
     } finally {
@@ -401,28 +518,29 @@ async function addEntry() {
     }
 }
 
-async function commitSharesEdit(entry) {
-    const val = editingShares.value[entry.id];
-    delete editingShares.value[entry.id];
-    if (val === undefined) return;
-
-    const res = await api.patch(`/exposure/bundles/${active.value.id}/entries/${entry.id}`, {
-        shares_override: val,
-    });
-    replaceBundle(res.data);
+function startEdit(entry) {
+    editingEntry.value = {
+        id: entry.id,
+        shares: Number(entry.net_shares),
+        leverage: Number(entry.leverage),
+        isCash: entry.is_cash,
+    };
 }
 
-function cancelSharesEdit(entry, input) {
-    delete editingShares.value[entry.id];
-    input.value = Number(entry.net_shares);
-    input.blur();
+function cancelEdit() {
+    editingEntry.value = null;
 }
 
-async function resetShares(entry) {
+async function saveEdit(entry) {
+    const e = editingEntry.value;
+    if (!e) return;
     const res = await api.patch(`/exposure/bundles/${active.value.id}/entries/${entry.id}`, {
-        shares_override: null,
+        shares_override: e.shares,
+        leverage: e.isCash ? 0 : e.leverage,
+        is_cash: e.isCash,
     });
     replaceBundle(res.data);
+    editingEntry.value = null;
 }
 
 async function removeEntry(entryId) {
