@@ -53,10 +53,11 @@ class PortfolioController extends Controller
             return response()->json([]);
         }
 
-        $yesterday = Carbon::yesterday('Asia/Taipei')->toDateString();
+        $today = Carbon::today('Asia/Taipei')->toDateString();
 
-        // Build a sorted list of all available dates across all stocks, capped at yesterday
-        $allDates = $histories->flatten()->pluck('date')->map(fn ($d) => (string) $d)->filter(fn ($d) => $d <= $yesterday)->unique()->sort()->values();
+        // Build a sorted list of all available dates across all stocks, up to and including today.
+        // Dates are cast to YYYY-MM-DD strings (trimming any datetime suffix) before comparison.
+        $allDates = $histories->flatten()->pluck('date')->map(fn ($d) => substr((string) $d, 0, 10))->filter(fn ($d) => $d <= $today)->unique()->sort()->values();
 
         // For each date, compute sum(sharesHeld × closePrice) for each stock
         $result = [];
@@ -80,8 +81,10 @@ class PortfolioController extends Controller
                     continue;
                 }
 
+                // Use the most recent price on or before $date (carry-forward for missing dates)
                 $priceRecord = ($histories[$stockId] ?? collect())
-                    ->first(fn ($h) => (string) $h->date === $date && (float) $h->close_price > 0);
+                    ->filter(fn ($h) => substr((string) $h->date, 0, 10) <= $date && (float) $h->close_price > 0)
+                    ->last();
 
                 if ($priceRecord) {
                     $totalValue += $netShares * (float) $priceRecord->close_price;

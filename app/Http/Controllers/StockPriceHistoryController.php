@@ -12,10 +12,10 @@ class StockPriceHistoryController extends Controller
     {
         $stock = Stock::where('symbol', strtoupper($symbol))->firstOrFail();
 
-        $yesterday = Carbon::yesterday('Asia/Taipei')->toDateString();
+        $today = Carbon::today('Asia/Taipei')->toDateString();
 
         return response()->json(
-            $stock->priceHistories()->where('date', '<=', $yesterday)->orderBy('date')->get()
+            $stock->priceHistories()->where('date', '<=', $today)->orderBy('date')->get()
         );
     }
 }
