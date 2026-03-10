@@ -53,6 +53,21 @@ services:
     networks:
       - laravel
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: laravel_scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    command: php artisan schedule:work
+    depends_on:
+      - mysql
+    networks:
+      - laravel
+
   mysql:
     image: mysql:8.4
     container_name: laravel_mysql
