@@ -59,12 +59,6 @@ POST /auth/login
 ```
 
 **Response `401`** — invalid credentials
-```json
-{
-  "message": "The given data was invalid.",
-  "errors": { "email": ["The provided credentials are incorrect."] }
-}
-```
 
 ---
 
@@ -72,7 +66,7 @@ POST /auth/login
 ```
 GET /auth/me
 ```
-🔒 Requires auth
+🔒 Requires auth.
 
 **Response `200`**
 ```json
@@ -116,7 +110,7 @@ Public. Returns all tracked stocks ordered by symbol.
     "name": "元大台灣50",
     "current_price": "73.6000",
     "change_percent": "1.2400",
-    "last_fetched_at": "2026-03-09T08:00:00.000000Z"
+    "last_fetched_at": "2026-03-10T06:30:00.000000Z"
   }
 ]
 ```
@@ -144,10 +138,10 @@ POST /stocks
 **Body**
 | Field | Type | Rules |
 |---|---|---|
-| `symbol` | string | required, max 15, alphanumeric + optional dot suffix (e.g. `2330.TW`) |
+| `symbol` | string | required, max 15, matches `/^\^?[A-Z0-9]+(\.[A-Z]+)?$/` |
 | `name` | string | required, max 255 |
 
-Symbol is automatically uppercased.
+Symbol is automatically uppercased. The `^` prefix is allowed for market indices (e.g. `^TWII`, `^IXIC`, `^VIX`). TWSE symbols use `.TW` suffix; OTC symbols use `.TWO`.
 
 **Response `201`** — created stock object
 
@@ -169,11 +163,47 @@ DELETE /stocks/{symbol}
 ```
 POST /stocks/{symbol}/fetch
 ```
-🔒 Requires auth. Fetches the latest price from Yahoo Finance synchronously.
+🔒 Requires auth. Fetches the latest price from Yahoo Finance synchronously and records today's closing price. `last_fetched_at` is set to the `regularMarketTime` from Yahoo Finance (i.e. when the price data is from, not when the fetch was triggered).
 
-- For `.TW` symbols not found on Yahoo Finance, automatically retries with `.TWO` (Taiwan OTC market).
+For `.TW` symbols not found on Yahoo Finance, automatically retries with `.TWO` (Taiwan OTC market).
 
 **Response `200`** — updated stock object
+
+---
+
+### Get Price History
+```
+GET /stocks/{symbol}/prices
+```
+Public. Returns daily closing prices up to and including today (Taiwan time), ordered by date ascending.
+
+**Response `200`**
+```json
+[
+  { "id": 1, "stock_id": 1, "date": "2026-01-30", "close_price": "72.6000" },
+  { "id": 2, "stock_id": 1, "date": "2026-03-10", "close_price": "73.6000" }
+]
+```
+
+---
+
+### Sync Price History
+```
+POST /stocks/sync-history
+```
+🔒 Requires auth. Fetches daily closing prices for **all** tracked stocks from `from_date` up to yesterday (Taiwan time). Runs synchronously.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `from_date` | date | required, on or before today |
+
+**Response `200`**
+```json
+{ "synced": 5 }
+```
+
+`synced` is the number of stocks processed.
 
 ---
 
@@ -204,29 +234,11 @@ GET /stocks/{symbol}/transactions
 
 ---
 
-## Price History
-
-### Get Price History for a Stock
-```
-GET /stocks/{symbol}/prices
-```
-Public. Returns daily closing prices up to and including yesterday (Taiwan time). Today is excluded to prevent incomplete intraday data.
-
-**Response `200`**
-```json
-[
-  { "id": 1, "stock_id": 1, "date": "2026-01-30", "close_price": "72.6000" },
-  { "id": 2, "stock_id": 1, "date": "2026-02-02", "close_price": "71.5000" }
-]
-```
-
----
-
 ## Transactions
 
 ### Create Transaction
 ```
-POST /transactions
+POST /stocks/transactions
 ```
 🔒 Requires auth.
 
@@ -237,16 +249,16 @@ POST /transactions
 | `type` | string | required, `buy` or `sell` |
 | `shares` | number | required, > 0 |
 | `price_per_share` | number | required, > 0 |
+| `handling_fee` | number | optional, ≥ 0 (auto-calculated if omitted) |
+| `transaction_tax` | number | optional, ≥ 0 (auto-calculated if omitted) |
 | `transacted_at` | date | required |
 | `notes` | string | optional |
 
-Handling fee and transaction tax are auto-calculated from the user's `handling_fee_discount` setting:
+Fee and tax are auto-calculated from the user's `handling_fee_discount` setting if not supplied:
 - **Handling fee** = `max(20, floor(tradeValue × 0.1425% × (1 − discount)))`
 - **Transaction tax** = `floor(tradeValue × 0.3%)` for sells; `0` for buys
 
 For sell transactions, validates that shares owned ≥ shares to sell.
-
-If `transacted_at` is not today, dispatches a background job to fetch historical price data for that date.
 
 **Response `201`** — created transaction object with `stock` relationship
 
@@ -256,7 +268,7 @@ If `transacted_at` is not today, dispatches a background job to fetch historical
 
 ### Update Transaction
 ```
-PUT /transactions/{id}
+PUT /stocks/transactions/{id}
 ```
 🔒 Requires auth. Only the transaction owner may update.
 
@@ -271,7 +283,7 @@ PUT /transactions/{id}
 | `transacted_at` | date | required |
 | `notes` | string | optional |
 
-Fee and tax are accepted as-is (user-overridable). If `transacted_at` is not today, dispatches a background job to fetch historical price data for the new date.
+Fee and tax are accepted as-is (user-overridable).
 
 **Response `200`** — updated transaction object with `stock` relationship
 
@@ -281,7 +293,7 @@ Fee and tax are accepted as-is (user-overridable). If `transacted_at` is not tod
 
 ### Delete Transaction
 ```
-DELETE /transactions/{id}
+DELETE /stocks/transactions/{id}
 ```
 🔒 Requires auth. Only the transaction owner may delete. Soft-deletes the record.
 
@@ -295,7 +307,7 @@ DELETE /transactions/{id}
 
 ### Get Portfolio Positions
 ```
-GET /portfolio
+GET /stocks/portfolio
 ```
 🔒 Requires auth. Returns current positions for all stocks the user has transactions in (only stocks with `net_shares > 0`).
 
@@ -309,7 +321,7 @@ GET /portfolio
       "name": "元大台灣50",
       "current_price": "73.6000",
       "change_percent": "1.2400",
-      "last_fetched_at": "2026-03-09T08:00:00.000000Z"
+      "last_fetched_at": "2026-03-10T06:30:00.000000Z"
     },
     "net_shares": "1380.0000",
     "average_cost": "72.8804",
@@ -325,18 +337,18 @@ GET /portfolio
 |---|---|
 | `average_cost` | Total buy cost (including fees) ÷ total shares bought |
 | `current_value` | `net_shares × current_price` |
-| `unrealized_gain` | `current_value − (average_cost × net_shares) − estimated sell fee − estimated sell tax` |
+| `unrealized_gain` | `current_value − (average_cost × net_shares)` |
 | `realized_gain` | Net proceeds from sells minus the average cost of shares sold |
 
 ---
 
 ### Get Portfolio Value History
 ```
-GET /portfolio/history
+GET /stocks/portfolio/history
 ```
-🔒 Requires auth. Returns daily portfolio value and cost basis from the earliest transaction date up to yesterday (Taiwan time).
+🔒 Requires auth. Returns daily portfolio value and cost basis from the earliest transaction date up to today (Taiwan time).
 
-For each date, only shares held at that date are included (i.e. future purchases are not counted back in time). Dates where total value is 0 or any close price is 0 are omitted.
+For each date, only shares held at that date are included (future purchases are not counted back in time). Missing price data is carried forward from the most recent available price. Dates where total value is 0 are omitted.
 
 **Response `200`**
 ```json
@@ -361,7 +373,7 @@ For each date, only shares held at that date are included (i.e. future purchases
 
 ### Get Settings
 ```
-GET /settings
+GET /stocks/settings
 ```
 🔒 Requires auth.
 
@@ -376,7 +388,7 @@ GET /settings
 
 ### Update Settings
 ```
-PATCH /settings
+PATCH /stocks/settings
 ```
 🔒 Requires auth.
 
@@ -389,6 +401,125 @@ PATCH /settings
 ```json
 { "handling_fee_discount": 0.3 }
 ```
+
+---
+
+## Exposure Bundles
+
+A bundle groups stocks with assigned leverages to track market exposure rate separately from the main portfolio.
+
+### List Bundles
+```
+GET /stocks/exposure/bundles
+```
+🔒 Requires auth. Returns all bundles for the authenticated user, each with their entries and current stock prices.
+
+**Response `200`**
+```json
+[
+  {
+    "id": 1,
+    "name": "Core",
+    "cash": "50000.00",
+    "entries": [
+      {
+        "id": 1,
+        "stock_id": 1,
+        "net_shares": "1000.0000",
+        "leverage": "2.0",
+        "is_cash": false,
+        "stock": { "id": 1, "symbol": "00631L.TW", "current_price": "18.50", ... }
+      }
+    ]
+  }
+]
+```
+
+---
+
+### Create Bundle
+```
+POST /stocks/exposure/bundles
+```
+🔒 Requires auth.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `name` | string | required, max 255 |
+
+**Response `201`** — created bundle object
+
+---
+
+### Update Bundle
+```
+PATCH /stocks/exposure/bundles/{bundle}
+```
+🔒 Requires auth. Owned bundles only. Used for renaming and updating cash balance.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `name` | string | optional, max 255 |
+| `cash` | number | optional, ≥ 0 |
+
+**Response `200`** — updated bundle object with entries
+
+---
+
+### Delete Bundle
+```
+DELETE /stocks/exposure/bundles/{bundle}
+```
+🔒 Requires auth. Owned bundles only.
+
+**Response `204`** — no content
+
+---
+
+### Add Entry to Bundle
+```
+POST /stocks/exposure/bundles/{bundle}/entries
+```
+🔒 Requires auth.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `stock_id` | integer | required, must exist |
+| `shares_override` | number | optional, ≥ 0 — if null, defaults to the user's net shares for that stock |
+| `leverage` | number | optional, ≥ 0, default 1 |
+| `is_cash` | boolean | optional, default false — marks the entry as a cash proxy (leverage is ignored) |
+
+**Response `200`** — updated bundle object with entries
+
+---
+
+### Update Entry
+```
+PATCH /stocks/exposure/bundles/{bundle}/entries/{entry}
+```
+🔒 Requires auth.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `shares_override` | number | optional, ≥ 0 |
+| `leverage` | number | optional, ≥ 0 |
+| `is_cash` | boolean | optional |
+
+**Response `200`** — updated bundle object with entries
+
+---
+
+### Remove Entry
+```
+DELETE /stocks/exposure/bundles/{bundle}/entries/{entry}
+```
+🔒 Requires auth.
+
+**Response `200`** — updated bundle object with entries
 
 ---
 
@@ -416,8 +547,9 @@ PATCH /settings
 
 ## Notes
 
-- All timestamps are in UTC. The app uses **Asia/Taipei (UTC+8)** for trading day calculations (price history, daily close cut-off).
-- Stock prices are fetched from **Yahoo Finance** (`query1.finance.yahoo.com/v8/finance/chart`). Taiwan TWSE symbols use `.TW` suffix; OTC symbols use `.TWO`. The API automatically falls back from `.TW` to `.TWO` when a symbol is not found.
-- Handling fees follow Taiwan brokerage standard: **0.1425%** of trade value, minimum NT$20, reduced by the user's `handling_fee_discount`.
+- All timestamps are in UTC. The app uses **Asia/Taipei (UTC+8)** for trading day calculations.
+- Stock prices are fetched from **Yahoo Finance** (`query1.finance.yahoo.com/v8/finance/chart`). TWSE symbols use `.TW`; OTC symbols use `.TWO`. The service auto-retries `.TW` symbols with `.TWO` on 404.
+- Market index symbols (e.g. `^TWII`, `^IXIC`, `^VIX`) are supported but cannot be transacted — they are tracked for price history and charting only.
+- Handling fees follow Taiwan brokerage standard: **0.1425%** of trade value, minimum NT$20, reduced by `handling_fee_discount`.
 - Transaction tax applies to **sell** orders only: **0.3%** of trade value.
-- All models use **soft deletes** — deleted records remain in the database with a `deleted_at` timestamp and are excluded from normal queries.
+- All models use **soft deletes** — deleted records are excluded from normal queries and can be restored.
