@@ -92,30 +92,41 @@ docker compose exec app php artisan optimize:clear
 Standard Laravel MVC structure:
 - `app/Http/Controllers/` — request handlers
 - `app/Models/` — Eloquent models
-- `routes/web.php` / `routes/api.php` — route definitions
-- `resources/views/` — Blade templates
+- `routes/api.php` — all API routes; auth under `/auth/*`, everything else under `/stocks/*`
 - `database/migrations/` — schema migrations
 - `database/seeders/` — data seeders
+
+### API Route Structure
+
+All stock-module routes share the `/stocks` prefix. Static paths are declared before `{symbol}` wildcard routes to avoid conflicts:
+
+```
+/auth/*               — register, login, logout, me
+/stocks               — list / create stocks
+/stocks/portfolio     — portfolio positions & history
+/stocks/transactions  — create / update / delete transactions
+/stocks/settings      — user settings
+/stocks/exposure/*    — exposure bundles & entries
+/stocks/sync-history  — bulk price history sync
+/stocks/{symbol}      — single stock CRUD & price fetch
+/stocks/{symbol}/prices       — price history
+/stocks/{symbol}/transactions — per-stock transactions
+```
 
 ## Docker Infrastructure
 
 - `docker/php/Dockerfile` — PHP 8.4-FPM image with required extensions
 - `docker/nginx/default.conf` — Nginx config routing to PHP-FPM on port 9000
-- `docker-compose.yml` — defines `app`, `nginx`, and `mysql` services; MySQL data persisted in `mysql_data` volume
+- `docker-compose.yml` — defines `app`, `nginx`, `mysql`, `worker`, `scheduler`, and `node` services; MySQL data persisted in `mysql_data` volume
 
 ## Queue Worker & Scheduler
 
-Jobs are stored in the database (`QUEUE_CONNECTION=database`). To process them:
+Jobs are stored in the database (`QUEUE_CONNECTION=database`). Both the queue worker and scheduler run automatically as dedicated Docker services — no manual commands needed after `docker compose up -d`.
 
-```bash
-# Start queue worker
-docker compose exec app php artisan queue:work
+- **`worker`** container runs `php artisan queue:work` — processes queued jobs (e.g. `FetchStockPrice`)
+- **`scheduler`** container runs `php artisan schedule:work` — dispatches `FetchAllStockPrices` **every hour on weekdays**
 
-# Run scheduler (processes every-minute jobs like FetchAllStockPrices)
-docker compose exec app php artisan schedule:work
-```
-
-Stock prices are fetched from **Yahoo Finance** (no API key required). The scheduler runs `FetchAllStockPrices` every minute.
+Stock prices are fetched from **Yahoo Finance** (no API key required). `FetchAllStockPrices` fans out by dispatching one `FetchStockPrice` job per tracked stock onto the queue.
 
 ## Environment
 
@@ -138,17 +149,19 @@ Key frontend conventions:
 
 - `resources/js/views/` — Vue page components (one per route)
 - `resources/js/components/` — shared Vue components
-- `resources/js/composables/` — shared Composition API logic (e.g. `useTheme`)
+- `resources/js/stores/` — shared state composables: `useTheme` (dark mode), `usePrivacy` (hide/show amounts), `useAuth`
 - `app/Services/StockPriceService.php` — Yahoo Finance fetching with `.TW` → `.TWO` OTC fallback
-- `app/Jobs/` — queued jobs (e.g. `FetchHistoricalPrices`, `FetchAllStockPrices`)
+- `app/Jobs/` — queued jobs (`FetchAllStockPrices` dispatches per-stock `FetchStockPrice` jobs)
 
 ## Taiwan Market Rules
 
 - All trading day calculations use **Asia/Taipei (UTC+8)**
-- Price history is capped at **yesterday** (Taiwan time) — today's intraday data is excluded
+- Price history includes **today** — `StockPriceHistoryController` and `PortfolioController` cap at today, not yesterday
+- Missing price history dates use **carry-forward** — last known price on or before that date is used
 - Handling fee: `max(20, floor(tradeValue × 0.1425% × (1 − discount)))` — buy and sell
 - Transaction tax: `floor(tradeValue × 0.3%)` — sell only, 0 for buys
 - Yahoo Finance: TWSE symbols use `.TW` suffix; OTC (TWO) symbols use `.TWO`; the service auto-retries with `.TWO` on 404
+- Market index symbols (`^TWII`, `^IXIC`, `^VIX`) are supported for price tracking — symbol regex allows `^` prefix
 
 ## Git Workflow
 
