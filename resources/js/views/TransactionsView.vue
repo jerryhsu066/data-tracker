@@ -68,7 +68,7 @@
                 <div>
                     <label class="block text-xs mb-1 invisible">_</label>
                     <div class="h-9 flex items-center text-sm text-slate-500 dark:text-slate-400 px-1">
-                        Total: <span class="ml-1 font-semibold text-slate-800 dark:text-slate-200">{{ txTotal }}</span>
+                        Total: <span class="ml-1 font-semibold text-slate-800 dark:text-slate-200">{{ hidden ? '••••' : txTotal }}</span>
                     </div>
                     <p class="h-[1.1rem]"></p>
                 </div>
@@ -186,11 +186,11 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ Number(tx.shares).toLocaleString() }}</td>
-                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ fmt(tx.price_per_share) }}</td>
+                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(tx.price_per_share) }}</td>
                             <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
-                                {{ tx.type === 'buy'
+                                {{ hidden ? '••••' : (tx.type === 'buy'
                                     ? fmt(tx.shares * tx.price_per_share + Number(tx.handling_fee))
-                                    : fmt(tx.shares * tx.price_per_share - Number(tx.handling_fee) - Number(tx.transaction_tax)) }}
+                                    : fmt(tx.shares * tx.price_per_share - Number(tx.handling_fee) - Number(tx.transaction_tax))) }}
                             </td>
                             <td class="px-4 py-3 text-slate-400 dark:text-slate-500 max-w-xs truncate">{{ tx.notes ?? '—' }}</td>
                             <td class="px-4 py-3 text-right">
@@ -208,7 +208,9 @@
 import { ref, computed, onMounted, watchEffect } from 'vue';
 import api from '../api';
 import { useAuth } from '../stores/auth';
+import { usePrivacy } from '../stores/privacy';
 
+const { hidden } = usePrivacy();
 const { state: authState } = useAuth();
 
 const STANDARD_HANDLING_RATE = 0.1425;

@@ -9,7 +9,7 @@
                 </div>
                 <div class="ml-auto text-right">
                     <div v-if="stock.current_price">
-                        <div class="text-3xl font-semibold text-slate-900 dark:text-slate-100">{{ fmt(stock.current_price) }}</div>
+                        <div class="text-3xl font-semibold text-slate-900 dark:text-slate-100">{{ hidden ? '••••' : fmt(stock.current_price) }}</div>
                         <div v-if="stock.change_percent" class="text-sm font-medium mt-0.5" :class="stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
                             {{ stock.change_percent >= 0 ? '+' : '' }}{{ Number(stock.change_percent).toFixed(2) }}%
                         </div>
@@ -114,7 +114,7 @@
                 <div>
                     <label class="block text-xs mb-1 invisible">_</label>
                     <div class="h-9 flex items-center text-sm text-slate-500 dark:text-slate-400 px-1">
-                        Total: <span class="ml-1 font-semibold text-slate-800 dark:text-slate-200">{{ txTotal }}</span>
+                        Total: <span class="ml-1 font-semibold text-slate-800 dark:text-slate-200">{{ hidden ? '••••' : txTotal }}</span>
                     </div>
                     <p class="h-[1.1rem]"></p>
                 </div>
@@ -209,13 +209,13 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ Number(tx.shares).toLocaleString() }}</td>
-                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ fmt(tx.price_per_share) }}</td>
-                            <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">{{ Number(tx.handling_fee) > 0 ? fmt(tx.handling_fee) : '—' }}</td>
-                            <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">{{ Number(tx.transaction_tax) > 0 ? fmt(tx.transaction_tax) : '—' }}</td>
+                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(tx.price_per_share) }}</td>
+                            <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">{{ hidden ? '••••' : (Number(tx.handling_fee) > 0 ? fmt(tx.handling_fee) : '—') }}</td>
+                            <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">{{ hidden ? '••••' : (Number(tx.transaction_tax) > 0 ? fmt(tx.transaction_tax) : '—') }}</td>
                             <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
-                                {{ tx.type === 'buy'
+                                {{ hidden ? '••••' : (tx.type === 'buy'
                                     ? fmt(tx.shares * tx.price_per_share + Number(tx.handling_fee))
-                                    : fmt(tx.shares * tx.price_per_share - Number(tx.handling_fee) - Number(tx.transaction_tax)) }}
+                                    : fmt(tx.shares * tx.price_per_share - Number(tx.handling_fee) - Number(tx.transaction_tax))) }}
                             </td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
                                 <button @click="startEdit(tx)" class="text-slate-300 dark:text-slate-600 hover:text-indigo-400 transition-colors mr-2">✎</button>
@@ -234,12 +234,14 @@ import { ref, computed, onMounted, watch, watchEffect, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '../api';
 import { useAuth } from '../stores/auth';
+import { usePrivacy } from '../stores/privacy';
 import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, Tooltip, CategoryScale } from 'chart.js';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Filler, Tooltip, CategoryScale);
 
 const PERIODS = ['1M', '3M', '6M', '1Y', 'All'];
 
+const { hidden } = usePrivacy();
 const route = useRoute();
 const symbol = computed(() => route.params.symbol);
 
@@ -394,9 +396,9 @@ function renderChart() {
                         title: ([item]) => item?.label ?? '',
                         label: (item) => {
                             if (item.raw === null) return null;
-                            if (item.datasetIndex === 0) return ` Close  ${fmt(item.raw)}`;
-                            if (item.datasetIndex === 1) return ` Buy ▲  ${fmt(item.raw)}`;
-                            return ` Sell ▼  ${fmt(item.raw)}`;
+                            if (item.datasetIndex === 0) return ` Close  ${hidden.value ? '••••' : fmt(item.raw)}`;
+                            if (item.datasetIndex === 1) return ` Buy ▲  ${hidden.value ? '••••' : fmt(item.raw)}`;
+                            return ` Sell ▼  ${hidden.value ? '••••' : fmt(item.raw)}`;
                         },
                         filter: (item) => item.raw !== null,
                     },

@@ -6,12 +6,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                 <p class="text-sm text-slate-500 dark:text-slate-400">Total Value</p>
-                <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ fmt(totalValue) }}</p>
+                <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(totalValue) }}</p>
             </div>
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                 <p class="text-sm text-slate-500 dark:text-slate-400">Unrealized Gain</p>
                 <p class="text-2xl font-bold mt-1" :class="totalUnrealized >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                    {{ sign(totalUnrealized) }}{{ fmt(Math.abs(totalUnrealized)) }}
+                    {{ hidden ? '••••' : (sign(totalUnrealized) + fmt(Math.abs(totalUnrealized))) }}
                 </p>
             </div>
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
@@ -44,7 +44,7 @@
                             <canvas ref="donutCanvas"></canvas>
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                 <p class="text-xs text-slate-400">Total</p>
-                                <p class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ fmt(totalValue) }}</p>
+                                <p class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ hidden ? '••••' : fmt(totalValue) }}</p>
                             </div>
                         </div>
                         <ul class="flex flex-col gap-2">
@@ -106,19 +106,19 @@
                                 <div class="text-xs text-slate-400 dark:text-slate-500">{{ pos.stock.name }}</div>
                             </td>
                             <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ num(pos.net_shares) }}</td>
-                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ fmt(pos.average_cost) }}</td>
+                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(pos.average_cost) }}</td>
                             <td class="px-4 py-3 text-right">
-                                <div class="text-slate-900 dark:text-slate-100">{{ fmt(pos.stock.current_price) }}</div>
+                                <div class="text-slate-900 dark:text-slate-100">{{ hidden ? '••••' : fmt(pos.stock.current_price) }}</div>
                                 <div v-if="pos.stock.change_percent" class="text-xs" :class="pos.stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
                                     {{ pos.stock.change_percent >= 0 ? '+' : '' }}{{ Number(pos.stock.change_percent).toFixed(2) }}%
                                 </div>
                             </td>
-                            <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">{{ fmt(pos.current_value) }}</td>
+                            <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">{{ hidden ? '••••' : fmt(pos.current_value) }}</td>
                             <td class="px-4 py-3 text-right font-medium" :class="pos.unrealized_gain >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                                {{ sign(pos.unrealized_gain) }}{{ fmt(Math.abs(pos.unrealized_gain)) }}
+                                {{ hidden ? '••••' : (sign(pos.unrealized_gain) + fmt(Math.abs(pos.unrealized_gain))) }}
                             </td>
                             <td class="px-4 py-3 text-right font-medium" :class="pos.realized_gain >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                                {{ sign(pos.realized_gain) }}{{ fmt(Math.abs(pos.realized_gain)) }}
+                                {{ hidden ? '••••' : (sign(pos.realized_gain) + fmt(Math.abs(pos.realized_gain))) }}
                             </td>
                         </tr>
                     </tbody>
@@ -133,6 +133,7 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { Chart, DoughnutController, BarController, LineController, ArcElement, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler, Legend } from 'chart.js';
 import api from '../api';
 import { useTheme } from '../stores/theme';
+import { usePrivacy } from '../stores/privacy';
 
 Chart.register(DoughnutController, BarController, LineController, ArcElement, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler, Legend);
 
@@ -167,6 +168,8 @@ const totalValue      = computed(() => positions.value.reduce((s, p) => s + Numb
 const totalUnrealized = computed(() => positions.value.reduce((s, p) => s + Number(p.unrealized_gain), 0));
 const totalCostBasis  = computed(() => positions.value.reduce((s, p) => s + Number(p.average_cost) * Number(p.net_shares), 0));
 const gainPct         = computed(() => totalCostBasis.value > 0 ? (totalUnrealized.value / totalCostBasis.value) * 100 : 0);
+
+const { hidden } = usePrivacy();
 
 function chartColors() {
     const dark = document.documentElement.classList.contains('dark');
@@ -248,6 +251,7 @@ function renderLineChart() {
                     callbacks: {
                         title: (items) => items[0].label,
                         label: (item) => {
+                            if (hidden.value) return item.datasetIndex === 0 ? [' Portfolio:  ••••', ' Gain/Loss: ••••'] : ' Cost Basis: ••••';
                             if (item.datasetIndex === 1) {
                                 return ` Cost Basis: ${fmt(item.raw)}`;
                             }
@@ -318,6 +322,7 @@ function renderCharts() {
                     tooltip: {
                         callbacks: {
                             label: (item) => {
+                                if (hidden.value) return ' ••••';
                                 const total = item.dataset.data.reduce((a, b) => a + b, 0);
                                 const pct = total > 0 ? ((item.raw / total) * 100).toFixed(1) : 0;
                                 return ` ${fmt(item.raw)}  (${pct}%)`;
@@ -375,7 +380,7 @@ function renderCharts() {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: (item) => ` ${sign(item.raw)}${fmt(Math.abs(item.raw))}  (${pcts[item.dataIndex] >= 0 ? '+' : ''}${pcts[item.dataIndex].toFixed(2)}%)`,
+                            label: (item) => hidden.value ? ' ••••' : ` ${sign(item.raw)}${fmt(Math.abs(item.raw))}  (${pcts[item.dataIndex] >= 0 ? '+' : ''}${pcts[item.dataIndex].toFixed(2)}%)`,
                         },
                     },
                 },

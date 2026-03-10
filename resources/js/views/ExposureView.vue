@@ -66,11 +66,11 @@
                 <div class="grid grid-cols-4 gap-4 mb-6">
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                         <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
-                        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ fmt(investValue) }}</p>
+                        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(investValue) }}</p>
                     </div>
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                         <p class="text-sm text-slate-500 dark:text-slate-400">Market Exposure</p>
-                        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ fmt(totalExposure) }}</p>
+                        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(totalExposure) }}</p>
                     </div>
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                         <p class="text-sm text-slate-500 dark:text-slate-400">Exposure Rate</p>
@@ -222,13 +222,13 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
-                                        {{ fmt(entry.stock.current_price) }}
+                                        {{ hidden ? '••••' : fmt(entry.stock.current_price) }}
                                     </td>
                                     <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
                                         {{ Number(entry.net_shares).toLocaleString() }}
                                     </td>
                                     <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
-                                        {{ fmt(Number(entry.net_shares) * Number(entry.stock.current_price)) }}
+                                        {{ hidden ? '••••' : fmt(Number(entry.net_shares) * Number(entry.stock.current_price)) }}
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         <span v-if="entry.is_cash" class="text-slate-400">—</span>
@@ -236,7 +236,7 @@
                                     </td>
                                     <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
                                         <span v-if="!entry.is_cash">
-                                            {{ fmt(Number(entry.net_shares) * Number(entry.stock.current_price) * Number(entry.leverage)) }}
+                                            {{ hidden ? '••••' : fmt(Number(entry.net_shares) * Number(entry.stock.current_price) * Number(entry.leverage)) }}
                                         </span>
                                         <span v-else class="text-slate-400">—</span>
                                     </td>
@@ -315,8 +315,8 @@
                                     <div class="text-xs text-slate-400">actual cash</div>
                                 </td>
                                 <td class="px-4 py-3 text-right text-slate-400">—</td>
-                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ fmt(active.cash || 0) }}</td>
-                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ fmt(active.cash || 0) }}</td>
+                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(active.cash || 0) }}</td>
+                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(active.cash || 0) }}</td>
                                 <td class="px-4 py-3 text-right text-slate-400">—</td>
                                 <td class="px-4 py-3 text-right text-slate-400">—</td>
                                 <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">
@@ -383,6 +383,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import api from '../api';
+import { usePrivacy } from '../stores/privacy';
 
 const PALETTE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'];
 
@@ -607,6 +608,8 @@ onMounted(async () => {
         loading.value = false;
     }
 });
+
+const { hidden } = usePrivacy();
 
 function fmt(v) {
     if (v == null) return '—';

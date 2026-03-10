@@ -43,7 +43,7 @@
                     >
                         <p class="font-semibold text-sm text-slate-900 dark:text-slate-100">{{ idx.stock.name }}</p>
                         <div class="flex items-baseline gap-2 mb-3">
-                            <span class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ fmtPrice(idx.stock.current_price) }}</span>
+                            <span class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ hidden ? '••••' : fmtPrice(idx.stock.current_price) }}</span>
                             <span v-if="idx.stock.change_percent" class="text-xs font-medium" :class="idx.stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
                                 {{ idx.stock.change_percent >= 0 ? '+' : '' }}{{ Number(idx.stock.change_percent).toFixed(2) }}%
                             </span>
@@ -61,12 +61,12 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                     <p class="text-sm text-slate-500 dark:text-slate-400">Total Value</p>
-                    <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ fmt(totalValue) }}</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(totalValue) }}</p>
                 </div>
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                     <p class="text-sm text-slate-500 dark:text-slate-400">Unrealized Gain</p>
                     <p class="text-2xl font-bold mt-1" :class="totalUnrealized >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                        {{ sign(totalUnrealized) }}{{ fmt(Math.abs(totalUnrealized)) }}
+                        {{ hidden ? '••••' : (sign(totalUnrealized) + fmt(Math.abs(totalUnrealized))) }}
                     </p>
                 </div>
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
@@ -107,7 +107,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
-                                <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ fmt(b.stats.investValue) }}</p>
+                                <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(b.stats.investValue) }}</p>
                             </div>
                         </div>
 
@@ -140,10 +140,12 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { Chart, LineController, LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip } from 'chart.js';
 import api from '../api';
 import { useTheme } from '../stores/theme';
+import { usePrivacy } from '../stores/privacy';
 
 Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip);
 
 const PERIODS = ['1M', '3M', '6M', '1Y', 'All'];
+const { hidden } = usePrivacy();
 
 const PALETTE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'];
 
@@ -294,7 +296,7 @@ function renderIndexCharts() {
                     tooltip: {
                         callbacks: {
                             title: ([item]) => item?.label ?? '',
-                            label: (item) => ` ${fmtPrice(item.raw)}`,
+                            label: (item) => ` ${hidden.value ? '••••' : fmtPrice(item.raw)}`,
                         },
                     },
                 },
