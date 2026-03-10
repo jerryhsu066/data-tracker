@@ -376,8 +376,8 @@ async function loadIndices() {
 
 async function loadData() {
     const [portfolio, bundlesRes] = await Promise.all([
-        api.get('/portfolio'),
-        api.get('/exposure/bundles'),
+        api.get('/stocks/portfolio'),
+        api.get('/stocks/exposure/bundles'),
     ]);
     positions.value = portfolio.data;
     bundles.value   = bundlesRes.data;

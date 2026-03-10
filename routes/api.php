@@ -20,44 +20,49 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-// Stocks
+// Stocks module — all routes share the /stocks prefix.
+// Static paths must be declared before the {symbol} wildcard to take priority.
 Route::prefix('stocks')->group(function () {
-    // Public reads
+
+    // Public
     Route::get('/', [StockController::class, 'index']);
-    Route::post('sync-history', [StockController::class, 'syncHistory'])->middleware('auth:sanctum');
+
+    // Protected — static paths
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/', [StockController::class, 'store']);
+        Route::post('sync-history', [StockController::class, 'syncHistory']);
+
+        // Portfolio
+        Route::get('portfolio', [PortfolioController::class, 'index']);
+        Route::get('portfolio/history', [PortfolioController::class, 'history']);
+
+        // Transactions
+        Route::post('transactions', [TransactionController::class, 'store']);
+        Route::put('transactions/{transaction}', [TransactionController::class, 'update']);
+        Route::delete('transactions/{transaction}', [TransactionController::class, 'destroy']);
+
+        // Settings
+        Route::get('settings', [SettingsController::class, 'show']);
+        Route::patch('settings', [SettingsController::class, 'update']);
+
+        // Exposure Bundles
+        Route::get('exposure/bundles', [ExposureBundleController::class, 'index']);
+        Route::post('exposure/bundles', [ExposureBundleController::class, 'store']);
+        Route::patch('exposure/bundles/{bundle}', [ExposureBundleController::class, 'update']);
+        Route::delete('exposure/bundles/{bundle}', [ExposureBundleController::class, 'destroy']);
+        Route::post('exposure/bundles/{bundle}/entries', [ExposureBundleController::class, 'addEntry']);
+        Route::patch('exposure/bundles/{bundle}/entries/{entry}', [ExposureBundleController::class, 'updateEntry']);
+        Route::delete('exposure/bundles/{bundle}/entries/{entry}', [ExposureBundleController::class, 'removeEntry']);
+    });
+
+    // Public — dynamic {symbol} paths (must come after all static paths)
     Route::get('{symbol}', [StockController::class, 'show']);
     Route::get('{symbol}/prices', [StockPriceHistoryController::class, 'index']);
 
-    // Protected writes
+    // Protected — dynamic {symbol} paths
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/', [StockController::class, 'store']);
         Route::delete('{symbol}', [StockController::class, 'destroy']);
         Route::post('{symbol}/fetch', [StockController::class, 'fetch']);
         Route::get('{symbol}/transactions', [StockController::class, 'transactions']);
     });
-});
-
-// Protected routes
-Route::middleware('auth:sanctum')->group(function () {
-    // Transactions
-    Route::post('transactions', [TransactionController::class, 'store']);
-    Route::put('transactions/{transaction}', [TransactionController::class, 'update']);
-    Route::delete('transactions/{transaction}', [TransactionController::class, 'destroy']);
-
-    // Portfolio
-    Route::get('portfolio', [PortfolioController::class, 'index']);
-    Route::get('portfolio/history', [PortfolioController::class, 'history']);
-
-    // Settings
-    Route::get('settings', [SettingsController::class, 'show']);
-    Route::patch('settings', [SettingsController::class, 'update']);
-
-    // Exposure Bundles
-    Route::get('exposure/bundles', [ExposureBundleController::class, 'index']);
-    Route::post('exposure/bundles', [ExposureBundleController::class, 'store']);
-    Route::patch('exposure/bundles/{bundle}', [ExposureBundleController::class, 'update']);
-    Route::delete('exposure/bundles/{bundle}', [ExposureBundleController::class, 'destroy']);
-    Route::post('exposure/bundles/{bundle}/entries', [ExposureBundleController::class, 'addEntry']);
-    Route::patch('exposure/bundles/{bundle}/entries/{entry}', [ExposureBundleController::class, 'updateEntry']);
-    Route::delete('exposure/bundles/{bundle}/entries/{entry}', [ExposureBundleController::class, 'removeEntry']);
 });

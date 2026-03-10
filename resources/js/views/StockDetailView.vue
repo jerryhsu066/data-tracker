@@ -448,7 +448,7 @@ async function submitTransaction() {
             : 0;
     }
     try {
-        const { data } = await api.post('/transactions', { stock_id: stock.value.id, ...txForm.value });
+        const { data } = await api.post('/stocks/transactions', { stock_id: stock.value.id, ...txForm.value });
         transactions.value.unshift(data);
         txForm.value = { type: txForm.value.type, shares: '', price_per_share: '', handling_fee: 0, transaction_tax: 0, transacted_at: today(), notes: '' };
     } catch (e) {
@@ -463,7 +463,7 @@ async function submitTransaction() {
 
 async function deleteTransaction(id) {
     if (!confirm('Delete this transaction?')) return;
-    await api.delete(`/transactions/${id}`);
+    await api.delete(`/stocks/transactions/${id}`);
     transactions.value = transactions.value.filter(t => t.id !== id);
 }
 
@@ -482,7 +482,7 @@ function startEdit(tx) {
 async function saveEdit(id) {
     saving.value = true;
     try {
-        const { data } = await api.put(`/transactions/${id}`, editForm.value);
+        const { data } = await api.put(`/stocks/transactions/${id}`, editForm.value);
         const idx = transactions.value.findIndex(t => t.id === id);
         if (idx !== -1) transactions.value[idx] = data;
         editingId.value = null;

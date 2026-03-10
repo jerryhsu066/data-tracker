@@ -267,7 +267,7 @@ async function load() {
         const [txRes, stockRes] = await Promise.all([
             // Fetch transactions per stock and flatten — or we build a combined list from portfolio stocks
             api.get('/stocks'),
-            api.get('/portfolio'),
+            api.get('/stocks/portfolio'),
         ]);
         stocks.value = txRes.data;
         // Collect all transactions from each tracked stock for this user
@@ -286,7 +286,7 @@ async function submit() {
     errors.value = {};
     submitting.value = true;
     try {
-        const { data } = await api.post('/transactions', form.value);
+        const { data } = await api.post('/stocks/transactions', form.value);
         transactions.value.unshift(data);
         transactions.value.sort((a, b) => b.transacted_at.localeCompare(a.transacted_at));
         form.value = { stock_id: '', type: 'buy', shares: '', price_per_share: '', handling_fee: 0, transaction_tax: 0, transacted_at: today(), notes: '' };
@@ -299,7 +299,7 @@ async function submit() {
 }
 
 async function del(id) {
-    await api.delete(`/transactions/${id}`);
+    await api.delete(`/stocks/transactions/${id}`);
     transactions.value = transactions.value.filter(t => t.id !== id);
     editingId.value = null;
 }
@@ -321,7 +321,7 @@ function startEdit(tx) {
 async function saveEdit(id) {
     saving.value = true;
     try {
-        const { data } = await api.put(`/transactions/${id}`, editForm.value);
+        const { data } = await api.put(`/stocks/transactions/${id}`, editForm.value);
         const idx = transactions.value.findIndex(t => t.id === id);
         if (idx !== -1) transactions.value[idx] = data;
         transactions.value.sort((a, b) => b.transacted_at.localeCompare(a.transacted_at));

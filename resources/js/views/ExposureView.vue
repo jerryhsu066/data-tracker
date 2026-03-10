@@ -478,7 +478,7 @@ const allocationSegments = computed(() => {
 });
 
 async function loadBundles() {
-    const res = await api.get('/exposure/bundles');
+    const res = await api.get('/stocks/exposure/bundles');
     bundles.value = res.data;
     if (!activeId.value && bundles.value.length > 0) {
         activeId.value = bundles.value[0].id;
@@ -492,7 +492,7 @@ function replaceBundle(updated) {
 
 async function saveCash() {
     if (!active.value) return;
-    const res = await api.patch(`/exposure/bundles/${active.value.id}`, { cash: cashInput.value || 0 });
+    const res = await api.patch(`/stocks/exposure/bundles/${active.value.id}`, { cash: cashInput.value || 0 });
     replaceBundle(res.data);
     editingCash.value = false;
 }
@@ -506,7 +506,7 @@ async function addEntry() {
 
     submitting.value = true;
     try {
-        const res = await api.post(`/exposure/bundles/${active.value.id}/entries`, {
+        const res = await api.post(`/stocks/exposure/bundles/${active.value.id}/entries`, {
             stock_id:        form.value.stockId,
             shares_override: sharesOverride,
             leverage:        form.value.isCash ? 0 : (form.value.leverage ?? 1),
@@ -540,7 +540,7 @@ function cancelEdit() {
 async function saveEdit(entry) {
     const e = editingEntry.value;
     if (!e) return;
-    const res = await api.patch(`/exposure/bundles/${active.value.id}/entries/${entry.id}`, {
+    const res = await api.patch(`/stocks/exposure/bundles/${active.value.id}/entries/${entry.id}`, {
         shares_override: e.shares,
         leverage: e.isCash ? 0 : e.leverage,
         is_cash: e.isCash,
@@ -551,7 +551,7 @@ async function saveEdit(entry) {
 }
 
 async function removeEntry(entryId) {
-    await api.delete(`/exposure/bundles/${active.value.id}/entries/${entryId}`);
+    await api.delete(`/stocks/exposure/bundles/${active.value.id}/entries/${entryId}`);
     const bundle = bundles.value.find(b => b.id === active.value.id);
     if (bundle) bundle.entries = bundle.entries.filter(e => e.id !== entryId);
 }
@@ -568,12 +568,12 @@ async function commitRename() {
     renamingId.value = null;
     const name = renameValue.value.trim();
     if (!name) return;
-    const res = await api.patch(`/exposure/bundles/${id}`, { name });
+    const res = await api.patch(`/stocks/exposure/bundles/${id}`, { name });
     replaceBundle(res.data);
 }
 
 async function deleteBundle(id) {
-    await api.delete(`/exposure/bundles/${id}`);
+    await api.delete(`/stocks/exposure/bundles/${id}`);
     const idx = bundles.value.findIndex(b => b.id === id);
     bundles.value.splice(idx, 1);
     if (activeId.value === id) {
@@ -590,7 +590,7 @@ function startAddBundle() {
 async function commitNewBundle() {
     addingBundle.value = false;
     const name = newBundleName.value.trim() || `Bundle ${bundles.value.length + 1}`;
-    const res = await api.post('/exposure/bundles', { name });
+    const res = await api.post('/stocks/exposure/bundles', { name });
     bundles.value.push(res.data);
     activeId.value = res.data.id;
 }
@@ -600,7 +600,7 @@ onMounted(async () => {
         const [, stocksRes, portfolioRes] = await Promise.all([
             loadBundles(),
             api.get('/stocks'),
-            api.get('/portfolio'),
+            api.get('/stocks/portfolio'),
         ]);
         stocks.value = stocksRes.data;
         portfolio.value = portfolioRes.data;

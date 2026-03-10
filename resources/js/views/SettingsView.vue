@@ -47,7 +47,7 @@ const discountPercent = ref(Math.round(Number(state.user?.handling_fee_discount 
 
 onMounted(async () => {
     try {
-        const { data } = await api.get('/settings');
+        const { data } = await api.get('/stocks/settings');
         discountPercent.value = Math.round(Number(data.handling_fee_discount ?? 0) * 100);
     } catch {}
 });
@@ -64,7 +64,7 @@ async function save() {
     saved.value = false;
     error.value = '';
     try {
-        const { data } = await api.patch('/settings', {
+        const { data } = await api.patch('/stocks/settings', {
             handling_fee_discount: discountPercent.value / 100,
         });
         updateUser({ handling_fee_discount: data.handling_fee_discount });

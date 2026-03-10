@@ -416,8 +416,8 @@ watch(dark, () => nextTick(() => { renderCharts(); renderLineChart(); }));
 onMounted(async () => {
     try {
         const [portfolio, history] = await Promise.all([
-            api.get('/portfolio'),
-            api.get('/portfolio/history'),
+            api.get('/stocks/portfolio'),
+            api.get('/stocks/portfolio/history'),
         ]);
         positions.value = portfolio.data;
         portfolioHistory.value = history.data;
