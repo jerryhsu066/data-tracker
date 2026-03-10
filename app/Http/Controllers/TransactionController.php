@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -69,9 +70,7 @@ class TransactionController extends Controller
 
     public function update(Request $request, Transaction $transaction): JsonResponse
     {
-        if ($transaction->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('update', $transaction);
 
         $validated = $request->validate([
             'type'             => ['required', Rule::in(['buy', 'sell'])],
@@ -95,11 +94,9 @@ class TransactionController extends Controller
         return response()->json($transaction);
     }
 
-    public function destroy(Request $request, Transaction $transaction): Response
+    public function destroy(Transaction $transaction): Response
     {
-        if ($transaction->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('delete', $transaction);
 
         $transaction->delete();
 
