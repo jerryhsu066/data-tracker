@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\FetchHistoricalPrices;
+use App\Jobs\FetchStockPrice;
 use App\Models\Stock;
 use App\Services\StockPriceService;
 use Illuminate\Http\JsonResponse;
@@ -78,6 +79,7 @@ class StockController extends Controller
 
         foreach ($stocks as $stock) {
             FetchHistoricalPrices::dispatch($stock, $validated['from_date']);
+            FetchStockPrice::dispatch($stock);
         }
 
         return response()->json(['synced' => $stocks->count()]);
