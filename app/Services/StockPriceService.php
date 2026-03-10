@@ -49,23 +49,30 @@ class StockPriceService
             ? round(($price - $previousClose) / $previousClose * 100, 4)
             : 0;
 
+        // Use the actual price data timestamp so "updated X ago" reflects when the
+        // price is FROM (e.g. yesterday's close), not when the fetch was triggered.
+        $priceTime = isset($meta['regularMarketTime'])
+            ? Carbon::createFromTimestamp($meta['regularMarketTime'])
+            : now();
+
         $stock->update([
             'current_price'  => $price,
             'previous_close' => $previousClose,
             'change_percent' => $changePercent,
-            'last_fetched_at' => now(),
+            'last_fetched_at' => $priceTime,
         ]);
 
-        // Only record daily history when the price data is actually from today
-        // (market open or closed). If regularMarketTime is from a previous day
-        // the market hasn't opened yet — skip saving to avoid stale/duplicate entries.
-        $tz = 'Asia/Taipei';
-        $today = now()->timezone($tz)->toDateString();
-        $priceDate = isset($meta['regularMarketTime'])
-            ? Carbon::createFromTimestamp($meta['regularMarketTime'])->timezone($tz)->toDateString()
-            : $today;
+        // Always record today's price so the portfolio chart includes today's data point.
+        if ($price > 0) {
+            $today = now()->timezone('Asia/Taipei')->toDateString();
 
-        if ($price > 0 && $priceDate === $today) {
+            // Restore any soft-deleted record for today before upserting,
+            // otherwise the unique constraint blocks a fresh insert.
+            StockPriceHistory::withTrashed()
+                ->where('stock_id', $stock->id)
+                ->where('date', $today)
+                ->restore();
+
             StockPriceHistory::updateOrCreate(
                 ['stock_id' => $stock->id, 'date' => $today],
                 ['close_price' => $price],
