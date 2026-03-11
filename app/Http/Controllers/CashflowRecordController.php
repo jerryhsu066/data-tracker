@@ -6,6 +6,7 @@ use App\Models\CashflowRecord;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class CashflowRecordController extends Controller
@@ -87,6 +88,57 @@ class CashflowRecordController extends Controller
         $record->update($validated);
 
         return response()->json($record->fresh());
+    }
+
+    public function bulk(Request $request): JsonResponse
+    {
+        $userId = $request->user()->id;
+
+        $validated = $request->validate([
+            'year'             => ['required', 'integer'],
+            'month'            => ['required', 'integer', 'min:1', 'max:12'],
+            'creates'          => ['sometimes', 'array'],
+            'creates.*.type_id'    => ['required', 'integer', Rule::exists('cashflow_types', 'id')->where('user_id', $userId)->whereNull('deleted_at')],
+            'creates.*.subtype_id' => ['nullable', 'integer', Rule::exists('cashflow_subtypes', 'id')->where('user_id', $userId)->whereNull('deleted_at')],
+            'creates.*.amount'     => ['required', 'numeric', 'min:0.01'],
+            'creates.*.note'       => ['nullable', 'string', 'max:500'],
+            'updates'          => ['sometimes', 'array'],
+            'updates.*.id'         => ['required', 'integer'],
+            'updates.*.amount'     => ['required', 'numeric', 'min:0.01'],
+            'updates.*.note'       => ['nullable', 'string', 'max:500'],
+            'deletes'          => ['sometimes', 'array'],
+            'deletes.*'            => ['required', 'integer'],
+        ]);
+
+        $recordedAt = sprintf('%04d-%02d-01', $validated['year'], $validated['month']);
+        $created    = [];
+
+        DB::transaction(function () use ($validated, $userId, $recordedAt, &$created) {
+            if (!empty($validated['deletes'])) {
+                CashflowRecord::whereIn('id', $validated['deletes'])
+                    ->where('user_id', $userId)
+                    ->delete();
+            }
+
+            foreach ($validated['updates'] ?? [] as $u) {
+                CashflowRecord::where('id', $u['id'])
+                    ->where('user_id', $userId)
+                    ->update(['amount' => $u['amount'], 'note' => $u['note'] ?? null]);
+            }
+
+            foreach ($validated['creates'] ?? [] as $c) {
+                $created[] = CashflowRecord::create([
+                    'user_id'     => $userId,
+                    'recorded_at' => $recordedAt,
+                    'type_id'     => $c['type_id'],
+                    'subtype_id'  => $c['subtype_id'] ?? null,
+                    'amount'      => $c['amount'],
+                    'note'        => $c['note'] ?? null,
+                ]);
+            }
+        });
+
+        return response()->json(['created' => $created]);
     }
 
     public function destroy(Request $request, CashflowRecord $record): Response

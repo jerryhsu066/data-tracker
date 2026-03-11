@@ -82,6 +82,7 @@ Route::prefix('cashflow')->middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('records', [CashflowRecordController::class, 'index']);
+    Route::post('records/bulk', [CashflowRecordController::class, 'bulk']);
     Route::post('records', [CashflowRecordController::class, 'store']);
     Route::patch('records/{record}', [CashflowRecordController::class, 'update']);
     Route::delete('records/{record}', [CashflowRecordController::class, 'destroy']);

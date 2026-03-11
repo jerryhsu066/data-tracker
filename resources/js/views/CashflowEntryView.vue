@@ -1,6 +1,15 @@
 <template>
     <div class="max-w-2xl mx-auto px-4 py-8 space-y-4">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Log Cashflow</h1>
+
+        <!-- Header + Save -->
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Log Cashflow</h1>
+            <button
+                @click="saveAll"
+                :disabled="saving"
+                class="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium rounded-md transition-colors"
+            >{{ saving ? 'Saving…' : 'Save' }}</button>
+        </div>
 
         <!-- Month navigation -->
         <div class="flex items-center gap-3">
@@ -15,53 +24,53 @@
             <div v-for="type in visibleTypes" :key="type.id" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
 
                 <!-- Type header -->
-                <div class="flex items-center gap-2 px-5 py-2.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40">
+                <div class="flex items-center gap-2 px-5 py-2.5 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700">
                     <span class="flex-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ type.name }}</span>
                     <span class="text-xs font-medium px-2 py-0.5 rounded-full"
-                        :class="type.is_expense ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'"
+                        :class="type.is_expense
+                            ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                            : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'"
                     >{{ type.is_expense ? 'Expense' : 'Income' }}</span>
                 </div>
 
-                <!-- Rows: one per subtype, or one for the type itself -->
-                <div class="divide-y divide-slate-50 dark:divide-slate-700/60">
-                    <div
-                        v-for="row in typeRows(type)" :key="row.key"
-                        class="flex items-center gap-3 px-5 py-2.5"
-                    >
-                        <!-- Subtype label (only when type has subtypes) -->
-                        <span v-if="row.subtypeId" class="w-32 shrink-0 text-sm text-slate-600 dark:text-slate-300 truncate">{{ row.label }}</span>
+                <!-- Subtype sections (or bare rows if no subtypes) -->
+                <template v-for="section in typeSections(type)" :key="section.key">
 
-                        <!-- Amount -->
+                    <!-- Subtype label row (only when type has subtypes) -->
+                    <div v-if="section.subtypeId" class="flex items-center gap-2 px-5 pt-2.5 pb-1">
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{{ section.label }}</span>
+                    </div>
+
+                    <!-- Entry rows -->
+                    <div
+                        v-for="row in section.rows" :key="row.tempId"
+                        class="flex items-center gap-2 px-5 py-1.5"
+                    >
                         <input
-                            v-model.number="amounts[row.key]"
+                            v-model.number="row.amount"
                             type="number" min="0" step="1" placeholder="0"
                             class="h-8 w-28 shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            @keydown.enter="save(row)"
                         />
-
-                        <!-- Note -->
                         <input
-                            v-model="notes[row.key]"
+                            v-model="row.note"
                             type="text" placeholder="note…"
-                            class="h-8 flex-1 min-w-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            @keydown.enter="save(row)"
+                            class="h-8 flex-1 min-w-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
-
-                        <!-- Save / status -->
-                        <div class="shrink-0 w-14 flex justify-end">
-                            <span v-if="saved[row.key]" class="text-xs font-medium text-emerald-500">Saved ✓</span>
-                            <button
-                                v-else
-                                @click="save(row)"
-                                :disabled="saving[row.key]"
-                                class="px-2.5 py-0.5 text-xs font-medium rounded-md transition-colors disabled:opacity-40"
-                                :class="existing[row.key]
-                                    ? 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200'
-                                    : 'bg-indigo-600 hover:bg-indigo-500 text-white'"
-                            >{{ existing[row.key] ? 'Update' : 'Add' }}</button>
-                        </div>
+                        <button
+                            @click="removeRow(section, row)"
+                            class="shrink-0 w-6 text-slate-300 dark:text-slate-600 hover:text-red-500 transition-colors text-base leading-none"
+                            title="Remove"
+                        >×</button>
                     </div>
-                </div>
+
+                    <!-- Add entry row -->
+                    <div class="px-5 pb-2.5 pt-1">
+                        <button
+                            @click="addRow(section)"
+                            class="text-xs text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+                        >+ add entry</button>
+                    </div>
+                </template>
             </div>
 
             <p v-if="visibleTypes.length === 0" class="text-center py-16 text-slate-400 text-sm">
@@ -83,19 +92,17 @@ const month = ref(now.getMonth() + 1);
 
 const types   = ref([]);
 const loading = ref(true);
+const saving  = ref(false);
 
-// Per-row state keyed by rowKey
-const amounts = reactive({});
-const notes   = reactive({});
-const existing = reactive({}); // rowKey → record id (or null)
-const saving  = reactive({});
-const saved   = reactive({});
+// sections[sectionKey] = { key, typeId, subtypeId, label, rows: [{tempId, id, amount, note}] }
+const sections  = reactive({});
+// IDs of records that were removed from the UI and need to be deleted on save
+const pendingDeletes = ref([]);
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+let tempCounter = 0;
+function nextTempId() { return ++tempCounter; }
 
-function rowKey(typeId, subtypeId) {
-    return `${typeId}-${subtypeId ?? 'x'}`;
-}
+// ── Month navigation ──────────────────────────────────────────────────────────
 
 const monthLabel = computed(() =>
     new Date(year.value, month.value - 1, 1).toLocaleString('en', { year: 'numeric', month: 'long' })
@@ -103,7 +110,6 @@ const monthLabel = computed(() =>
 const isCurrentMonth = computed(() =>
     year.value === now.getFullYear() && month.value === now.getMonth() + 1
 );
-
 function prevMonth() {
     if (month.value === 1) { year.value--; month.value = 12; }
     else month.value--;
@@ -114,41 +120,55 @@ function nextMonth() {
     else month.value++;
 }
 
-const visibleTypes = computed(() =>
-    types.value.filter(t => !t.is_hidden)
-);
+// ── Types / sections ──────────────────────────────────────────────────────────
 
-function visibleSubtypes(type) {
-    return type.subtypes.filter(s => !s.is_hidden);
+const visibleTypes = computed(() => types.value.filter(t => !t.is_hidden));
+
+function sectionKey(typeId, subtypeId) {
+    return `${typeId}-${subtypeId ?? 'x'}`;
 }
 
-function typeRows(type) {
-    const subs = visibleSubtypes(type);
+function typeSections(type) {
+    const subs = type.subtypes.filter(s => !s.is_hidden);
     if (subs.length > 0) {
-        return subs.map(s => ({ key: rowKey(type.id, s.id), typeId: type.id, subtypeId: s.id, label: s.name }));
+        return subs.map(s => sections[sectionKey(type.id, s.id)] ?? { key: sectionKey(type.id, s.id), typeId: type.id, subtypeId: s.id, label: s.name, rows: [] });
     }
-    return [{ key: rowKey(type.id, null), typeId: type.id, subtypeId: null, label: type.name }];
+    const k = sectionKey(type.id, null);
+    return [sections[k] ?? { key: k, typeId: type.id, subtypeId: null, label: type.name, rows: [] }];
 }
 
 // ── Data loading ──────────────────────────────────────────────────────────────
 
-function initRows(recordList) {
-    // Reset state for all rows
-    for (const type of types.value) {
-        for (const row of typeRows(type)) {
-            amounts[row.key] = 0;
-            notes[row.key]   = '';
-            existing[row.key] = null;
-            saving[row.key]  = false;
-            saved[row.key]   = false;
+function buildSections(typeList, recordList) {
+    // Clear existing
+    for (const k of Object.keys(sections)) delete sections[k];
+    pendingDeletes.value = [];
+
+    // Init one section per visible type/subtype
+    for (const type of typeList) {
+        if (type.is_hidden) continue;
+        const subs = type.subtypes.filter(s => !s.is_hidden);
+        const keys = subs.length > 0
+            ? subs.map(s => ({ key: sectionKey(type.id, s.id), subtypeId: s.id, label: s.name }))
+            : [{ key: sectionKey(type.id, null), subtypeId: null, label: type.name }];
+
+        for (const { key, subtypeId, label } of keys) {
+            sections[key] = { key, typeId: type.id, subtypeId, label, rows: [] };
         }
     }
-    // Pre-fill from existing records
+
+    // Populate with existing records
     for (const rec of recordList) {
-        const key = rowKey(rec.type_id, rec.subtype_id);
-        amounts[key]  = Number(rec.amount);
-        notes[key]    = rec.note ?? '';
-        existing[key] = rec.id;
+        const k = sectionKey(rec.type_id, rec.subtype_id);
+        if (!sections[k]) continue; // type/subtype hidden or removed
+        sections[k].rows.push({ tempId: nextTempId(), id: rec.id, amount: Number(rec.amount), note: rec.note ?? '' });
+    }
+
+    // Ensure every section has at least one blank row
+    for (const sec of Object.values(sections)) {
+        if (sec.rows.length === 0) {
+            sec.rows.push({ tempId: nextTempId(), id: null, amount: 0, note: '' });
+        }
     }
 }
 
@@ -160,53 +180,71 @@ async function loadData() {
             api.get('/cashflow/records', { params: { year: year.value, month: month.value } }),
         ]);
         types.value = typesRes.data;
-        initRows(recordsRes.data);
+        buildSections(typesRes.data, recordsRes.data);
     } finally {
         loading.value = false;
     }
 }
 
-async function reloadRecords() {
+watch([year, month], async () => {
     const { data } = await api.get('/cashflow/records', { params: { year: year.value, month: month.value } });
-    initRows(data);
+    buildSections(types.value, data);
+});
+
+// ── Row management ────────────────────────────────────────────────────────────
+
+function addRow(section) {
+    section.rows.push({ tempId: nextTempId(), id: null, amount: 0, note: '' });
 }
 
-watch([year, month], reloadRecords);
+function removeRow(section, row) {
+    section.rows = section.rows.filter(r => r.tempId !== row.tempId);
+    if (row.id) pendingDeletes.value.push(row.id);
+    // Keep at least one blank row
+    if (section.rows.length === 0) {
+        section.rows.push({ tempId: nextTempId(), id: null, amount: 0, note: '' });
+    }
+}
 
 // ── Save ──────────────────────────────────────────────────────────────────────
 
-async function save(row) {
-    saving[row.key] = true;
-    saved[row.key]  = false;
-    const amount    = amounts[row.key] || 0;
-    const note      = notes[row.key] || null;
-    const recordedAt = `${year.value}-${String(month.value).padStart(2, '0')}-01`;
+async function saveAll() {
+    saving.value = true;
+    const creates = [];
+    const updates = [];
+
+    for (const sec of Object.values(sections)) {
+        for (const row of sec.rows) {
+            if (!row.amount || row.amount <= 0) continue;
+            if (row.id) {
+                updates.push({ id: row.id, amount: row.amount, note: row.note || null });
+            } else {
+                creates.push({ type_id: sec.typeId, subtype_id: sec.subtypeId ?? null, amount: row.amount, note: row.note || null });
+            }
+        }
+    }
 
     try {
-        if (existing[row.key]) {
-            if (amount === 0) {
-                await api.delete(`/cashflow/records/${existing[row.key]}`);
-                existing[row.key] = null;
-                amounts[row.key]  = 0;
-                notes[row.key]    = '';
-            } else {
-                const { data } = await api.patch(`/cashflow/records/${existing[row.key]}`, { amount, note });
-                existing[row.key] = data.id;
+        const { data } = await api.post('/cashflow/records/bulk', {
+            year:    year.value,
+            month:   month.value,
+            creates,
+            updates,
+            deletes: pendingDeletes.value,
+        });
+
+        // Assign IDs back to new rows
+        let ci = 0;
+        for (const sec of Object.values(sections)) {
+            for (const row of sec.rows) {
+                if (!row.id && row.amount > 0 && data.created[ci]) {
+                    row.id = data.created[ci++].id;
+                }
             }
-        } else if (amount > 0) {
-            const { data } = await api.post('/cashflow/records', {
-                recorded_at: recordedAt,
-                type_id:     row.typeId,
-                subtype_id:  row.subtypeId ?? null,
-                amount,
-                note,
-            });
-            existing[row.key] = data.id;
         }
-        saved[row.key] = true;
-        setTimeout(() => { saved[row.key] = false; }, 1500);
+        pendingDeletes.value = [];
     } finally {
-        saving[row.key] = false;
+        saving.value = false;
     }
 }
 
