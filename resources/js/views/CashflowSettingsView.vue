@@ -2,7 +2,7 @@
     <div class="max-w-2xl mx-auto px-4 py-8 space-y-4">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Cashflow Settings</h1>
 
-        <!-- Add new type (always on top) -->
+        <!-- Add new type -->
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
             <h2 class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">Add New Type</h2>
             <form @submit.prevent="addType" class="flex gap-2 items-center flex-wrap">
@@ -32,13 +32,30 @@
         <div v-if="loading" class="text-center py-12 text-slate-400">Loading…</div>
 
         <template v-else>
-            <div v-for="type in types" :key="type.id" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
-
+            <div
+                v-for="type in types" :key="type.id"
+                class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden transition-opacity"
+                :class="{
+                    'opacity-40': dragTypeId === type.id,
+                    'ring-2 ring-indigo-400 dark:ring-indigo-500': dragOverTypeId === type.id,
+                }"
+                :draggable="!editingType && !editingSubtype"
+                @dragstart="onTypeDragStart($event, type)"
+                @dragover="onTypeDragOver($event, type)"
+                @dragleave="onTypeDragLeave"
+                @drop="onTypeDrop($event, type)"
+                @dragend="onTypeDragEnd"
+            >
                 <!-- ── Type: view mode ── -->
                 <template v-if="editingType?.id !== type.id">
-                    <div class="flex items-center gap-3 px-5 py-3" :class="type.subtypes.length ? 'border-b border-slate-100 dark:border-slate-700' : ''">
+                    <div class="flex items-center gap-3 px-3 py-3" :class="type.subtypes.length ? 'border-b border-slate-100 dark:border-slate-700' : ''">
+                        <!-- grip handle -->
+                        <span class="text-slate-300 dark:text-slate-600 cursor-grab active:cursor-grabbing shrink-0 select-none">
+                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                            </svg>
+                        </span>
                         <span class="flex-1 font-semibold text-slate-800 dark:text-slate-100">{{ type.name }}</span>
-                        <!-- indicators -->
                         <span v-if="type.is_hidden" class="text-xs text-amber-500 dark:text-amber-400 font-medium">Hidden</span>
                         <span v-if="type.merge_subtypes" class="text-xs text-violet-500 dark:text-violet-400 font-medium">Merged</span>
                         <span
@@ -92,12 +109,29 @@
                 </template>
 
                 <!-- ── Subtypes list ── -->
-                <ul v-if="type.subtypes.length" class="divide-y divide-slate-50 dark:divide-slate-700/60 px-5">
-                    <li v-for="sub in type.subtypes" :key="sub.id" class="flex items-center gap-3 py-2">
-
+                <ul v-if="type.subtypes.length" class="divide-y divide-slate-50 dark:divide-slate-700/60 px-3">
+                    <li
+                        v-for="sub in type.subtypes" :key="sub.id"
+                        class="flex items-center gap-3 py-2 transition-colors"
+                        :class="{
+                            'opacity-40': dragSubInfo?.subId === sub.id,
+                            'bg-indigo-50 dark:bg-indigo-900/20': dragOverSubId === sub.id,
+                        }"
+                        :draggable="!editingSubtype"
+                        @dragstart="onSubDragStart($event, type.id, sub)"
+                        @dragover="onSubDragOver($event, sub)"
+                        @dragleave="onSubDragLeave"
+                        @drop="onSubDrop($event, type, sub)"
+                        @dragend="onSubDragEnd"
+                    >
                         <!-- Subtype: view mode -->
                         <template v-if="editingSubtype?.id !== sub.id">
-                            <span class="flex-1 text-sm text-slate-700 dark:text-slate-300 pl-2">{{ sub.name }}</span>
+                            <span class="text-slate-300 dark:text-slate-600 cursor-grab active:cursor-grabbing shrink-0 select-none">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                </svg>
+                            </span>
+                            <span class="flex-1 text-sm text-slate-700 dark:text-slate-300">{{ sub.name }}</span>
                             <span v-if="sub.is_hidden" class="text-xs text-amber-500 dark:text-amber-400 font-medium">Hidden</span>
                             <button @click="startEditSubtype(sub)" class="text-xs text-slate-400 hover:text-indigo-500 transition-colors">Edit</button>
                         </template>
@@ -107,7 +141,7 @@
                             <input
                                 v-model="editingSubtype.name"
                                 type="text"
-                                class="flex-1 min-w-0 h-7 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ml-2"
+                                class="flex-1 min-w-0 h-7 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ml-1"
                                 @keydown.enter="saveSubtype(type)"
                                 @keydown.escape="cancelEdit"
                             />
@@ -159,17 +193,15 @@ const newTypeIsExpense = ref(true);
 const typeError        = ref('');
 const editingType      = ref(null);
 
-const newSubtypeName  = reactive({});
-const editingSubtype  = ref(null);
+const newSubtypeName   = reactive({});
+const editingSubtype   = ref(null);
 const confirmingDelete = ref(null);
 
 function resetConfirm() { confirmingDelete.value = null; }
-
 watch(confirmingDelete, (val) => {
     if (val) document.addEventListener('click', resetConfirm);
     else     document.removeEventListener('click', resetConfirm);
 });
-
 onUnmounted(() => document.removeEventListener('click', resetConfirm));
 
 onMounted(async () => {
@@ -181,17 +213,14 @@ onMounted(async () => {
     }
 });
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types CRUD ────────────────────────────────────────────────────────────────
 
 async function addType() {
     const name = newTypeName.value.trim();
     if (!name) return;
     typeError.value = '';
     try {
-        const { data } = await api.post('/cashflow/settings/types', {
-            name,
-            is_expense: newTypeIsExpense.value,
-        });
+        const { data } = await api.post('/cashflow/settings/types', { name, is_expense: newTypeIsExpense.value });
         types.value.push(data);
         newTypeName.value = '';
         newTypeIsExpense.value = true;
@@ -203,13 +232,7 @@ async function addType() {
 function startEditType(type) {
     editingSubtype.value = null;
     confirmingDelete.value = null;
-    editingType.value = {
-        id:             type.id,
-        name:           type.name,
-        is_expense:     type.is_expense,
-        is_hidden:      type.is_hidden,
-        merge_subtypes: type.merge_subtypes,
-    };
+    editingType.value = { id: type.id, name: type.name, is_expense: type.is_expense, is_hidden: type.is_hidden, merge_subtypes: type.merge_subtypes };
 }
 
 async function saveType() {
@@ -234,7 +257,7 @@ function cancelEdit() {
     confirmingDelete.value = null;
 }
 
-// ── Subtypes ──────────────────────────────────────────────────────────────────
+// ── Subtypes CRUD ─────────────────────────────────────────────────────────────
 
 async function addSubtype(type) {
     const name = (newSubtypeName[type.id] ?? '').trim();
@@ -264,5 +287,99 @@ async function deleteSubtype(type, id) {
     editingSubtype.value = null;
     await api.delete(`/cashflow/settings/subtypes/${id}`);
     type.subtypes = type.subtypes.filter(s => s.id !== id);
+}
+
+// ── Drag & drop — types ───────────────────────────────────────────────────────
+
+const dragTypeId     = ref(null);
+const dragOverTypeId = ref(null);
+
+function onTypeDragStart(e, type) {
+    dragTypeId.value = type.id;
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function onTypeDragOver(e, type) {
+    if (!dragTypeId.value || dragSubInfo.value) return; // ignore while dragging a subtype
+    if (dragTypeId.value === type.id) return;
+    e.preventDefault();
+    dragOverTypeId.value = type.id;
+}
+
+function onTypeDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) dragOverTypeId.value = null;
+}
+
+async function onTypeDrop(e, targetType) {
+    if (dragSubInfo.value) return; // let subtype drop handler handle it
+    e.preventDefault();
+    const fromId = dragTypeId.value;
+    dragTypeId.value = null;
+    dragOverTypeId.value = null;
+    if (!fromId || fromId === targetType.id) return;
+
+    const fromIdx = types.value.findIndex(t => t.id === fromId);
+    const toIdx   = types.value.findIndex(t => t.id === targetType.id);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const [item] = types.value.splice(fromIdx, 1);
+    types.value.splice(toIdx, 0, item);
+
+    await Promise.all(types.value.map((t, i) =>
+        api.patch(`/cashflow/settings/types/${t.id}`, { sort_order: i })
+    ));
+}
+
+function onTypeDragEnd() {
+    dragTypeId.value = null;
+    dragOverTypeId.value = null;
+}
+
+// ── Drag & drop — subtypes ────────────────────────────────────────────────────
+
+const dragSubInfo   = ref(null); // { typeId, subId }
+const dragOverSubId = ref(null);
+
+function onSubDragStart(e, typeId, sub) {
+    e.stopPropagation();
+    dragSubInfo.value = { typeId, subId: sub.id };
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function onSubDragOver(e, sub) {
+    if (!dragSubInfo.value || dragSubInfo.value.subId === sub.id) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragOverSubId.value = sub.id;
+}
+
+function onSubDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) dragOverSubId.value = null;
+}
+
+async function onSubDrop(e, type, targetSub) {
+    e.preventDefault();
+    e.stopPropagation();
+    const info = dragSubInfo.value;
+    dragSubInfo.value = null;
+    dragOverSubId.value = null;
+    if (!info || info.subId === targetSub.id || info.typeId !== type.id) return;
+
+    const subs    = type.subtypes;
+    const fromIdx = subs.findIndex(s => s.id === info.subId);
+    const toIdx   = subs.findIndex(s => s.id === targetSub.id);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const [item] = subs.splice(fromIdx, 1);
+    subs.splice(toIdx, 0, item);
+
+    await Promise.all(subs.map((s, i) =>
+        api.patch(`/cashflow/settings/subtypes/${s.id}`, { sort_order: i })
+    ));
+}
+
+function onSubDragEnd() {
+    dragSubInfo.value = null;
+    dragOverSubId.value = null;
 }
 </script>
