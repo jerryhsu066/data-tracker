@@ -40,7 +40,7 @@
                         <span class="flex-1 font-semibold text-slate-800 dark:text-slate-100">{{ type.name }}</span>
                         <!-- indicators -->
                         <span v-if="type.is_hidden" class="text-xs text-amber-500 dark:text-amber-400 font-medium">Hidden</span>
-                        <span v-if="type.merge_subtypes" class="text-xs text-indigo-500 dark:text-indigo-400 font-medium">Merged</span>
+                        <span v-if="type.merge_subtypes" class="text-xs text-violet-500 dark:text-violet-400 font-medium">Merged</span>
                         <span
                             class="text-xs font-medium px-2 py-0.5 rounded-full"
                             :class="type.is_expense ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'"
@@ -76,7 +76,7 @@
                         <button
                             type="button"
                             @click="editingType.is_hidden = !editingType.is_hidden"
-                            class="h-8 px-3 text-sm font-medium rounded-md transition-colors"
+                            class="px-2.5 py-0.5 text-xs font-medium rounded-full transition-colors"
                             :class="editingType.is_hidden
                                 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
@@ -84,9 +84,9 @@
                         <button
                             type="button"
                             @click="editingType.merge_subtypes = !editingType.merge_subtypes"
-                            class="h-8 px-3 text-sm font-medium rounded-md transition-colors"
+                            class="px-2.5 py-0.5 text-xs font-medium rounded-full transition-colors"
                             :class="editingType.merge_subtypes
-                                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
+                                ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400'
                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
                         >Merge subtypes</button>
                         <div class="flex-1" />
@@ -127,7 +127,7 @@
                             <button
                                 type="button"
                                 @click="editingSubtype.is_hidden = !editingSubtype.is_hidden"
-                                class="h-8 px-3 text-sm font-medium rounded-md transition-colors shrink-0"
+                                class="px-2.5 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
                                 :class="editingSubtype.is_hidden
                                     ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                                     : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
