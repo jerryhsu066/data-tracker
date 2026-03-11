@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen flex items-center justify-center px-4">
+    <div class="min-h-screen flex items-center justify-center px-4 bg-white dark:bg-slate-900">
         <div class="w-full max-w-sm bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8">
             <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">Welcome back</h1>
             <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">Sign in to your stock tracker</p>

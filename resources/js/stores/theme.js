@@ -1,8 +1,7 @@
 import { ref, watch } from 'vue';
 
 const dark = ref(
-    localStorage.getItem('theme') === 'dark' ||
-    (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+    localStorage.getItem('theme') !== 'light',
 );
 
 function apply() {
