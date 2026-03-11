@@ -4,11 +4,14 @@
         <!-- Header + Save -->
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Log Cashflow</h1>
-            <button
-                @click="saveAll"
-                :disabled="saving"
-                class="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium rounded-md transition-colors"
-            >{{ saving ? 'Saving…' : 'Save' }}</button>
+            <div class="flex items-center gap-3">
+                <span v-if="savedIndicator" class="text-sm font-medium text-emerald-500 dark:text-emerald-400">Saved ✓</span>
+                <button
+                    @click="saveAll"
+                    :disabled="saving"
+                    class="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium rounded-md transition-colors"
+                >{{ saving ? 'Saving…' : 'Save' }}</button>
+            </div>
         </div>
 
         <!-- Month navigation -->
@@ -92,7 +95,8 @@ const month = ref(now.getMonth() + 1);
 
 const types   = ref([]);
 const loading = ref(true);
-const saving  = ref(false);
+const saving         = ref(false);
+const savedIndicator = ref(false);
 
 // sections[sectionKey] = { key, typeId, subtypeId, label, rows: [{tempId, id, amount, note}] }
 const sections  = reactive({});
@@ -243,6 +247,8 @@ async function saveAll() {
             }
         }
         pendingDeletes.value = [];
+        savedIndicator.value = true;
+        setTimeout(() => { savedIndicator.value = false; }, 2000);
     } finally {
         saving.value = false;
     }
