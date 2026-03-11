@@ -28,7 +28,7 @@
         <!-- Empty state -->
         <div v-else-if="positions.length === 0" class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
             <p class="text-slate-400 text-lg">No positions yet.</p>
-            <RouterLink to="/stocks" class="mt-3 inline-block text-indigo-600 hover:underline text-sm">
+            <RouterLink to="/stocks/list" class="mt-3 inline-block text-indigo-600 hover:underline text-sm">
                 Add stocks and record transactions →
             </RouterLink>
         </div>

@@ -103,12 +103,12 @@ const modules = [
         icon: '📈',
         label: 'Stocks',
         links: [
-            { to: '/home', label: 'Home' },
-            { to: '/dashboard', label: 'Portfolio' },
-            { to: '/stocks', label: 'Stocks' },
-            { to: '/transactions', label: 'Transactions' },
-            { to: '/exposure', label: 'Exposure' },
-            { to: '/settings', label: 'Settings' },
+            { to: '/stocks/home', label: 'Home' },
+            { to: '/stocks/dashboard', label: 'Portfolio' },
+            { to: '/stocks/list', label: 'Stocks' },
+            { to: '/stocks/transactions', label: 'Transactions' },
+            { to: '/stocks/exposure', label: 'Exposure' },
+            { to: '/stocks/settings', label: 'Settings' },
         ],
     },
 ];

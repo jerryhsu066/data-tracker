@@ -56,7 +56,7 @@
             <!-- Portfolio summary -->
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Portfolio</h2>
-                <RouterLink to="/dashboard" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Details →</RouterLink>
+                <RouterLink to="/stocks/dashboard" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Details →</RouterLink>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
@@ -81,13 +81,13 @@
             <template v-if="bundlesWithStats.length > 0">
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Exposure Bundles</h2>
-                    <RouterLink to="/exposure" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Manage →</RouterLink>
+                    <RouterLink to="/stocks/exposure" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Manage →</RouterLink>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <RouterLink
                         v-for="b in bundlesWithStats"
                         :key="b.id"
-                        to="/exposure"
+                        to="/stocks/exposure"
                         class="block bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 hover:ring-2 hover:ring-indigo-400 dark:hover:ring-indigo-500 transition-all"
                     >
                         <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">{{ b.name }}</h3>

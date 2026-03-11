@@ -65,7 +65,7 @@ async function submit() {
     loading.value = true;
     try {
         await auth.login(form.value.email, form.value.password);
-        router.push('/home');
+        router.push('/stocks/home');
     } catch (e) {
         if (e.response?.status === 422) errors.value = e.response.data.errors ?? {};
         else generalError.value = e.response?.data?.message ?? 'Login failed.';

@@ -82,7 +82,7 @@ async function submit() {
     loading.value = true;
     try {
         await auth.register(form.value.name, form.value.email, form.value.password, form.value.password_confirmation);
-        router.push('/dashboard');
+        router.push('/stocks/home');
     } catch (e) {
         if (e.response?.status === 422) errors.value = e.response.data.errors ?? {};
     } finally {
