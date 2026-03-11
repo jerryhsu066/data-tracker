@@ -34,7 +34,7 @@
                                         :class="colHeaderClass(col)"
                                     >
                                         <div class="text-xs uppercase tracking-wide opacity-70">{{ col.typeLabel }}</div>
-                                        <div>{{ col.label }}</div>
+                                        <div>{{ col.label }}<span v-if="col.merged" class="ml-1 opacity-50 text-xs normal-case tracking-normal">∑</span></div>
                                     </th>
                                     <th class="px-4 py-3 font-medium text-right text-slate-500 dark:text-slate-400 min-w-32 whitespace-nowrap">
                                         Net
@@ -129,18 +129,38 @@ const cellInput    = ref(null);
 const columns = computed(() => {
     const cols = [];
     for (const type of types.value) {
-        if (type.subtypes.length > 0) {
-            for (const sub of type.subtypes) {
+        if (type.is_hidden) continue;
+
+        const visibleSubs = type.subtypes.filter(s => !s.is_hidden);
+
+        if (visibleSubs.length > 0) {
+            if (type.merge_subtypes) {
+                // One merged column summing all visible subtypes
                 cols.push({
-                    key:       `${type.id}-${sub.id}`,
-                    typeId:    type.id,
-                    subtypeId: sub.id,
-                    typeLabel: type.name,
-                    label:     sub.name,
-                    isExpense: type.is_expense,
+                    key:          `${type.id}-merged`,
+                    typeId:       type.id,
+                    subtypeId:    null,
+                    subtypeIds:   visibleSubs.map(s => s.id), // for aggregation
+                    typeLabel:    type.name,
+                    label:        type.name,
+                    isExpense:    type.is_expense,
+                    merged:       true,
                 });
+            } else {
+                for (const sub of visibleSubs) {
+                    cols.push({
+                        key:       `${type.id}-${sub.id}`,
+                        typeId:    type.id,
+                        subtypeId: sub.id,
+                        typeLabel: type.name,
+                        label:     sub.name,
+                        isExpense: type.is_expense,
+                        merged:    false,
+                    });
+                }
             }
-        } else {
+        } else if (type.subtypes.length === 0) {
+            // Type with no subtypes at all
             cols.push({
                 key:       `${type.id}`,
                 typeId:    type.id,
@@ -148,6 +168,7 @@ const columns = computed(() => {
                 typeLabel: type.name,
                 label:     type.name,
                 isExpense: type.is_expense,
+                merged:    false,
             });
         }
     }
@@ -162,14 +183,25 @@ function getRows(section) {
         const m = maxMonth - i;
         const cells = {};
         for (const col of columns.value) {
-            cells[col.key] = section.records.find(r => {
-                const rm = new Date(r.recorded_at).getMonth() + 1;
-                if (rm !== m) return false;
-                if (r.type_id !== col.typeId) return false;
-                return col.subtypeId !== null
-                    ? r.subtype_id === col.subtypeId
-                    : r.subtype_id === null;
-            }) ?? null;
+            if (col.merged) {
+                // Sum all visible subtype records for this type/month
+                const sum = section.records.reduce((total, r) => {
+                    const rm = new Date(r.recorded_at).getMonth() + 1;
+                    if (rm !== m || r.type_id !== col.typeId) return total;
+                    if (!col.subtypeIds.includes(r.subtype_id)) return total;
+                    return total + Number(r.amount);
+                }, 0);
+                cells[col.key] = sum > 0 ? { amount: sum, _merged: true } : null;
+            } else {
+                cells[col.key] = section.records.find(r => {
+                    const rm = new Date(r.recorded_at).getMonth() + 1;
+                    if (rm !== m) return false;
+                    if (r.type_id !== col.typeId) return false;
+                    return col.subtypeId !== null
+                        ? r.subtype_id === col.subtypeId
+                        : r.subtype_id === null;
+                }) ?? null;
+            }
         }
         return { month: m, cells };
     });
@@ -218,8 +250,10 @@ function colHeaderClass(col) {
 }
 function cellValueClass(row, col) {
     const rec = row.cells[col.key];
-    if (!rec) return 'text-slate-300 dark:text-slate-600 text-xs';
-    return col.isExpense ? 'text-slate-700 dark:text-slate-300' : 'text-emerald-600 dark:text-emerald-400 font-medium';
+    const base = col.merged ? 'cursor-default' : '';
+    if (!rec) return `${base} text-slate-300 dark:text-slate-600 text-xs`;
+    const color = col.isExpense ? 'text-slate-700 dark:text-slate-300' : 'text-emerald-600 dark:text-emerald-400 font-medium';
+    return `${base} ${color} ${col.merged ? 'font-semibold' : ''}`;
 }
 function cellDisplay(row, col) {
     const rec = row.cells[col.key];
@@ -251,6 +285,7 @@ function syncSections() {
 // ── Cell editing ──────────────────────────────────────────────────────────────
 
 function startEdit(section, row, col) {
+    if (col.merged) return; // merged columns are read-only aggregates
     const rec = row.cells[col.key];
     editingCell.value  = { year: section.year, rowMonth: row.month, colKey: col.key };
     editingValue.value = rec ? Number(rec.amount) : 0;

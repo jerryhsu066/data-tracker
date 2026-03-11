@@ -158,4 +158,37 @@ class CashflowSettingsTest extends TestCase
         $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/subtypes/{$subtype->id}")
              ->assertForbidden();
     }
+
+    // ── Visibility ────────────────────────────────────────────────────────────
+
+    public function test_can_hide_type(): void
+    {
+        $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Subscription', 'is_expense' => true]);
+
+        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/types/{$type->id}", ['is_hidden' => true])
+             ->assertOk()->assertJsonFragment(['is_hidden' => true]);
+
+        $this->assertDatabaseHas('cashflow_types', ['id' => $type->id, 'is_hidden' => true]);
+    }
+
+    public function test_can_set_merge_subtypes_on_type(): void
+    {
+        $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Subscription', 'is_expense' => true]);
+
+        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/types/{$type->id}", ['merge_subtypes' => true])
+             ->assertOk()->assertJsonFragment(['merge_subtypes' => true]);
+
+        $this->assertDatabaseHas('cashflow_types', ['id' => $type->id, 'merge_subtypes' => true]);
+    }
+
+    public function test_can_hide_subtype(): void
+    {
+        $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
+        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
+
+        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/subtypes/{$subtype->id}", ['is_hidden' => true])
+             ->assertOk()->assertJsonFragment(['is_hidden' => true]);
+
+        $this->assertDatabaseHas('cashflow_subtypes', ['id' => $subtype->id, 'is_hidden' => true]);
+    }
 }

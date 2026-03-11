@@ -48,9 +48,11 @@ class CashflowSettingsController extends Controller
         }
 
         $validated = $request->validate([
-            'name'       => ['sometimes', 'string', 'max:255'],
-            'is_expense' => ['sometimes', 'boolean'],
-            'sort_order' => ['sometimes', 'integer', 'min:0'],
+            'name'           => ['sometimes', 'string', 'max:255'],
+            'is_expense'     => ['sometimes', 'boolean'],
+            'sort_order'     => ['sometimes', 'integer', 'min:0'],
+            'is_hidden'      => ['sometimes', 'boolean'],
+            'merge_subtypes' => ['sometimes', 'boolean'],
         ]);
 
         $type->update($validated);
@@ -101,6 +103,7 @@ class CashflowSettingsController extends Controller
         $validated = $request->validate([
             'name'       => ['sometimes', 'string', 'max:255'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
+            'is_hidden'  => ['sometimes', 'boolean'],
         ]);
 
         $subtype->update($validated);
