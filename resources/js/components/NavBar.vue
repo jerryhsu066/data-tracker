@@ -111,6 +111,15 @@ const modules = [
             { to: '/stocks/settings', label: 'Settings' },
         ],
     },
+    {
+        id: 'cashflow',
+        icon: '💰',
+        label: 'Cashflow',
+        links: [
+            { to: '/cashflow/home', label: 'Home' },
+            { to: '/cashflow/settings', label: 'Settings' },
+        ],
+    },
 ];
 
 const activeModule = ref('stocks');

@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CashflowRecordController;
+use App\Http\Controllers\CashflowSettingsController;
 use App\Http\Controllers\ExposureBundleController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\SettingsController;
@@ -65,4 +67,24 @@ Route::prefix('stocks')->group(function () {
         Route::post('{symbol}/fetch', [StockController::class, 'fetch']);
         Route::get('{symbol}/transactions', [StockController::class, 'transactions']);
     });
+});
+
+// Cashflow module
+Route::prefix('cashflow')->middleware('auth:sanctum')->group(function () {
+    Route::prefix('settings')->group(function () {
+        Route::get('companies', [CashflowSettingsController::class, 'listCompanies']);
+        Route::post('companies', [CashflowSettingsController::class, 'createCompany']);
+        Route::patch('companies/{company}', [CashflowSettingsController::class, 'updateCompany']);
+        Route::delete('companies/{company}', [CashflowSettingsController::class, 'deleteCompany']);
+
+        Route::get('banks', [CashflowSettingsController::class, 'listBanks']);
+        Route::post('banks', [CashflowSettingsController::class, 'createBank']);
+        Route::patch('banks/{bank}', [CashflowSettingsController::class, 'updateBank']);
+        Route::delete('banks/{bank}', [CashflowSettingsController::class, 'deleteBank']);
+    });
+
+    Route::get('records', [CashflowRecordController::class, 'index']);
+    Route::post('records', [CashflowRecordController::class, 'store']);
+    Route::patch('records/{record}', [CashflowRecordController::class, 'update']);
+    Route::delete('records/{record}', [CashflowRecordController::class, 'destroy']);
 });
