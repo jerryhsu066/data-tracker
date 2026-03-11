@@ -14,15 +14,18 @@ class CashflowRecordController extends Controller
     {
         $request->validate([
             'year'  => ['required', 'integer'],
-            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'month' => ['sometimes', 'integer', 'min:1', 'max:12'],
         ]);
 
-        $records = CashflowRecord::with(['company', 'bank'])
+        $query = CashflowRecord::with(['company', 'bank'])
             ->where('user_id', $request->user()->id)
-            ->whereYear('recorded_at', $request->year)
-            ->whereMonth('recorded_at', $request->month)
-            ->orderBy('recorded_at')
-            ->get();
+            ->whereYear('recorded_at', $request->year);
+
+        if ($request->filled('month')) {
+            $query->whereMonth('recorded_at', $request->month);
+        }
+
+        $records = $query->orderBy('recorded_at')->get();
 
         return response()->json($records);
     }
