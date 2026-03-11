@@ -139,7 +139,7 @@
                             <span class="flex-1 text-sm text-slate-700 dark:text-slate-300">{{ sub.name }}</span>
                             <span v-if="sub.is_disabled" class="text-xs text-amber-500 dark:text-amber-400 font-medium">Disabled</span>
                             <span v-if="!sub.is_private" class="text-xs text-sky-500 dark:text-sky-400 font-medium">Always visible</span>
-                            <button @click="startEditSubtype(sub)" class="text-xs text-slate-400 hover:text-indigo-500 transition-colors">Edit</button>
+                            <button @click="startEditSubtype(type, sub)" class="text-xs text-slate-400 hover:text-indigo-500 transition-colors">Edit</button>
                         </template>
 
                         <!-- Subtype: edit mode -->
@@ -155,9 +155,16 @@
                                 class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
                                 :class="editingSubtype.is_disabled ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
                             >Disabled</button>
-                            <button type="button" @click="editingSubtype.is_private = !editingSubtype.is_private"
+                            <button type="button"
+                                @click="!editingSubtype.parentMerged && (editingSubtype.is_private = !editingSubtype.is_private)"
                                 class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
-                                :class="editingSubtype.is_private ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                                :disabled="editingSubtype.parentMerged"
+                                :class="editingSubtype.parentMerged
+                                    ? 'bg-slate-100 dark:bg-slate-700 text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                                    : editingSubtype.is_private
+                                        ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400'
+                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                                :title="editingSubtype.parentMerged ? 'Controlled by parent type' : ''"
                             >Private</button>
                             <button @click="saveSubtype(type)"
                                 class="px-2.5 py-0.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors shrink-0"
@@ -284,10 +291,16 @@ async function addSubtype(type) {
     newSubtypeName[type.id] = '';
 }
 
-function startEditSubtype(sub) {
+function startEditSubtype(type, sub) {
     editingType.value = null;
     confirmingDelete.value = null;
-    editingSubtype.value = { id: sub.id, name: sub.name, is_disabled: sub.is_disabled, is_private: sub.is_private };
+    editingSubtype.value = {
+        id: sub.id,
+        name: sub.name,
+        is_disabled: sub.is_disabled,
+        is_private: sub.is_private,
+        parentMerged: type.merge_subtypes,
+    };
 }
 
 async function saveSubtype(type) {

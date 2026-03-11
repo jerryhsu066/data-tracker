@@ -58,7 +58,13 @@ class CashflowSettingsController extends Controller
 
         $type->update($validated);
 
-        return response()->json($type->load('subtypes'));
+        // Cascade is_disabled and is_private down to all subtypes
+        $cascade = array_intersect_key($validated, array_flip(['is_disabled', 'is_private']));
+        if (!empty($cascade)) {
+            CashflowSubtype::where('type_id', $type->id)->whereNull('deleted_at')->update($cascade);
+        }
+
+        return response()->json($type->fresh()->load('subtypes'));
     }
 
     public function deleteType(Request $request, CashflowType $type): Response
