@@ -4,22 +4,6 @@
             <!-- App name -->
             <span class="font-bold text-base tracking-tight text-white select-none">data-tracker</span>
 
-            <!-- Module selector (desktop only) -->
-            <div class="hidden md:flex items-center gap-1">
-                <button
-                    v-for="mod in modules"
-                    :key="mod.id"
-                    @click="activeModule = mod.id"
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-                    :class="activeModule === mod.id
-                        ? 'bg-indigo-600 text-white'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-700'"
-                >
-                    <span>{{ mod.icon }}</span>
-                    <span>{{ mod.label }}</span>
-                </button>
-            </div>
-
             <!-- User controls -->
             <div class="flex items-center gap-2 sm:gap-3">
                 <span class="hidden sm:block text-slate-400 text-sm">{{ auth.state.user?.name }}</span>
@@ -63,20 +47,32 @@
 
         <!-- Mobile menu dropdown -->
         <div v-if="mobileMenuOpen" class="md:hidden bg-slate-800 border-t border-slate-700">
-            <div class="px-3 py-2 flex flex-col gap-0.5">
-                <RouterLink
-                    v-for="link in activeLinks"
-                    :key="link.to"
-                    :to="link.to"
-                    class="px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
-                    active-class="text-white bg-slate-700"
-                    @click="mobileMenuOpen = false"
-                >
-                    {{ link.label }}
-                </RouterLink>
+            <div class="px-3 py-2">
+                <div v-for="mod in modules" :key="mod.id" class="mb-3">
+                    <RouterLink
+                        :to="mod.home"
+                        class="flex items-center gap-1.5 px-3 py-1.5 mb-0.5 rounded-md text-sm font-semibold text-slate-200 hover:text-white hover:bg-slate-700 transition-colors"
+                        @click="mobileMenuOpen = false"
+                    >
+                        <span class="leading-none">{{ mod.icon }}</span>
+                        <span>{{ mod.label }}</span>
+                    </RouterLink>
+                    <div class="flex flex-col gap-0.5 pl-3">
+                        <RouterLink
+                            v-for="link in mod.links"
+                            :key="link.to"
+                            :to="link.to"
+                            class="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                            active-class="text-white bg-slate-700"
+                            @click="mobileMenuOpen = false"
+                        >
+                            {{ link.label }}
+                        </RouterLink>
+                    </div>
+                </div>
                 <button
                     @click="handleLogout"
-                    class="sm:hidden text-left px-3 py-2.5 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors mt-1 border-t border-slate-700"
+                    class="sm:hidden w-full text-left px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors mt-1 border-t border-slate-700 pt-3"
                 >Logout</button>
             </div>
         </div>
@@ -84,60 +80,19 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref } from 'vue';
 import { useAuth } from '../stores/auth';
 import { useTheme } from '../stores/theme';
 import { usePrivacy } from '../stores/privacy';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
+import { modules } from '../navigation';
 
 const auth = useAuth();
 const theme = useTheme();
 const privacy = usePrivacy();
 const router = useRouter();
-const route  = useRoute();
 
 const mobileMenuOpen = ref(false);
-
-const modules = [
-    {
-        id: 'stocks',
-        icon: '📈',
-        label: 'Stocks',
-        links: [
-            { to: '/stocks/home', label: 'Home' },
-            { to: '/stocks/dashboard', label: 'Portfolio' },
-            { to: '/stocks/list', label: 'Stocks' },
-            { to: '/stocks/transactions', label: 'Transactions' },
-            { to: '/stocks/exposure', label: 'Exposure' },
-            { to: '/stocks/settings', label: 'Settings' },
-        ],
-    },
-    {
-        id: 'cashflow',
-        icon: '💰',
-        label: 'Cashflow',
-        links: [
-            { to: '/cashflow/home', label: 'Home' },
-            { to: '/cashflow/enter', label: 'Enter' },
-            { to: '/cashflow/overview', label: 'Overview' },
-            { to: '/cashflow/settings', label: 'Settings' },
-        ],
-    },
-];
-
-function moduleFromPath(path) {
-    if (path.startsWith('/cashflow')) return 'cashflow';
-    return 'stocks';
-}
-
-const activeModule = ref(moduleFromPath(route.path));
-watch(() => route.path, (path) => { activeModule.value = moduleFromPath(path); });
-
-const activeLinks = computed(() =>
-    modules.find(m => m.id === activeModule.value)?.links ?? []
-);
-
-defineExpose({ activeLinks });
 
 async function handleLogout() {
     mobileMenuOpen.value = false;
