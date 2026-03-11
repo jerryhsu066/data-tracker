@@ -84,16 +84,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useAuth } from '../stores/auth';
 import { useTheme } from '../stores/theme';
 import { usePrivacy } from '../stores/privacy';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
 const auth = useAuth();
 const theme = useTheme();
 const privacy = usePrivacy();
 const router = useRouter();
+const route  = useRoute();
 
 const mobileMenuOpen = ref(false);
 
@@ -124,7 +125,13 @@ const modules = [
     },
 ];
 
-const activeModule = ref('stocks');
+function moduleFromPath(path) {
+    if (path.startsWith('/cashflow')) return 'cashflow';
+    return 'stocks';
+}
+
+const activeModule = ref(moduleFromPath(route.path));
+watch(() => route.path, (path) => { activeModule.value = moduleFromPath(path); });
 
 const activeLinks = computed(() =>
     modules.find(m => m.id === activeModule.value)?.links ?? []
