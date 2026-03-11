@@ -55,7 +55,7 @@
                         <input
                             v-model="editingType.name"
                             type="text"
-                            class="flex-1 min-w-0 h-8 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            class="flex-1 min-w-0 h-7 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             @keydown.enter="saveType"
                             @keydown.escape="cancelEdit"
                         />
@@ -77,13 +77,17 @@
                             class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
                             :class="editingType.merge_subtypes ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
                         >Merge</button>
-                        <button @click="saveType" class="text-xs font-medium text-indigo-600 hover:text-indigo-500 shrink-0">Save</button>
+                        <button @click="saveType"
+                            class="px-2.5 py-0.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors shrink-0"
+                        >Save</button>
                         <button
                             @click.stop="confirmingDelete === `type-${editingType.id}` ? deleteType(editingType.id) : (confirmingDelete = `type-${editingType.id}`)"
-                            class="text-xs font-medium transition-colors shrink-0"
-                            :class="confirmingDelete === `type-${editingType.id}` ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-red-500'"
+                            class="px-2.5 py-0.5 text-xs font-medium text-white rounded-md transition-colors shrink-0"
+                            :class="confirmingDelete === `type-${editingType.id}` ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-red-500 hover:bg-red-600'"
                         >{{ confirmingDelete === `type-${editingType.id}` ? 'Confirm?' : 'Delete' }}</button>
-                        <button @click="cancelEdit" class="text-xs text-slate-400 hover:text-slate-600 shrink-0">Cancel</button>
+                        <button @click="cancelEdit"
+                            class="px-2.5 py-0.5 text-xs font-medium bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md transition-colors shrink-0"
+                        >Cancel</button>
                     </div>
                 </template>
 
@@ -111,13 +115,17 @@
                                 class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
                                 :class="editingSubtype.is_hidden ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
                             >Hidden</button>
-                            <button @click="saveSubtype(type)" class="text-xs font-medium text-indigo-600 hover:text-indigo-500 shrink-0">Save</button>
+                            <button @click="saveSubtype(type)"
+                                class="px-2.5 py-0.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors shrink-0"
+                            >Save</button>
                             <button
                                 @click.stop="confirmingDelete === `sub-${editingSubtype.id}` ? deleteSubtype(type, editingSubtype.id) : (confirmingDelete = `sub-${editingSubtype.id}`)"
-                                class="text-xs font-medium transition-colors shrink-0"
-                                :class="confirmingDelete === `sub-${editingSubtype.id}` ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-red-500'"
+                                class="px-2.5 py-0.5 text-xs font-medium text-white rounded-md transition-colors shrink-0"
+                                :class="confirmingDelete === `sub-${editingSubtype.id}` ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-red-500 hover:bg-red-600'"
                             >{{ confirmingDelete === `sub-${editingSubtype.id}` ? 'Confirm?' : 'Delete' }}</button>
-                            <button @click="cancelEdit" class="text-xs text-slate-400 hover:text-slate-600 shrink-0">Cancel</button>
+                            <button @click="cancelEdit"
+                                class="px-2.5 py-0.5 text-xs font-medium bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md transition-colors shrink-0"
+                            >Cancel</button>
                         </template>
                     </li>
                 </ul>
