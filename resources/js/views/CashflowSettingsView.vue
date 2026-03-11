@@ -51,7 +51,7 @@
 
                 <!-- ── Type: edit mode ── -->
                 <template v-else>
-                    <!-- Row 1: name + income/expense + save/cancel -->
+                    <!-- Row 1: name + income/expense toggle -->
                     <div class="flex items-center gap-3 px-5 py-3 border-b border-slate-100 dark:border-slate-700">
                         <input
                             v-model="editingType.name"
@@ -70,43 +70,37 @@
                                 :class="editingType.is_expense ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'"
                             >Expense</button>
                         </div>
-                        <button @click="saveType" class="text-xs font-medium text-indigo-600 hover:text-indigo-500">Save</button>
-                        <button @click="cancelEdit" class="text-xs text-slate-400 hover:text-slate-600">Cancel</button>
                     </div>
-                    <!-- Row 2: hidden + merge + delete -->
-                    <div class="flex items-center gap-4 px-5 py-2 bg-slate-50 dark:bg-slate-700/30 border-b border-slate-100 dark:border-slate-700">
+                    <!-- Row 2: hidden + merge toggles + Save/Delete/Cancel -->
+                    <div class="flex items-center gap-2 px-5 py-2.5 bg-slate-50 dark:bg-slate-700/30 border-b border-slate-100 dark:border-slate-700">
                         <button
                             type="button"
                             @click="editingType.is_hidden = !editingType.is_hidden"
-                            class="flex items-center gap-1.5 text-xs transition-colors"
-                            :class="editingType.is_hidden ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'"
-                        >
-                            <span class="w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors"
-                                :class="editingType.is_hidden ? 'border-amber-500 bg-amber-500 text-white' : 'border-slate-300 dark:border-slate-600'"
-                            >
-                                <svg v-if="editingType.is_hidden" class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/></svg>
-                            </span>
-                            Hidden
-                        </button>
+                            class="h-8 px-3 text-sm font-medium rounded-md transition-colors"
+                            :class="editingType.is_hidden
+                                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                        >Hidden</button>
                         <button
                             type="button"
                             @click="editingType.merge_subtypes = !editingType.merge_subtypes"
-                            class="flex items-center gap-1.5 text-xs transition-colors"
-                            :class="editingType.merge_subtypes ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'"
-                        >
-                            <span class="w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors"
-                                :class="editingType.merge_subtypes ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300 dark:border-slate-600'"
-                            >
-                                <svg v-if="editingType.merge_subtypes" class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/></svg>
-                            </span>
-                            Merge subtypes
-                        </button>
+                            class="h-8 px-3 text-sm font-medium rounded-md transition-colors"
+                            :class="editingType.merge_subtypes
+                                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
+                                : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                        >Merge subtypes</button>
                         <div class="flex-1" />
+                        <button @click="saveType"
+                            class="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors"
+                        >Save</button>
                         <button
                             @click.stop="confirmingDelete === `type-${editingType.id}` ? deleteType(editingType.id) : (confirmingDelete = `type-${editingType.id}`)"
-                            class="text-xs font-medium transition-colors"
-                            :class="confirmingDelete === `type-${editingType.id}` ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-red-500'"
-                        >{{ confirmingDelete === `type-${editingType.id}` ? 'Confirm delete?' : 'Delete' }}</button>
+                            class="h-8 px-3 text-white text-sm font-medium rounded-md transition-colors"
+                            :class="confirmingDelete === `type-${editingType.id}` ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-red-500 hover:bg-red-600'"
+                        >{{ confirmingDelete === `type-${editingType.id}` ? 'Confirm?' : 'Delete' }}</button>
+                        <button @click="cancelEdit"
+                            class="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors"
+                        >Cancel</button>
                     </div>
                 </template>
 
@@ -133,23 +127,22 @@
                             <button
                                 type="button"
                                 @click="editingSubtype.is_hidden = !editingSubtype.is_hidden"
-                                class="flex items-center gap-1 text-xs transition-colors shrink-0"
-                                :class="editingSubtype.is_hidden ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'"
-                            >
-                                <span class="w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors"
-                                    :class="editingSubtype.is_hidden ? 'border-amber-500 bg-amber-500 text-white' : 'border-slate-300 dark:border-slate-600'"
-                                >
-                                    <svg v-if="editingSubtype.is_hidden" class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/></svg>
-                                </span>
-                                Hidden
-                            </button>
-                            <button @click="saveSubtype(type)" class="text-xs font-medium text-indigo-600 hover:text-indigo-500 shrink-0">Save</button>
-                            <button @click="cancelEdit" class="text-xs text-slate-400 hover:text-slate-600 shrink-0">Cancel</button>
+                                class="h-8 px-3 text-sm font-medium rounded-md transition-colors shrink-0"
+                                :class="editingSubtype.is_hidden
+                                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                            >Hidden</button>
+                            <button @click="saveSubtype(type)"
+                                class="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors shrink-0"
+                            >Save</button>
                             <button
                                 @click.stop="confirmingDelete === `sub-${editingSubtype.id}` ? deleteSubtype(type, editingSubtype.id) : (confirmingDelete = `sub-${editingSubtype.id}`)"
-                                class="text-xs font-medium transition-colors shrink-0"
-                                :class="confirmingDelete === `sub-${editingSubtype.id}` ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-red-500'"
+                                class="h-8 px-3 text-white text-sm font-medium rounded-md transition-colors shrink-0"
+                                :class="confirmingDelete === `sub-${editingSubtype.id}` ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-red-500 hover:bg-red-600'"
                             >{{ confirmingDelete === `sub-${editingSubtype.id}` ? 'Confirm?' : 'Delete' }}</button>
+                            <button @click="cancelEdit"
+                                class="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors shrink-0"
+                            >Cancel</button>
                         </template>
                     </li>
                 </ul>
