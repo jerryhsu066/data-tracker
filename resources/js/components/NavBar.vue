@@ -117,6 +117,7 @@ const modules = [
         label: 'Cashflow',
         links: [
             { to: '/cashflow/home', label: 'Home' },
+            { to: '/cashflow/enter', label: 'Enter' },
             { to: '/cashflow/overview', label: 'Overview' },
             { to: '/cashflow/settings', label: 'Settings' },
         ],
