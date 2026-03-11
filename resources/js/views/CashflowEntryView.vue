@@ -53,6 +53,7 @@
                             v-model.number="row.amount"
                             type="number" min="0" step="1" placeholder="0"
                             class="h-8 w-28 shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            :class="{ 'blur-sm select-none': privacy.hidden.value && sectionIsPrivate(type, section) }"
                         />
                         <input
                             v-model="row.note"
@@ -88,6 +89,9 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import api from '../api';
+import { usePrivacy } from '../stores/privacy';
+
+const privacy = usePrivacy();
 
 const now   = new Date();
 const year  = ref(now.getFullYear());
@@ -126,14 +130,20 @@ function nextMonth() {
 
 // ── Types / sections ──────────────────────────────────────────────────────────
 
-const visibleTypes = computed(() => types.value.filter(t => !t.is_hidden));
+const visibleTypes = computed(() => types.value.filter(t => !t.is_disabled));
 
 function sectionKey(typeId, subtypeId) {
     return `${typeId}-${subtypeId ?? 'x'}`;
 }
 
+function sectionIsPrivate(type, section) {
+    if (!section.subtypeId) return type.is_private;
+    const sub = type.subtypes.find(s => s.id === section.subtypeId);
+    return sub ? sub.is_private : type.is_private;
+}
+
 function typeSections(type) {
-    const subs = type.subtypes.filter(s => !s.is_hidden);
+    const subs = type.subtypes.filter(s => !s.is_disabled);
     if (subs.length > 0) {
         return subs.map(s => sections[sectionKey(type.id, s.id)] ?? { key: sectionKey(type.id, s.id), typeId: type.id, subtypeId: s.id, label: s.name, rows: [] });
     }
@@ -150,8 +160,8 @@ function buildSections(typeList, recordList) {
 
     // Init one section per visible type/subtype
     for (const type of typeList) {
-        if (type.is_hidden) continue;
-        const subs = type.subtypes.filter(s => !s.is_hidden);
+        if (type.is_disabled) continue;
+        const subs = type.subtypes.filter(s => !s.is_disabled);
         const keys = subs.length > 0
             ? subs.map(s => ({ key: sectionKey(type.id, s.id), subtypeId: s.id, label: s.name }))
             : [{ key: sectionKey(type.id, null), subtypeId: null, label: type.name }];

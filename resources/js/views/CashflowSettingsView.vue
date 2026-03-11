@@ -56,7 +56,8 @@
                             </svg>
                         </span>
                         <span class="flex-1 font-semibold text-slate-800 dark:text-slate-100">{{ type.name }}</span>
-                        <span v-if="type.is_hidden" class="text-xs text-amber-500 dark:text-amber-400 font-medium">Hidden</span>
+                        <span v-if="type.is_disabled" class="text-xs text-amber-500 dark:text-amber-400 font-medium">Disabled</span>
+                        <span v-if="!type.is_private" class="text-xs text-sky-500 dark:text-sky-400 font-medium">Always visible</span>
                         <span v-if="type.merge_subtypes" class="text-xs text-violet-500 dark:text-violet-400 font-medium">Merged</span>
                         <span
                             class="text-xs font-medium px-2 py-0.5 rounded-full"
@@ -86,10 +87,14 @@
                                 :class="editingType.is_expense ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'"
                             >Expense</button>
                         </div>
-                        <button type="button" @click="editingType.is_hidden = !editingType.is_hidden"
+                        <button type="button" @click="editingType.is_disabled = !editingType.is_disabled"
                             class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
-                            :class="editingType.is_hidden ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
-                        >Hidden</button>
+                            :class="editingType.is_disabled ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                        >Disabled</button>
+                        <button type="button" @click="editingType.is_private = !editingType.is_private"
+                            class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
+                            :class="editingType.is_private ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                        >Private</button>
                         <button type="button" @click="editingType.merge_subtypes = !editingType.merge_subtypes"
                             class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
                             :class="editingType.merge_subtypes ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
@@ -132,7 +137,8 @@
                                 </svg>
                             </span>
                             <span class="flex-1 text-sm text-slate-700 dark:text-slate-300">{{ sub.name }}</span>
-                            <span v-if="sub.is_hidden" class="text-xs text-amber-500 dark:text-amber-400 font-medium">Hidden</span>
+                            <span v-if="sub.is_disabled" class="text-xs text-amber-500 dark:text-amber-400 font-medium">Disabled</span>
+                            <span v-if="!sub.is_private" class="text-xs text-sky-500 dark:text-sky-400 font-medium">Always visible</span>
                             <button @click="startEditSubtype(sub)" class="text-xs text-slate-400 hover:text-indigo-500 transition-colors">Edit</button>
                         </template>
 
@@ -145,10 +151,14 @@
                                 @keydown.enter="saveSubtype(type)"
                                 @keydown.escape="cancelEdit"
                             />
-                            <button type="button" @click="editingSubtype.is_hidden = !editingSubtype.is_hidden"
+                            <button type="button" @click="editingSubtype.is_disabled = !editingSubtype.is_disabled"
                                 class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
-                                :class="editingSubtype.is_hidden ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
-                            >Hidden</button>
+                                :class="editingSubtype.is_disabled ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                            >Disabled</button>
+                            <button type="button" @click="editingSubtype.is_private = !editingSubtype.is_private"
+                                class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
+                                :class="editingSubtype.is_private ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                            >Private</button>
                             <button @click="saveSubtype(type)"
                                 class="px-2.5 py-0.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors shrink-0"
                             >Save</button>
@@ -232,14 +242,21 @@ async function addType() {
 function startEditType(type) {
     editingSubtype.value = null;
     confirmingDelete.value = null;
-    editingType.value = { id: type.id, name: type.name, is_expense: type.is_expense, is_hidden: type.is_hidden, merge_subtypes: type.merge_subtypes };
+    editingType.value = {
+        id: type.id,
+        name: type.name,
+        is_expense: type.is_expense,
+        is_disabled: type.is_disabled,
+        is_private: type.is_private,
+        merge_subtypes: type.merge_subtypes,
+    };
 }
 
 async function saveType() {
     if (!editingType.value) return;
-    const { id, name, is_expense, is_hidden, merge_subtypes } = editingType.value;
+    const { id, name, is_expense, is_disabled, is_private, merge_subtypes } = editingType.value;
     editingType.value = null;
-    const { data } = await api.patch(`/cashflow/settings/types/${id}`, { name, is_expense, is_hidden, merge_subtypes });
+    const { data } = await api.patch(`/cashflow/settings/types/${id}`, { name, is_expense, is_disabled, is_private, merge_subtypes });
     const idx = types.value.findIndex(t => t.id === id);
     if (idx !== -1) types.value[idx] = { ...types.value[idx], ...data };
 }
@@ -270,14 +287,14 @@ async function addSubtype(type) {
 function startEditSubtype(sub) {
     editingType.value = null;
     confirmingDelete.value = null;
-    editingSubtype.value = { id: sub.id, name: sub.name, is_hidden: sub.is_hidden };
+    editingSubtype.value = { id: sub.id, name: sub.name, is_disabled: sub.is_disabled, is_private: sub.is_private };
 }
 
 async function saveSubtype(type) {
     if (!editingSubtype.value) return;
-    const { id, name, is_hidden } = editingSubtype.value;
+    const { id, name, is_disabled, is_private } = editingSubtype.value;
     editingSubtype.value = null;
-    const { data } = await api.patch(`/cashflow/settings/subtypes/${id}`, { name, is_hidden });
+    const { data } = await api.patch(`/cashflow/settings/subtypes/${id}`, { name, is_disabled, is_private });
     const idx = type.subtypes.findIndex(s => s.id === id);
     if (idx !== -1) type.subtypes[idx] = { ...type.subtypes[idx], ...data };
 }
@@ -300,7 +317,7 @@ function onTypeDragStart(e, type) {
 }
 
 function onTypeDragOver(e, type) {
-    if (!dragTypeId.value || dragSubInfo.value) return; // ignore while dragging a subtype
+    if (!dragTypeId.value || dragSubInfo.value) return;
     if (dragTypeId.value === type.id) return;
     e.preventDefault();
     dragOverTypeId.value = type.id;
@@ -311,7 +328,7 @@ function onTypeDragLeave(e) {
 }
 
 async function onTypeDrop(e, targetType) {
-    if (dragSubInfo.value) return; // let subtype drop handler handle it
+    if (dragSubInfo.value) return;
     e.preventDefault();
     const fromId = dragTypeId.value;
     dragTypeId.value = null;
@@ -337,7 +354,7 @@ function onTypeDragEnd() {
 
 // ── Drag & drop — subtypes ────────────────────────────────────────────────────
 
-const dragSubInfo   = ref(null); // { typeId, subId }
+const dragSubInfo   = ref(null);
 const dragOverSubId = ref(null);
 
 function onSubDragStart(e, typeId, sub) {

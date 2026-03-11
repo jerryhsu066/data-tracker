@@ -159,16 +159,26 @@ class CashflowSettingsTest extends TestCase
              ->assertForbidden();
     }
 
-    // ── Visibility ────────────────────────────────────────────────────────────
+    // ── Visibility / Privacy ──────────────────────────────────────────────────
 
-    public function test_can_hide_type(): void
+    public function test_can_disable_type(): void
     {
         $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Subscription', 'is_expense' => true]);
 
-        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/types/{$type->id}", ['is_hidden' => true])
-             ->assertOk()->assertJsonFragment(['is_hidden' => true]);
+        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/types/{$type->id}", ['is_disabled' => true])
+             ->assertOk()->assertJsonFragment(['is_disabled' => true]);
 
-        $this->assertDatabaseHas('cashflow_types', ['id' => $type->id, 'is_hidden' => true]);
+        $this->assertDatabaseHas('cashflow_types', ['id' => $type->id, 'is_disabled' => true]);
+    }
+
+    public function test_can_set_private_on_type(): void
+    {
+        $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Subscription', 'is_expense' => true]);
+
+        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/types/{$type->id}", ['is_private' => false])
+             ->assertOk()->assertJsonFragment(['is_private' => false]);
+
+        $this->assertDatabaseHas('cashflow_types', ['id' => $type->id, 'is_private' => false]);
     }
 
     public function test_can_set_merge_subtypes_on_type(): void
@@ -181,14 +191,25 @@ class CashflowSettingsTest extends TestCase
         $this->assertDatabaseHas('cashflow_types', ['id' => $type->id, 'merge_subtypes' => true]);
     }
 
-    public function test_can_hide_subtype(): void
+    public function test_can_disable_subtype(): void
     {
         $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
         $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
 
-        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/subtypes/{$subtype->id}", ['is_hidden' => true])
-             ->assertOk()->assertJsonFragment(['is_hidden' => true]);
+        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/subtypes/{$subtype->id}", ['is_disabled' => true])
+             ->assertOk()->assertJsonFragment(['is_disabled' => true]);
 
-        $this->assertDatabaseHas('cashflow_subtypes', ['id' => $subtype->id, 'is_hidden' => true]);
+        $this->assertDatabaseHas('cashflow_subtypes', ['id' => $subtype->id, 'is_disabled' => true]);
+    }
+
+    public function test_can_set_private_on_subtype(): void
+    {
+        $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
+        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
+
+        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/subtypes/{$subtype->id}", ['is_private' => false])
+             ->assertOk()->assertJsonFragment(['is_private' => false]);
+
+        $this->assertDatabaseHas('cashflow_subtypes', ['id' => $subtype->id, 'is_private' => false]);
     }
 }

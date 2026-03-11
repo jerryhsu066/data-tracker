@@ -10,9 +10,9 @@ class CashflowSubtype extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['type_id', 'user_id', 'name', 'sort_order', 'is_hidden'];
+    protected $fillable = ['type_id', 'user_id', 'name', 'sort_order', 'is_disabled', 'is_private'];
 
-    protected $casts = ['is_hidden' => 'boolean'];
+    protected $casts = ['is_disabled' => 'boolean', 'is_private' => 'boolean'];
 
     public function type(): BelongsTo
     {
