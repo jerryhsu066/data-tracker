@@ -25,29 +25,19 @@
             <form @submit.prevent="addRecord" class="flex flex-wrap gap-3 items-end">
                 <div>
                     <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Type</label>
-                    <select v-model="form.type" class="h-9 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="income">Income</option>
-                        <option value="rent">Rent</option>
-                        <option value="credit_card">Credit Card</option>
-                        <option value="other">Other</option>
+                    <select v-model="form.type_id" class="h-9 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="" disabled>Select type…</option>
+                        <option v-for="t in types" :key="t.id" :value="t.id">{{ t.name }}</option>
                     </select>
-                    <p class="h-[1.1rem]"></p>
+                    <p class="h-[1.1rem] text-xs text-red-500">{{ formErrors.type_id?.[0] ?? '' }}</p>
                 </div>
-                <div v-if="form.type === 'income'">
-                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Company</label>
-                    <select v-model="form.company_id" class="h-9 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div v-if="selectedType?.subtypes?.length">
+                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">{{ selectedType.name }}</label>
+                    <select v-model="form.subtype_id" class="h-9 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="" disabled>Select…</option>
-                        <option v-for="c in companies" :key="c.id" :value="c.id">{{ c.name }}</option>
+                        <option v-for="s in selectedType.subtypes" :key="s.id" :value="s.id">{{ s.name }}</option>
                     </select>
-                    <p class="h-[1.1rem] text-xs text-red-500">{{ formErrors.company_id?.[0] ?? '' }}</p>
-                </div>
-                <div v-if="form.type === 'credit_card'">
-                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Bank</label>
-                    <select v-model="form.bank_id" class="h-9 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="" disabled>Select…</option>
-                        <option v-for="b in banks" :key="b.id" :value="b.id">{{ b.name }}</option>
-                    </select>
-                    <p class="h-[1.1rem] text-xs text-red-500">{{ formErrors.bank_id?.[0] ?? '' }}</p>
+                    <p class="h-[1.1rem] text-xs text-red-500">{{ formErrors.subtype_id?.[0] ?? '' }}</p>
                 </div>
                 <div>
                     <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Amount</label>
@@ -118,7 +108,7 @@
                         <thead class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
                             <tr>
                                 <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Type</th>
-                                <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Label</th>
+                                <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Subtype</th>
                                 <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Amount</th>
                                 <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Note</th>
                                 <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Date</th>
@@ -133,25 +123,15 @@
                                         <div class="flex flex-wrap gap-3 items-end">
                                             <div>
                                                 <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Type</label>
-                                                <select v-model="editForm.type" class="h-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                                    <option value="income">Income</option>
-                                                    <option value="rent">Rent</option>
-                                                    <option value="credit_card">Credit Card</option>
-                                                    <option value="other">Other</option>
+                                                <select v-model="editForm.type_id" class="h-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                                    <option v-for="t in types" :key="t.id" :value="t.id">{{ t.name }}</option>
                                                 </select>
                                             </div>
-                                            <div v-if="editForm.type === 'income'">
-                                                <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Company</label>
-                                                <select v-model="editForm.company_id" class="h-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                                    <option value="" disabled>Select…</option>
-                                                    <option v-for="c in companies" :key="c.id" :value="c.id">{{ c.name }}</option>
-                                                </select>
-                                            </div>
-                                            <div v-if="editForm.type === 'credit_card'">
-                                                <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Bank</label>
-                                                <select v-model="editForm.bank_id" class="h-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                                    <option value="" disabled>Select…</option>
-                                                    <option v-for="b in banks" :key="b.id" :value="b.id">{{ b.name }}</option>
+                                            <div v-if="editSelectedType?.subtypes?.length">
+                                                <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">{{ editSelectedType.name }}</label>
+                                                <select v-model="editForm.subtype_id" class="h-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                                    <option :value="null">None</option>
+                                                    <option v-for="s in editSelectedType.subtypes" :key="s.id" :value="s.id">{{ s.name }}</option>
                                                 </select>
                                             </div>
                                             <div>
@@ -181,15 +161,15 @@
                                 <!-- Display row -->
                                 <tr v-else class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                     <td class="px-4 py-3">
-                                        <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="typeBadge(rec.type)">
-                                            {{ typeLabel(rec.type) }}
+                                        <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="typeBadgeClass(rec.type_id)">
+                                            {{ typeNameById(rec.type_id) }}
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
-                                        {{ rec.company?.name ?? rec.bank?.name ?? '—' }}
+                                        {{ subtypeNameById(rec.subtype_id) }}
                                     </td>
-                                    <td class="px-4 py-3 text-right font-medium" :class="rec.type === 'income' ? 'text-emerald-600' : 'text-slate-900 dark:text-slate-100'">
-                                        {{ hidden ? '••••' : (rec.type === 'income' ? '+' : '-') + fmt(rec.amount) }}
+                                    <td class="px-4 py-3 text-right font-medium" :class="isExpenseById(rec.type_id) ? 'text-slate-900 dark:text-slate-100' : 'text-emerald-600'">
+                                        {{ hidden ? '••••' : (isExpenseById(rec.type_id) ? '-' : '+') + fmt(rec.amount) }}
                                     </td>
                                     <td class="px-4 py-3 text-slate-400 dark:text-slate-500">{{ rec.note ?? '—' }}</td>
                                     <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ rec.recorded_at.slice(0, 10) }}</td>
@@ -213,18 +193,17 @@ import { usePrivacy } from '../stores/privacy';
 
 const { hidden } = usePrivacy();
 
-const now = new Date();
+const now   = new Date();
 const year  = ref(now.getFullYear());
 const month = ref(now.getMonth() + 1);
 
-const records   = ref([]);
-const companies = ref([]);
-const banks     = ref([]);
-const loading   = ref(true);
+const records = ref([]);
+const types   = ref([]);
+const loading = ref(true);
 
-const showForm    = ref(false);
-const submitting  = ref(false);
-const formErrors  = ref({});
+const showForm   = ref(false);
+const submitting = ref(false);
+const formErrors = ref({});
 
 const editingId       = ref(null);
 const editForm        = ref({});
@@ -234,17 +213,16 @@ const confirmingDelete = ref(false);
 const form = ref(defaultForm());
 
 function defaultForm() {
-    return { type: 'income', company_id: '', bank_id: '', amount: '', recorded_at: firstOfMonth(), note: '' };
+    return { type_id: '', subtype_id: '', amount: '', recorded_at: firstOfMonth(), note: '' };
 }
 
 function firstOfMonth() {
     return `${year.value}-${String(month.value).padStart(2, '0')}-01`;
 }
 
-const monthLabel = computed(() => {
-    return new Date(year.value, month.value - 1, 1)
-        .toLocaleString('en', { year: 'numeric', month: 'long' });
-});
+const monthLabel = computed(() =>
+    new Date(year.value, month.value - 1, 1).toLocaleString('en', { year: 'numeric', month: 'long' })
+);
 
 const isCurrentMonth = computed(() =>
     year.value === now.getFullYear() && month.value === now.getMonth() + 1
@@ -254,29 +232,47 @@ function prevMonth() {
     if (month.value === 1) { year.value--; month.value = 12; }
     else month.value--;
 }
-
 function nextMonth() {
     if (isCurrentMonth.value) return;
     if (month.value === 12) { year.value++; month.value = 1; }
     else month.value++;
 }
 
-const totalIncome   = computed(() => records.value.filter(r => r.type === 'income').reduce((s, r) => s + Number(r.amount), 0));
-const totalExpenses = computed(() => records.value.filter(r => r.type !== 'income').reduce((s, r) => s + Number(r.amount), 0));
+// Type lookup helpers
+const typeMap    = computed(() => Object.fromEntries(types.value.map(t => [t.id, t])));
+const subtypeMap = computed(() => {
+    const m = {};
+    for (const t of types.value) {
+        for (const s of t.subtypes) m[s.id] = s;
+    }
+    return m;
+});
+
+function typeNameById(id)    { return typeMap.value[id]?.name ?? '—'; }
+function subtypeNameById(id) { return id ? (subtypeMap.value[id]?.name ?? '—') : '—'; }
+function isExpenseById(id)   { return typeMap.value[id]?.is_expense ?? true; }
+
+const BADGE_COLORS = [
+    'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400',
+    'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
+    'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400',
+    'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400',
+    'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
+    'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-400',
+];
+const expenseTypeIds = computed(() => types.value.filter(t => t.is_expense).map(t => t.id));
+function typeBadgeClass(id) {
+    if (!isExpenseById(id)) return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400';
+    const idx = expenseTypeIds.value.indexOf(id);
+    return BADGE_COLORS[idx % BADGE_COLORS.length] ?? 'bg-slate-100 text-slate-600';
+}
+
+const selectedType     = computed(() => typeMap.value[form.value.type_id] ?? null);
+const editSelectedType = computed(() => typeMap.value[editForm.value.type_id] ?? null);
+
+const totalIncome   = computed(() => records.value.filter(r => !isExpenseById(r.type_id)).reduce((s, r) => s + Number(r.amount), 0));
+const totalExpenses = computed(() => records.value.filter(r => isExpenseById(r.type_id)).reduce((s, r) => s + Number(r.amount), 0));
 const net           = computed(() => totalIncome.value - totalExpenses.value);
-
-function typeLabel(type) {
-    return { income: 'Income', rent: 'Rent', credit_card: 'Credit Card', other: 'Other' }[type] ?? type;
-}
-
-function typeBadge(type) {
-    return {
-        income:      'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400',
-        rent:        'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400',
-        credit_card: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
-        other:       'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400',
-    }[type] ?? 'bg-slate-100 text-slate-600';
-}
 
 function fmt(v) {
     return Number(v).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -297,19 +293,21 @@ watch([year, month], () => {
     loadRecords();
 });
 
+// Reset subtype when type changes
+watch(() => form.value.type_id, () => { form.value.subtype_id = ''; });
+watch(() => editForm.value.type_id, () => { editForm.value.subtype_id = null; });
+
 async function addRecord() {
     formErrors.value = {};
     submitting.value = true;
     try {
-        const payload = {
+        const { data } = await api.post('/cashflow/records', {
             recorded_at: form.value.recorded_at,
-            type:        form.value.type,
+            type_id:     form.value.type_id,
+            subtype_id:  form.value.subtype_id || null,
             amount:      form.value.amount,
             note:        form.value.note || null,
-            company_id:  form.value.type === 'income'      ? form.value.company_id  : null,
-            bank_id:     form.value.type === 'credit_card' ? form.value.bank_id     : null,
-        };
-        const { data } = await api.post('/cashflow/records', payload);
+        });
         records.value.push(data);
         form.value = defaultForm();
         showForm.value = false;
@@ -324,9 +322,8 @@ function startEdit(rec) {
     confirmingDelete.value = false;
     editingId.value = rec.id;
     editForm.value = {
-        type:        rec.type,
-        company_id:  rec.company_id ?? '',
-        bank_id:     rec.bank_id ?? '',
+        type_id:     rec.type_id,
+        subtype_id:  rec.subtype_id ?? null,
         amount:      Number(rec.amount),
         recorded_at: rec.recorded_at.slice(0, 10),
         note:        rec.note ?? '',
@@ -342,15 +339,13 @@ async function saveEdit() {
     saving.value = true;
     try {
         const id = editingId.value;
-        const payload = {
-            type:        editForm.value.type,
+        const { data } = await api.patch(`/cashflow/records/${id}`, {
+            type_id:     editForm.value.type_id,
+            subtype_id:  editForm.value.subtype_id,
             amount:      editForm.value.amount,
             recorded_at: editForm.value.recorded_at,
             note:        editForm.value.note || null,
-            company_id:  editForm.value.type === 'income'      ? editForm.value.company_id  : null,
-            bank_id:     editForm.value.type === 'credit_card' ? editForm.value.bank_id     : null,
-        };
-        const { data } = await api.patch(`/cashflow/records/${id}`, payload);
+        });
         const idx = records.value.findIndex(r => r.id === id);
         if (idx !== -1) records.value[idx] = data;
         cancelEdit();
@@ -366,12 +361,10 @@ async function deleteRecord(id) {
 }
 
 onMounted(async () => {
-    const [, cRes, bRes] = await Promise.all([
+    const [, typesRes] = await Promise.all([
         loadRecords(),
-        api.get('/cashflow/settings/companies'),
-        api.get('/cashflow/settings/banks'),
+        api.get('/cashflow/settings/types'),
     ]);
-    companies.value = cRes.data;
-    banks.value = bRes.data;
+    types.value = typesRes.data;
 });
 </script>

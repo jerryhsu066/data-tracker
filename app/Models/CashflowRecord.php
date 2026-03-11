@@ -13,10 +13,9 @@ class CashflowRecord extends Model
     protected $fillable = [
         'user_id',
         'recorded_at',
-        'type',
+        'type_id',
+        'subtype_id',
         'amount',
-        'company_id',
-        'bank_id',
         'note',
     ];
 
@@ -30,13 +29,13 @@ class CashflowRecord extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function company(): BelongsTo
+    public function type(): BelongsTo
     {
-        return $this->belongsTo(CashflowCompany::class);
+        return $this->belongsTo(CashflowType::class, 'type_id');
     }
 
-    public function bank(): BelongsTo
+    public function subtype(): BelongsTo
     {
-        return $this->belongsTo(CashflowBank::class);
+        return $this->belongsTo(CashflowSubtype::class, 'subtype_id');
     }
 }

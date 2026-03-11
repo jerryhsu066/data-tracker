@@ -2,98 +2,119 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CashflowBank;
-use App\Models\CashflowCompany;
+use App\Models\CashflowSubtype;
+use App\Models\CashflowType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class CashflowSettingsController extends Controller
 {
-    // ── Companies ─────────────────────────────────────────────────────────────
+    // ── Types ─────────────────────────────────────────────────────────────────
 
-    public function listCompanies(Request $request): JsonResponse
+    public function listTypes(Request $request): JsonResponse
     {
-        return response()->json(
-            CashflowCompany::where('user_id', $request->user()->id)->orderBy('name')->get()
-        );
+        $types = CashflowType::with('subtypes')
+            ->where('user_id', $request->user()->id)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        return response()->json($types);
     }
 
-    public function createCompany(Request $request): JsonResponse
+    public function createType(Request $request): JsonResponse
     {
-        $validated = $request->validate(['name' => ['required', 'string', 'max:255']]);
-
-        $company = CashflowCompany::create([
-            'user_id' => $request->user()->id,
-            'name'    => $validated['name'],
+        $validated = $request->validate([
+            'name'       => ['required', 'string', 'max:255'],
+            'is_expense' => ['sometimes', 'boolean'],
+            'sort_order' => ['sometimes', 'integer', 'min:0'],
         ]);
 
-        return response()->json($company, 201);
+        $type = CashflowType::create([
+            'user_id'    => $request->user()->id,
+            'name'       => $validated['name'],
+            'is_expense' => $validated['is_expense'] ?? true,
+            'sort_order' => $validated['sort_order'] ?? 0,
+        ]);
+
+        return response()->json($type->load('subtypes'), 201);
     }
 
-    public function updateCompany(Request $request, CashflowCompany $company): JsonResponse
+    public function updateType(Request $request, CashflowType $type): JsonResponse
     {
-        if ($company->user_id !== $request->user()->id) {
+        if ($type->user_id !== $request->user()->id) {
             abort(403);
         }
 
-        $validated = $request->validate(['name' => ['required', 'string', 'max:255']]);
-        $company->update($validated);
+        $validated = $request->validate([
+            'name'       => ['sometimes', 'string', 'max:255'],
+            'is_expense' => ['sometimes', 'boolean'],
+            'sort_order' => ['sometimes', 'integer', 'min:0'],
+        ]);
 
-        return response()->json($company);
+        $type->update($validated);
+
+        return response()->json($type->load('subtypes'));
     }
 
-    public function deleteCompany(Request $request, CashflowCompany $company): Response
+    public function deleteType(Request $request, CashflowType $type): Response
     {
-        if ($company->user_id !== $request->user()->id) {
+        if ($type->user_id !== $request->user()->id) {
             abort(403);
         }
 
-        $company->delete();
+        $type->delete();
 
         return response()->noContent();
     }
 
-    // ── Banks ─────────────────────────────────────────────────────────────────
+    // ── Subtypes ──────────────────────────────────────────────────────────────
 
-    public function listBanks(Request $request): JsonResponse
+    public function createSubtype(Request $request, CashflowType $type): JsonResponse
     {
-        return response()->json(
-            CashflowBank::where('user_id', $request->user()->id)->orderBy('name')->get()
-        );
-    }
+        if ($type->user_id !== $request->user()->id) {
+            abort(403);
+        }
 
-    public function createBank(Request $request): JsonResponse
-    {
-        $validated = $request->validate(['name' => ['required', 'string', 'max:255']]);
-
-        $bank = CashflowBank::create([
-            'user_id' => $request->user()->id,
-            'name'    => $validated['name'],
+        $validated = $request->validate([
+            'name'       => ['required', 'string', 'max:255'],
+            'sort_order' => ['sometimes', 'integer', 'min:0'],
         ]);
 
-        return response()->json($bank, 201);
+        $subtype = CashflowSubtype::create([
+            'type_id'    => $type->id,
+            'user_id'    => $request->user()->id,
+            'name'       => $validated['name'],
+            'sort_order' => $validated['sort_order'] ?? 0,
+        ]);
+
+        return response()->json($subtype, 201);
     }
 
-    public function updateBank(Request $request, CashflowBank $bank): JsonResponse
+    public function updateSubtype(Request $request, CashflowSubtype $subtype): JsonResponse
     {
-        if ($bank->user_id !== $request->user()->id) {
+        if ($subtype->user_id !== $request->user()->id) {
             abort(403);
         }
 
-        $validated = $request->validate(['name' => ['required', 'string', 'max:255']]);
-        $bank->update($validated);
+        $validated = $request->validate([
+            'name'       => ['sometimes', 'string', 'max:255'],
+            'sort_order' => ['sometimes', 'integer', 'min:0'],
+        ]);
 
-        return response()->json($bank);
+        $subtype->update($validated);
+
+        return response()->json($subtype);
     }
 
-    public function deleteBank(Request $request, CashflowBank $bank): Response
+    public function deleteSubtype(Request $request, CashflowSubtype $subtype): Response
     {
-        if ($bank->user_id !== $request->user()->id) {
+        if ($subtype->user_id !== $request->user()->id) {
             abort(403);
         }
 
-        $bank->delete();
+        $subtype->delete();
 
         return response()->noContent();
     }

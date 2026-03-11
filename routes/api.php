@@ -72,15 +72,13 @@ Route::prefix('stocks')->group(function () {
 // Cashflow module
 Route::prefix('cashflow')->middleware('auth:sanctum')->group(function () {
     Route::prefix('settings')->group(function () {
-        Route::get('companies', [CashflowSettingsController::class, 'listCompanies']);
-        Route::post('companies', [CashflowSettingsController::class, 'createCompany']);
-        Route::patch('companies/{company}', [CashflowSettingsController::class, 'updateCompany']);
-        Route::delete('companies/{company}', [CashflowSettingsController::class, 'deleteCompany']);
-
-        Route::get('banks', [CashflowSettingsController::class, 'listBanks']);
-        Route::post('banks', [CashflowSettingsController::class, 'createBank']);
-        Route::patch('banks/{bank}', [CashflowSettingsController::class, 'updateBank']);
-        Route::delete('banks/{bank}', [CashflowSettingsController::class, 'deleteBank']);
+        Route::get('types', [CashflowSettingsController::class, 'listTypes']);
+        Route::post('types', [CashflowSettingsController::class, 'createType']);
+        Route::patch('types/{type}', [CashflowSettingsController::class, 'updateType']);
+        Route::delete('types/{type}', [CashflowSettingsController::class, 'deleteType']);
+        Route::post('types/{type}/subtypes', [CashflowSettingsController::class, 'createSubtype']);
+        Route::patch('subtypes/{subtype}', [CashflowSettingsController::class, 'updateSubtype']);
+        Route::delete('subtypes/{subtype}', [CashflowSettingsController::class, 'deleteSubtype']);
     });
 
     Route::get('records', [CashflowRecordController::class, 'index']);

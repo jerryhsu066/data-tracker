@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\CashflowBank;
-use App\Models\CashflowCompany;
+use App\Models\CashflowSubtype;
+use App\Models\CashflowType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -24,137 +24,138 @@ class CashflowSettingsTest extends TestCase
 
     public function test_guest_cannot_access_cashflow_settings(): void
     {
-        $this->getJson('/api/cashflow/settings/companies')->assertUnauthorized();
-        $this->getJson('/api/cashflow/settings/banks')->assertUnauthorized();
+        $this->getJson('/api/cashflow/settings/types')->assertUnauthorized();
     }
 
-    // ── Companies ─────────────────────────────────────────────────────────────
+    // ── Types ─────────────────────────────────────────────────────────────────
 
-    public function test_can_list_own_companies(): void
+    public function test_can_list_own_types_with_subtypes(): void
     {
         $other = User::factory()->create();
-        CashflowCompany::create(['user_id' => $this->user->id, 'name' => 'My Corp']);
-        CashflowCompany::create(['user_id' => $other->id, 'name' => 'Other Corp']);
+        $type  = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
+        CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
+        CashflowType::create(['user_id' => $other->id, 'name' => 'Other Type', 'is_expense' => true]);
 
-        $response = $this->actingAs($this->user)->getJson('/api/cashflow/settings/companies');
+        $response = $this->actingAs($this->user)->getJson('/api/cashflow/settings/types');
 
         $response->assertOk()->assertJsonCount(1);
-        $response->assertJsonFragment(['name' => 'My Corp']);
-        $response->assertJsonMissing(['name' => 'Other Corp']);
+        $response->assertJsonFragment(['name' => 'Income']);
+        $response->assertJsonMissing(['name' => 'Other Type']);
+
+        // subtypes nested
+        $data = $response->json('0.subtypes');
+        $this->assertCount(1, $data);
+        $this->assertEquals('Acme', $data[0]['name']);
     }
 
-    public function test_can_create_company(): void
+    public function test_can_create_type(): void
     {
-        $response = $this->actingAs($this->user)->postJson('/api/cashflow/settings/companies', [
-            'name' => 'Acme Inc',
+        $response = $this->actingAs($this->user)->postJson('/api/cashflow/settings/types', [
+            'name'       => 'Subscription',
+            'is_expense' => true,
         ]);
 
-        $response->assertCreated()->assertJsonFragment(['name' => 'Acme Inc']);
-        $this->assertDatabaseHas('cashflow_companies', ['user_id' => $this->user->id, 'name' => 'Acme Inc']);
+        $response->assertCreated()
+                 ->assertJsonFragment(['name' => 'Subscription', 'is_expense' => true]);
+        $this->assertDatabaseHas('cashflow_types', ['user_id' => $this->user->id, 'name' => 'Subscription']);
     }
 
-    public function test_company_name_is_required(): void
+    public function test_type_name_is_required(): void
     {
-        $this->actingAs($this->user)->postJson('/api/cashflow/settings/companies', [])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
+        $this->actingAs($this->user)->postJson('/api/cashflow/settings/types', [])
+             ->assertUnprocessable()
+             ->assertJsonValidationErrors(['name']);
     }
 
-    public function test_can_update_company(): void
+    public function test_can_update_type(): void
     {
-        $company = CashflowCompany::create(['user_id' => $this->user->id, 'name' => 'Old Name']);
+        $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Old', 'is_expense' => true]);
 
-        $response = $this->actingAs($this->user)->patchJson("/api/cashflow/settings/companies/{$company->id}", [
+        $response = $this->actingAs($this->user)->patchJson("/api/cashflow/settings/types/{$type->id}", [
             'name' => 'New Name',
         ]);
 
         $response->assertOk()->assertJsonFragment(['name' => 'New Name']);
-        $this->assertDatabaseHas('cashflow_companies', ['id' => $company->id, 'name' => 'New Name']);
+        $this->assertDatabaseHas('cashflow_types', ['id' => $type->id, 'name' => 'New Name']);
     }
 
-    public function test_can_delete_company(): void
+    public function test_can_delete_type(): void
     {
-        $company = CashflowCompany::create(['user_id' => $this->user->id, 'name' => 'To Delete']);
+        $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'To Delete', 'is_expense' => true]);
 
-        $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/companies/{$company->id}")
-            ->assertNoContent();
+        $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/types/{$type->id}")
+             ->assertNoContent();
 
-        $this->assertSoftDeleted('cashflow_companies', ['id' => $company->id]);
+        $this->assertSoftDeleted('cashflow_types', ['id' => $type->id]);
     }
 
-    public function test_cannot_modify_another_users_company(): void
-    {
-        $other = User::factory()->create();
-        $company = CashflowCompany::create(['user_id' => $other->id, 'name' => 'Their Corp']);
-
-        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/companies/{$company->id}", ['name' => 'Hijacked'])
-            ->assertForbidden();
-        $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/companies/{$company->id}")
-            ->assertForbidden();
-    }
-
-    // ── Banks ─────────────────────────────────────────────────────────────────
-
-    public function test_can_list_own_banks(): void
+    public function test_cannot_modify_another_users_type(): void
     {
         $other = User::factory()->create();
-        CashflowBank::create(['user_id' => $this->user->id, 'name' => 'My Bank']);
-        CashflowBank::create(['user_id' => $other->id, 'name' => 'Other Bank']);
+        $type  = CashflowType::create(['user_id' => $other->id, 'name' => 'Their Type', 'is_expense' => true]);
 
-        $response = $this->actingAs($this->user)->getJson('/api/cashflow/settings/banks');
-
-        $response->assertOk()->assertJsonCount(1);
-        $response->assertJsonFragment(['name' => 'My Bank']);
-        $response->assertJsonMissing(['name' => 'Other Bank']);
+        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/types/{$type->id}", ['name' => 'Hijacked'])
+             ->assertForbidden();
+        $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/types/{$type->id}")
+             ->assertForbidden();
     }
 
-    public function test_can_create_bank(): void
+    // ── Subtypes ──────────────────────────────────────────────────────────────
+
+    public function test_can_create_subtype_under_own_type(): void
     {
-        $response = $this->actingAs($this->user)->postJson('/api/cashflow/settings/banks', [
-            'name' => 'CTBC',
+        $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
+
+        $response = $this->actingAs($this->user)->postJson("/api/cashflow/settings/types/{$type->id}/subtypes", [
+            'name' => 'Acme Corp',
         ]);
 
-        $response->assertCreated()->assertJsonFragment(['name' => 'CTBC']);
-        $this->assertDatabaseHas('cashflow_banks', ['user_id' => $this->user->id, 'name' => 'CTBC']);
+        $response->assertCreated()->assertJsonFragment(['name' => 'Acme Corp', 'type_id' => $type->id]);
+        $this->assertDatabaseHas('cashflow_subtypes', ['type_id' => $type->id, 'name' => 'Acme Corp']);
     }
 
-    public function test_bank_name_is_required(): void
-    {
-        $this->actingAs($this->user)->postJson('/api/cashflow/settings/banks', [])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
-    }
-
-    public function test_can_update_bank(): void
-    {
-        $bank = CashflowBank::create(['user_id' => $this->user->id, 'name' => 'Old Bank']);
-
-        $response = $this->actingAs($this->user)->patchJson("/api/cashflow/settings/banks/{$bank->id}", [
-            'name' => 'New Bank',
-        ]);
-
-        $response->assertOk()->assertJsonFragment(['name' => 'New Bank']);
-        $this->assertDatabaseHas('cashflow_banks', ['id' => $bank->id, 'name' => 'New Bank']);
-    }
-
-    public function test_can_delete_bank(): void
-    {
-        $bank = CashflowBank::create(['user_id' => $this->user->id, 'name' => 'To Delete']);
-
-        $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/banks/{$bank->id}")
-            ->assertNoContent();
-
-        $this->assertSoftDeleted('cashflow_banks', ['id' => $bank->id]);
-    }
-
-    public function test_cannot_modify_another_users_bank(): void
+    public function test_cannot_add_subtype_to_another_users_type(): void
     {
         $other = User::factory()->create();
-        $bank = CashflowBank::create(['user_id' => $other->id, 'name' => 'Their Bank']);
+        $type  = CashflowType::create(['user_id' => $other->id, 'name' => 'Their Type', 'is_expense' => true]);
 
-        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/banks/{$bank->id}", ['name' => 'Hijacked'])
-            ->assertForbidden();
-        $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/banks/{$bank->id}")
-            ->assertForbidden();
+        $this->actingAs($this->user)->postJson("/api/cashflow/settings/types/{$type->id}/subtypes", ['name' => 'Sub'])
+             ->assertForbidden();
+    }
+
+    public function test_can_update_subtype(): void
+    {
+        $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
+        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Old']);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/cashflow/settings/subtypes/{$subtype->id}", [
+            'name' => 'New Sub',
+        ]);
+
+        $response->assertOk()->assertJsonFragment(['name' => 'New Sub']);
+        $this->assertDatabaseHas('cashflow_subtypes', ['id' => $subtype->id, 'name' => 'New Sub']);
+    }
+
+    public function test_can_delete_subtype(): void
+    {
+        $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
+        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Sub']);
+
+        $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/subtypes/{$subtype->id}")
+             ->assertNoContent();
+
+        $this->assertSoftDeleted('cashflow_subtypes', ['id' => $subtype->id]);
+    }
+
+    public function test_cannot_modify_another_users_subtype(): void
+    {
+        $other   = User::factory()->create();
+        $type    = CashflowType::create(['user_id' => $other->id, 'name' => 'Their Type', 'is_expense' => true]);
+        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $other->id, 'name' => 'Their Sub']);
+
+        $this->actingAs($this->user)->patchJson("/api/cashflow/settings/subtypes/{$subtype->id}", ['name' => 'Hijacked'])
+             ->assertForbidden();
+        $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/subtypes/{$subtype->id}")
+             ->assertForbidden();
     }
 }

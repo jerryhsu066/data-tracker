@@ -6,25 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('cashflow_banks', function (Blueprint $table) {
+        Schema::create('cashflow_types', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
+            $table->boolean('is_expense')->default(true);
+            $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
             $table->softDeletes();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('cashflow_banks');
+        Schema::dropIfExists('cashflow_types');
     }
 };
