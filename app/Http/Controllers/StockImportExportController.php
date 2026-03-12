@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stock;
-use App\Models\Transaction;
+use App\Models\StockTransaction;
 use App\Services\StockPriceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class StockImportExportController extends Controller
     {
         $format = $request->get('format', 'csv');
 
-        $transactions = Transaction::with('stock')
+        $transactions = StockTransaction::with('stock')
             ->where('user_id', $request->user()->id)
             ->orderBy('transacted_at')
             ->get();
@@ -126,7 +126,7 @@ class StockImportExportController extends Controller
                 }
             }
 
-            if ($stock && Transaction::where('user_id', $userId)
+            if ($stock && StockTransaction::where('user_id', $userId)
                     ->where('stock_id', $stock->id)
                     ->where('type', $row['type'])
                     ->whereDate('transacted_at', $row['date'])
@@ -213,7 +213,7 @@ class StockImportExportController extends Controller
 
             $stock = $symbolCache[$symbol];
 
-            if ($skipDuplicates && Transaction::where('user_id', $userId)
+            if ($skipDuplicates && StockTransaction::where('user_id', $userId)
                     ->where('stock_id', $stock->id)
                     ->where('type', $row['type'])
                     ->whereDate('transacted_at', $row['date'])
@@ -224,7 +224,7 @@ class StockImportExportController extends Controller
                 continue;
             }
 
-            Transaction::create([
+            StockTransaction::create([
                 'user_id'         => $userId,
                 'stock_id'        => $stock->id,
                 'type'            => $row['type'],

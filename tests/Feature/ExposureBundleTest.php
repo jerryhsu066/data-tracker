@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\ExposureBundle;
 use App\Models\ExposureBundleEntry;
 use App\Models\Stock;
-use App\Models\Transaction;
+use App\Models\StockTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -126,7 +126,7 @@ class ExposureBundleTest extends TestCase
         $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'Bundle', 'cash' => 0]);
         $stock = Stock::factory()->create(['symbol' => '0050.TW']);
 
-        Transaction::factory()->create([
+        StockTransaction::factory()->create([
             'user_id' => $this->user->id,
             'stock_id' => $stock->id,
             'type' => 'buy',
@@ -153,7 +153,7 @@ class ExposureBundleTest extends TestCase
         $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'Bundle', 'cash' => 0]);
         $stock = Stock::factory()->create(['symbol' => '0050.TW']);
 
-        Transaction::factory()->create([
+        StockTransaction::factory()->create([
             'user_id' => $this->user->id,
             'stock_id' => $stock->id,
             'type' => 'buy',
@@ -180,7 +180,7 @@ class ExposureBundleTest extends TestCase
         $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'Bundle', 'cash' => 0]);
         $stock = Stock::factory()->create();
 
-        Transaction::factory()->create([
+        StockTransaction::factory()->create([
             'user_id' => $this->user->id,
             'stock_id' => $stock->id,
             'type' => 'buy',

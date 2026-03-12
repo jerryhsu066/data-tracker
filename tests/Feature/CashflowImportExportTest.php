@@ -23,14 +23,14 @@ class CashflowImportExportTest extends TestCase
         parent::setUp();
         $this->user    = User::factory()->create();
         $this->type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Credit Card', 'is_expense' => true]);
-        $this->subtype = CashflowSubtype::create(['type_id' => $this->type->id, 'user_id' => $this->user->id, 'name' => 'HSBC']);
+        $this->subtype = CashflowSubtype::create(['cashflow_type_id' => $this->type->id, 'user_id' => $this->user->id, 'name' => 'HSBC']);
         CashflowRecord::create([
-            'user_id'     => $this->user->id,
-            'type_id'     => $this->type->id,
-            'subtype_id'  => $this->subtype->id,
-            'amount'      => 5000,
-            'note'        => 'Jan bill',
-            'recorded_at' => '2024-01-01',
+            'user_id'              => $this->user->id,
+            'cashflow_type_id'     => $this->type->id,
+            'cashflow_subtype_id'  => $this->subtype->id,
+            'amount'               => 5000,
+            'note'                 => 'Jan bill',
+            'recorded_at'          => '2024-01-01',
         ]);
     }
 
@@ -64,7 +64,7 @@ class CashflowImportExportTest extends TestCase
     {
         $other = User::factory()->create();
         $type  = CashflowType::create(['user_id' => $other->id, 'name' => 'Other', 'is_expense' => true]);
-        CashflowRecord::create(['user_id' => $other->id, 'type_id' => $type->id, 'amount' => 999, 'recorded_at' => '2024-01-01']);
+        CashflowRecord::create(['user_id' => $other->id, 'cashflow_type_id' => $type->id, 'amount' => 999, 'recorded_at' => '2024-01-01']);
 
         $response = $this->actingAs($this->user)->get('/api/cashflow/export?format=json');
         $this->assertCount(1, $response->json());
@@ -142,9 +142,9 @@ class CashflowImportExportTest extends TestCase
 
         $response->assertOk()->assertJsonFragment(['imported' => 1]);
         $this->assertDatabaseHas('cashflow_records', [
-            'user_id' => $this->user->id,
-            'type_id' => $this->type->id,
-            'amount'  => 3000,
+            'user_id'          => $this->user->id,
+            'cashflow_type_id' => $this->type->id,
+            'amount'           => 3000,
         ]);
     }
 
@@ -188,7 +188,7 @@ class CashflowImportExportTest extends TestCase
                          ->postJson('/api/cashflow/import', ['file' => $file, 'format' => 'csv']);
 
         $response->assertOk()->assertJsonFragment(['imported' => 1]);
-        $this->assertDatabaseHas('cashflow_records', ['type_id' => $typeNoSub->id, 'subtype_id' => null]);
+        $this->assertDatabaseHas('cashflow_records', ['cashflow_type_id' => $typeNoSub->id, 'cashflow_subtype_id' => null]);
     }
 
     public function test_import_skips_duplicates_by_default(): void

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class SettingsController extends Controller
+class StockSettingsController extends Controller
 {
     public function show(Request $request): JsonResponse
     {

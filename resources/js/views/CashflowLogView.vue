@@ -173,7 +173,7 @@ function buildSections(typeList, recordList) {
 
     // Populate with existing records
     for (const rec of recordList) {
-        const k = sectionKey(rec.type_id, rec.subtype_id);
+        const k = sectionKey(rec.cashflow_type_id, rec.cashflow_subtype_id);
         if (!sections[k]) continue; // type/subtype hidden or removed
         sections[k].rows.push({ tempId: nextTempId(), id: rec.id, amount: Number(rec.amount), note: rec.note ?? '' });
     }
@@ -233,7 +233,7 @@ async function saveAll() {
             if (row.id) {
                 updates.push({ id: row.id, amount: row.amount, note: row.note || null });
             } else {
-                creates.push({ type_id: sec.typeId, subtype_id: sec.subtypeId ?? null, amount: row.amount, note: row.note || null });
+                creates.push({ cashflow_type_id: sec.typeId, cashflow_subtype_id: sec.subtypeId ?? null, amount: row.amount, note: row.note || null });
             }
         }
     }

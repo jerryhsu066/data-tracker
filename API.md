@@ -234,9 +234,9 @@ GET /stocks/{symbol}/transactions
 
 ---
 
-## Transactions
+## Stock Transactions
 
-### Create Transaction
+### Create Stock Transaction
 ```
 POST /stocks/transactions
 ```
@@ -266,7 +266,7 @@ For sell transactions, validates that shares owned ≥ shares to sell.
 
 ---
 
-### Update Transaction
+### Update Stock Transaction
 ```
 PUT /stocks/transactions/{id}
 ```
@@ -291,7 +291,7 @@ Fee and tax are accepted as-is (user-overridable).
 
 ---
 
-### Delete Transaction
+### Delete Stock Transaction
 ```
 DELETE /stocks/transactions/{id}
 ```
@@ -300,6 +300,73 @@ DELETE /stocks/transactions/{id}
 **Response `204`** — no content
 
 **Response `403`** — not the transaction owner
+
+---
+
+## Stock Import / Export
+
+### Export Transactions
+```
+GET /stocks/export?format=csv|json
+```
+🔒 Requires auth. Returns the authenticated user's transactions in the requested format. If the user has no transactions, a single example row is included.
+
+**Response `200`** — streamed CSV (`text/csv`) or JSON array (`application/json`)
+
+CSV columns: `date, symbol, type, shares, price_per_share, handling_fee, transaction_tax, notes`
+
+---
+
+### Preview Import
+```
+POST /stocks/import/preview
+```
+🔒 Requires auth. Validates and classifies rows without writing to the database. Unknown stock symbols are looked up on Yahoo Finance.
+
+**Body (multipart/form-data)**
+| Field | Type | Rules |
+|---|---|---|
+| `file` | file | required, CSV or JSON |
+| `format` | string | required, `csv` or `json` |
+
+**Response `200`**
+```json
+{
+  "total": 3,
+  "valid": 1,
+  "invalid": [
+    { "row": 2, "reason": "Invalid date format" }
+  ],
+  "duplicates": [
+    { "row": 3, "reason": "Duplicate transaction" }
+  ]
+}
+```
+
+---
+
+### Import Transactions
+```
+POST /stocks/import
+```
+🔒 Requires auth. Imports valid, non-duplicate rows. Unknown stock symbols are created if found on Yahoo Finance; skipped otherwise.
+
+**Body (multipart/form-data)**
+| Field | Type | Rules |
+|---|---|---|
+| `file` | file | required, CSV or JSON |
+| `format` | string | required, `csv` or `json` |
+| `skip_duplicates` | boolean | optional, default `true` |
+
+**Response `200`**
+```json
+{
+  "imported": 2,
+  "skipped": [
+    { "row": 3, "reason": "Duplicate transaction" }
+  ]
+}
+```
 
 ---
 
@@ -520,6 +587,295 @@ DELETE /stocks/exposure/bundles/{bundle}/entries/{entry}
 🔒 Requires auth.
 
 **Response `200`** — updated bundle object with entries
+
+---
+
+---
+
+## Cashflow Settings
+
+On registration, default types (`Income`, `Credit Card`, `Housing`, `Subscription`) and subtypes are seeded automatically.
+
+### List Types
+```
+GET /cashflow/settings/types
+```
+🔒 Requires auth. Returns the user's cashflow types with nested subtypes and an `unsubtyped_records_count` for each type.
+
+**Response `200`**
+```json
+[
+  {
+    "id": 1,
+    "name": "Credit Card",
+    "is_expense": true,
+    "is_disabled": false,
+    "is_private": false,
+    "merge_subtypes": false,
+    "unsubtyped_records_count": 0,
+    "subtypes": [
+      { "id": 1, "name": "HSBC", "is_disabled": false, "is_private": false }
+    ]
+  }
+]
+```
+
+---
+
+### Create Type
+```
+POST /cashflow/settings/types
+```
+🔒 Requires auth.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `name` | string | required, max 255 |
+| `is_expense` | boolean | required |
+
+**Response `201`** — created type object
+
+---
+
+### Update Type
+```
+PATCH /cashflow/settings/types/{id}
+```
+🔒 Requires auth. Owned types only.
+
+**Body** (all optional)
+| Field | Type | Notes |
+|---|---|---|
+| `name` | string | max 255 |
+| `is_disabled` | boolean | cascades `is_disabled` to all subtypes |
+| `is_private` | boolean | cascades `is_private` to all subtypes |
+| `merge_subtypes` | boolean | display subtypes as a single merged column |
+
+**Response `200`** — updated type object
+
+---
+
+### Delete Type
+```
+DELETE /cashflow/settings/types/{id}
+```
+🔒 Requires auth. Owned types only. Fails with `422` if the type has existing records (disable instead).
+
+**Response `204`** — no content
+
+---
+
+### Create Subtype
+```
+POST /cashflow/settings/types/{id}/subtypes
+```
+🔒 Requires auth. Owned types only.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `name` | string | required, max 255 |
+| `migrate_existing` | boolean | optional — if `true` and this is the *first* subtype, reassigns all existing null-subtype records to this new subtype |
+
+**Response `201`**
+```json
+{
+  "subtype": { "id": 2, "name": "CTBC", "cashflow_type_id": 1, ... },
+  "migrated_count": 3
+}
+```
+
+---
+
+### Update Subtype
+```
+PATCH /cashflow/settings/subtypes/{id}
+```
+🔒 Requires auth. Owned subtypes only.
+
+**Body** (all optional)
+| Field | Type |
+|---|---|
+| `name` | string |
+| `is_disabled` | boolean |
+| `is_private` | boolean |
+
+**Response `200`** — updated subtype object
+
+---
+
+### Delete Subtype
+```
+DELETE /cashflow/settings/subtypes/{id}
+```
+🔒 Requires auth. Owned subtypes only. Fails with `422` if the subtype has existing records.
+
+**Response `204`** — no content
+
+---
+
+## Cashflow Records
+
+### List Records
+```
+GET /cashflow/records?year=2026&month=3
+```
+🔒 Requires auth. `year` is required; `month` is optional (omit to get the full year).
+
+**Response `200`**
+```json
+[
+  {
+    "id": 1,
+    "cashflow_type_id": 1,
+    "cashflow_subtype_id": 2,
+    "amount": "5000.00",
+    "note": "March bill",
+    "recorded_at": "2026-03-01"
+  }
+]
+```
+
+---
+
+### Create Record
+```
+POST /cashflow/records
+```
+🔒 Requires auth.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `recorded_at` | date | required |
+| `cashflow_type_id` | integer | required, must be the user's own type |
+| `cashflow_subtype_id` | integer | required if the type has subtypes, otherwise omit |
+| `amount` | number | required, > 0 |
+| `note` | string | optional |
+
+**Response `201`** — created record object
+
+**Response `422`** — validation error (e.g. subtype required but missing, subtype belongs to a different type)
+
+---
+
+### Update Record
+```
+PATCH /cashflow/records/{id}
+```
+🔒 Requires auth. Owned records only.
+
+**Body** (all optional)
+| Field | Type |
+|---|---|
+| `cashflow_type_id` | integer |
+| `cashflow_subtype_id` | integer |
+| `amount` | number |
+| `note` | string |
+
+**Response `200`** — updated record object
+
+**Response `403`** — not the record owner
+
+---
+
+### Delete Record
+```
+DELETE /cashflow/records/{id}
+```
+🔒 Requires auth. Owned records only. Soft-deletes.
+
+**Response `204`** — no content
+
+---
+
+### Bulk Operations
+```
+POST /cashflow/records/bulk
+```
+🔒 Requires auth. Executes creates, updates, and deletes in one request.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `year` | integer | required |
+| `month` | integer | required |
+| `creates` | array | optional — each item: `{ cashflow_type_id, cashflow_subtype_id, amount, note }` |
+| `updates` | array | optional — each item: `{ id, amount, note }` |
+| `deletes` | array | optional — array of record IDs to soft-delete |
+
+Updates and deletes for records not owned by the user are silently skipped.
+
+**Response `200`**
+```json
+{
+  "created": [ { "id": 5, ... } ],
+  "updated": 1,
+  "deleted": 2
+}
+```
+
+---
+
+## Cashflow Import / Export
+
+### Export Cashflow Records
+```
+GET /cashflow/export?format=csv|json
+```
+🔒 Requires auth. Returns the user's cashflow records. If no records exist, a single example row is included.
+
+**Response `200`** — streamed CSV (`text/csv`) or JSON array (`application/json`)
+
+CSV columns: `year, month, type, subtype, amount, note`
+
+---
+
+### Preview Cashflow Import
+```
+POST /cashflow/import/preview
+```
+🔒 Requires auth. Validates rows and checks for duplicates without writing to the database.
+
+**Body (multipart/form-data)**
+| Field | Type | Rules |
+|---|---|---|
+| `file` | file | required, CSV or JSON |
+| `format` | string | required, `csv` or `json` |
+
+**Response `200`**
+```json
+{
+  "total": 2,
+  "valid": 1,
+  "invalid": [ { "row": 2, "reason": "Unknown type" } ],
+  "duplicates": []
+}
+```
+
+---
+
+### Import Cashflow Records
+```
+POST /cashflow/import
+```
+🔒 Requires auth. Types and subtypes must already exist for the user — unknown types are skipped, not created.
+
+**Body (multipart/form-data)**
+| Field | Type | Rules |
+|---|---|---|
+| `file` | file | required, CSV or JSON |
+| `format` | string | required, `csv` or `json` |
+| `skip_duplicates` | boolean | optional, default `true` |
+
+**Response `200`**
+```json
+{
+  "imported": 1,
+  "skipped": [ { "row": 2, "reason": "Unknown type: Rent" } ]
+}
+```
 
 ---
 

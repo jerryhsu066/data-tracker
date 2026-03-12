@@ -28,10 +28,10 @@ class SeedDefaultCashflowTypes
 
             foreach ($def['subtypes'] as $j => $subName) {
                 CashflowSubtype::create([
-                    'type_id'    => $type->id,
-                    'user_id'    => $user->id,
-                    'name'       => $subName,
-                    'sort_order' => $j,
+                    'cashflow_type_id' => $type->id,
+                    'user_id'          => $user->id,
+                    'name'             => $subName,
+                    'sort_order'       => $j,
                 ]);
             }
         }

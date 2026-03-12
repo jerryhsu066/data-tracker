@@ -34,26 +34,26 @@ class CashflowRecordController extends Controller
         $userId          = $request->user()->id;
         $typeHasSubtypes = CashflowSubtype::where('user_id', $userId)
             ->whereNull('deleted_at')
-            ->where('type_id', $request->type_id)
+            ->where('cashflow_type_id', $request->cashflow_type_id)
             ->exists();
 
         $validated = $request->validate([
-            'recorded_at' => ['required', 'date'],
-            'type_id'     => [
+            'recorded_at'        => ['required', 'date'],
+            'cashflow_type_id'   => [
                 'required',
                 Rule::exists('cashflow_types', 'id')
                     ->where('user_id', $userId)
                     ->whereNull('deleted_at'),
             ],
-            'subtype_id'  => [
+            'cashflow_subtype_id' => [
                 $typeHasSubtypes ? 'required' : 'nullable',
                 Rule::exists('cashflow_subtypes', 'id')
-                    ->where('type_id', $request->type_id)
+                    ->where('cashflow_type_id', $request->cashflow_type_id)
                     ->where('user_id', $userId)
                     ->whereNull('deleted_at'),
             ],
-            'amount'      => ['required', 'numeric', 'min:0'],
-            'note'        => ['nullable', 'string', 'max:500'],
+            'amount'             => ['required', 'numeric', 'min:0'],
+            'note'               => ['nullable', 'string', 'max:500'],
         ]);
 
         $record = CashflowRecord::create(['user_id' => $userId, ...$validated]);
@@ -68,30 +68,30 @@ class CashflowRecordController extends Controller
         }
 
         $userId          = $request->user()->id;
-        $typeId          = $request->input('type_id', $record->type_id);
+        $typeId          = $request->input('cashflow_type_id', $record->cashflow_type_id);
         $typeHasSubtypes = CashflowSubtype::where('user_id', $userId)
             ->whereNull('deleted_at')
-            ->where('type_id', $typeId)
+            ->where('cashflow_type_id', $typeId)
             ->exists();
 
         $validated = $request->validate([
-            'recorded_at' => ['sometimes', 'date'],
-            'type_id'     => [
+            'recorded_at'        => ['sometimes', 'date'],
+            'cashflow_type_id'   => [
                 'sometimes',
                 Rule::exists('cashflow_types', 'id')
                     ->where('user_id', $userId)
                     ->whereNull('deleted_at'),
             ],
-            'subtype_id'  => [
+            'cashflow_subtype_id' => [
                 $typeHasSubtypes ? 'required' : 'sometimes',
                 'nullable',
                 Rule::exists('cashflow_subtypes', 'id')
-                    ->where('type_id', $typeId)
+                    ->where('cashflow_type_id', $typeId)
                     ->where('user_id', $userId)
                     ->whereNull('deleted_at'),
             ],
-            'amount'      => ['sometimes', 'numeric', 'min:0'],
-            'note'        => ['nullable', 'string', 'max:500'],
+            'amount'             => ['sometimes', 'numeric', 'min:0'],
+            'note'               => ['nullable', 'string', 'max:500'],
         ]);
 
         $record->update($validated);
@@ -107,10 +107,10 @@ class CashflowRecordController extends Controller
             'year'             => ['required', 'integer'],
             'month'            => ['required', 'integer', 'min:1', 'max:12'],
             'creates'          => ['sometimes', 'array'],
-            'creates.*.type_id'    => ['required', 'integer', Rule::exists('cashflow_types', 'id')->where('user_id', $userId)->whereNull('deleted_at')],
-            'creates.*.subtype_id' => ['nullable', 'integer', Rule::exists('cashflow_subtypes', 'id')->where('user_id', $userId)->whereNull('deleted_at')],
-            'creates.*.amount'     => ['required', 'numeric', 'min:0.01'],
-            'creates.*.note'       => ['nullable', 'string', 'max:500'],
+            'creates.*.cashflow_type_id'    => ['required', 'integer', Rule::exists('cashflow_types', 'id')->where('user_id', $userId)->whereNull('deleted_at')],
+            'creates.*.cashflow_subtype_id' => ['nullable', 'integer', Rule::exists('cashflow_subtypes', 'id')->where('user_id', $userId)->whereNull('deleted_at')],
+            'creates.*.amount'              => ['required', 'numeric', 'min:0.01'],
+            'creates.*.note'                => ['nullable', 'string', 'max:500'],
             'updates'          => ['sometimes', 'array'],
             'updates.*.id'         => ['required', 'integer'],
             'updates.*.amount'     => ['required', 'numeric', 'min:0.01'],
@@ -121,7 +121,7 @@ class CashflowRecordController extends Controller
 
         $recordedAt        = sprintf('%04d-%02d-01', $validated['year'], $validated['month']);
         $typesWithSubtypes = array_flip(
-            CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->pluck('type_id')->unique()->all()
+            CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->pluck('cashflow_type_id')->unique()->all()
         );
         $created = [];
 
@@ -139,16 +139,16 @@ class CashflowRecordController extends Controller
             }
 
             foreach ($validated['creates'] ?? [] as $c) {
-                if (isset($typesWithSubtypes[$c['type_id']]) && empty($c['subtype_id'])) {
-                    abort(422, 'subtype_id is required for this type');
+                if (isset($typesWithSubtypes[$c['cashflow_type_id']]) && empty($c['cashflow_subtype_id'])) {
+                    abort(422, 'cashflow_subtype_id is required for this type');
                 }
                 $created[] = CashflowRecord::create([
-                    'user_id'     => $userId,
-                    'recorded_at' => $recordedAt,
-                    'type_id'     => $c['type_id'],
-                    'subtype_id'  => $c['subtype_id'] ?? null,
-                    'amount'      => $c['amount'],
-                    'note'        => $c['note'] ?? null,
+                    'user_id'             => $userId,
+                    'recorded_at'         => $recordedAt,
+                    'cashflow_type_id'    => $c['cashflow_type_id'],
+                    'cashflow_subtype_id' => $c['cashflow_subtype_id'] ?? null,
+                    'amount'              => $c['amount'],
+                    'note'                => $c['note'] ?? null,
                 ]);
             }
         });

@@ -4,13 +4,13 @@ namespace Tests\Feature;
 
 use App\Jobs\FetchHistoricalPrices;
 use App\Models\Stock;
-use App\Models\Transaction;
+use App\Models\StockTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
-class TransactionApiTest extends TestCase
+class StockTransactionApiTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -47,7 +47,7 @@ class TransactionApiTest extends TestCase
                 'transaction_tax' => '0.0000',
             ]);
 
-        $this->assertDatabaseHas('transactions', [
+        $this->assertDatabaseHas('stock_transactions', [
             'user_id' => $this->user->id,
             'stock_id' => $stock->id,
             'type' => 'buy',
@@ -77,7 +77,7 @@ class TransactionApiTest extends TestCase
     public function test_fees_auto_calculated_for_sell(): void
     {
         $stock = Stock::factory()->create();
-        Transaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
 
         // 500 shares × 900 = 450,000 trade value
         // handling_fee = max(20, floor(450000 × 0.001425)) = 641
@@ -118,7 +118,7 @@ class TransactionApiTest extends TestCase
     public function test_can_record_a_sell_transaction(): void
     {
         $stock = Stock::factory()->create();
-        Transaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
 
         $response = $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
@@ -134,7 +134,7 @@ class TransactionApiTest extends TestCase
     public function test_cannot_sell_more_shares_than_owned(): void
     {
         $stock = Stock::factory()->create();
-        Transaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $this->user->id]);
 
         $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
@@ -170,11 +170,11 @@ class TransactionApiTest extends TestCase
         $stock = Stock::factory()->create(['symbol' => '2330.TW']);
         $other = Stock::factory()->create(['symbol' => '2317.TW']);
 
-        Transaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
-        Transaction::factory()->sell($stock, shares: 200, price: 900)->create(['user_id' => $this->user->id]);
-        Transaction::factory()->buy($other, shares: 500, price: 100)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->sell($stock, shares: 200, price: 900)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($other, shares: 500, price: 100)->create(['user_id' => $this->user->id]);
         // Another user's transaction on the same stock — should not appear
-        Transaction::factory()->buy($stock, shares: 300, price: 790)->create();
+        StockTransaction::factory()->buy($stock, shares: 300, price: 790)->create();
 
         $response = $this->actingAs($this->user)->getJson('/api/stocks/2330.TW/transactions');
 
@@ -232,7 +232,7 @@ class TransactionApiTest extends TestCase
         $response->assertCreated()
             ->assertJsonFragment(['handling_fee' => '50.0000', 'transaction_tax' => '0.0000']);
 
-        $this->assertDatabaseHas('transactions', ['handling_fee' => 50, 'transaction_tax' => 0]);
+        $this->assertDatabaseHas('stock_transactions', ['handling_fee' => 50, 'transaction_tax' => 0]);
     }
 
     public function test_store_auto_calculates_fees_when_not_provided(): void
@@ -255,10 +255,10 @@ class TransactionApiTest extends TestCase
     public function test_can_delete_own_transaction(): void
     {
         $stock = Stock::factory()->create();
-        $tx = Transaction::factory()->buy($stock, shares: 500, price: 100)->create(['user_id' => $this->user->id]);
+        $tx = StockTransaction::factory()->buy($stock, shares: 500, price: 100)->create(['user_id' => $this->user->id]);
 
         $this->actingAs($this->user)->deleteJson("/api/stocks/transactions/{$tx->id}")->assertNoContent();
 
-        $this->assertSoftDeleted('transactions', ['id' => $tx->id]);
+        $this->assertSoftDeleted('stock_transactions', ['id' => $tx->id]);
     }
 }

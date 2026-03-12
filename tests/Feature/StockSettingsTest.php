@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class SettingsTest extends TestCase
+class StockSettingsTest extends TestCase
 {
     use RefreshDatabase;
 

@@ -33,7 +33,7 @@ class StockController extends Controller
         if (! $service->updatePrice($stock)) {
             $stock->forceDelete();
             throw ValidationException::withMessages([
-                'symbol' => ['Symbol not found on Yahoo Finance. Please check the symbol and try again.'],
+                'symbol' => ['Symbol not found on Yahoo Finance.'],
             ]);
         }
 

@@ -22,7 +22,7 @@ class CashflowRecordBulkTest extends TestCase
         parent::setUp();
         $this->user = User::factory()->create();
         $this->type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        $this->sub  = CashflowSubtype::create(['type_id' => $this->type->id, 'user_id' => $this->user->id, 'name' => 'Salary']);
+        $this->sub  = CashflowSubtype::create(['cashflow_type_id' => $this->type->id, 'user_id' => $this->user->id, 'name' => 'Salary']);
     }
 
     public function test_bulk_creates_records(): void
@@ -31,14 +31,14 @@ class CashflowRecordBulkTest extends TestCase
             'year'    => 2026,
             'month'   => 3,
             'creates' => [
-                ['type_id' => $this->type->id, 'subtype_id' => $this->sub->id, 'amount' => 5000, 'note' => 'March pay'],
-                ['type_id' => $this->type->id, 'subtype_id' => $this->sub->id, 'amount' => 200,  'note' => null],
+                ['cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => $this->sub->id, 'amount' => 5000, 'note' => 'March pay'],
+                ['cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => $this->sub->id, 'amount' => 200,  'note' => null],
             ],
         ]);
 
         $response->assertOk();
-        $this->assertDatabaseHas('cashflow_records', ['type_id' => $this->type->id, 'subtype_id' => $this->sub->id, 'amount' => 5000]);
-        $this->assertDatabaseHas('cashflow_records', ['type_id' => $this->type->id, 'subtype_id' => $this->sub->id, 'amount' => 200]);
+        $this->assertDatabaseHas('cashflow_records', ['cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => $this->sub->id, 'amount' => 5000]);
+        $this->assertDatabaseHas('cashflow_records', ['cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => $this->sub->id, 'amount' => 200]);
         $this->assertCount(2, $response->json('created'));
     }
 
@@ -48,7 +48,7 @@ class CashflowRecordBulkTest extends TestCase
             'year'    => 2026,
             'month'   => 3,
             'creates' => [
-                ['type_id' => $this->type->id, 'subtype_id' => null, 'amount' => 5000, 'note' => null],
+                ['cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => null, 'amount' => 5000, 'note' => null],
             ],
         ])->assertUnprocessable();
     }
@@ -57,7 +57,7 @@ class CashflowRecordBulkTest extends TestCase
     {
         $record = CashflowRecord::create([
             'user_id' => $this->user->id, 'recorded_at' => '2026-03-01',
-            'type_id' => $this->type->id, 'subtype_id' => null, 'amount' => 100,
+            'cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => null, 'amount' => 100,
         ]);
 
         $this->actingAs($this->user)->postJson('/api/cashflow/records/bulk', [
@@ -73,7 +73,7 @@ class CashflowRecordBulkTest extends TestCase
     {
         $record = CashflowRecord::create([
             'user_id' => $this->user->id, 'recorded_at' => '2026-03-01',
-            'type_id' => $this->type->id, 'subtype_id' => null, 'amount' => 100,
+            'cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => null, 'amount' => 100,
         ]);
 
         $this->actingAs($this->user)->postJson('/api/cashflow/records/bulk', [
@@ -89,17 +89,17 @@ class CashflowRecordBulkTest extends TestCase
     {
         $existing = CashflowRecord::create([
             'user_id' => $this->user->id, 'recorded_at' => '2026-03-01',
-            'type_id' => $this->type->id, 'subtype_id' => null, 'amount' => 100,
+            'cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => null, 'amount' => 100,
         ]);
         $toDelete = CashflowRecord::create([
             'user_id' => $this->user->id, 'recorded_at' => '2026-03-01',
-            'type_id' => $this->type->id, 'subtype_id' => null, 'amount' => 50,
+            'cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => null, 'amount' => 50,
         ]);
 
         $response = $this->actingAs($this->user)->postJson('/api/cashflow/records/bulk', [
             'year'    => 2026,
             'month'   => 3,
-            'creates' => [['type_id' => $this->type->id, 'subtype_id' => $this->sub->id, 'amount' => 300, 'note' => null]],
+            'creates' => [['cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => $this->sub->id, 'amount' => 300, 'note' => null]],
             'updates' => [['id' => $existing->id, 'amount' => 200, 'note' => null]],
             'deletes' => [$toDelete->id],
         ]);
@@ -115,7 +115,7 @@ class CashflowRecordBulkTest extends TestCase
         $other  = User::factory()->create();
         $record = CashflowRecord::create([
             'user_id' => $other->id, 'recorded_at' => '2026-03-01',
-            'type_id' => $this->type->id, 'subtype_id' => null, 'amount' => 100,
+            'cashflow_type_id' => $this->type->id, 'cashflow_subtype_id' => null, 'amount' => 100,
         ]);
 
         // update: silently skipped (no 403, just not applied)

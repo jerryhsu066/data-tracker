@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Stock;
-use App\Models\Transaction;
+use App\Models\StockTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -25,8 +25,8 @@ class PortfolioApiTest extends TestCase
         $stock = Stock::factory()->create(['symbol' => '2330.TW', 'current_price' => 900.0000]);
 
         // Buy 1000 @ 800, buy 500 @ 820 → WAC = (800000+410000)/1500 = 806.67
-        Transaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
-        Transaction::factory()->buy($stock, shares: 500, price: 820)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock, shares: 500, price: 820)->create(['user_id' => $this->user->id]);
 
         $response = $this->actingAs($this->user)->getJson('/api/stocks/portfolio');
 
@@ -44,8 +44,8 @@ class PortfolioApiTest extends TestCase
     {
         $stock = Stock::factory()->create(['symbol' => '2330.TW', 'current_price' => 900.0000]);
 
-        Transaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
-        Transaction::factory()->sell($stock, shares: 300, price: 850)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->sell($stock, shares: 300, price: 850)->create(['user_id' => $this->user->id]);
 
         $position = $this->actingAs($this->user)->getJson('/api/stocks/portfolio')->json()[0];
 
@@ -57,8 +57,8 @@ class PortfolioApiTest extends TestCase
     {
         $stock = Stock::factory()->create(['current_price' => 900.0000]);
 
-        Transaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
-        Transaction::factory()->sell($stock, shares: 200, price: 850)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->sell($stock, shares: 200, price: 850)->create(['user_id' => $this->user->id]);
 
         $position = $this->actingAs($this->user)->getJson('/api/stocks/portfolio')->json()[0];
 
@@ -73,8 +73,8 @@ class PortfolioApiTest extends TestCase
     {
         $stock = Stock::factory()->create(['current_price' => 900.0000]);
 
-        Transaction::factory()->buy($stock, shares: 500, price: 800)->create(['user_id' => $this->user->id]);
-        Transaction::factory()->sell($stock, shares: 500, price: 850)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock, shares: 500, price: 800)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->sell($stock, shares: 500, price: 850)->create(['user_id' => $this->user->id]);
 
         $this->actingAs($this->user)->getJson('/api/stocks/portfolio')
             ->assertOk()->assertJsonCount(0);
@@ -85,12 +85,12 @@ class PortfolioApiTest extends TestCase
         $stock = Stock::factory()->create(['current_price' => 900.0000]);
 
         // Buy 1000 @ 800 + 1140 fee → total cost = 801140, avg cost = 801.14
-        Transaction::factory()->buy($stock, shares: 1000, price: 800)
+        StockTransaction::factory()->buy($stock, shares: 1000, price: 800)
             ->create(['user_id' => $this->user->id, 'handling_fee' => 1140, 'transaction_tax' => 0]);
 
         // Sell 200 @ 900 − 256 fee − 540 tax → net revenue = 180000 - 256 - 540 = 179204
         // realized gain = 179204 − (200 × 801.14) = 179204 − 160228 = 18976
-        Transaction::factory()->sell($stock, shares: 200, price: 900)
+        StockTransaction::factory()->sell($stock, shares: 200, price: 900)
             ->create(['user_id' => $this->user->id, 'handling_fee' => 256, 'transaction_tax' => 540]);
 
         $position = $this->actingAs($this->user)->getJson('/api/stocks/portfolio')->json()[0];
@@ -104,8 +104,8 @@ class PortfolioApiTest extends TestCase
         $tsmc = Stock::factory()->create(['symbol' => '2330.TW', 'current_price' => 900.0000]);
         $foxconn = Stock::factory()->create(['symbol' => '2317.TW', 'current_price' => 150.0000]);
 
-        Transaction::factory()->buy($tsmc, shares: 100, price: 800)->create(['user_id' => $this->user->id]);
-        Transaction::factory()->buy($foxconn, shares: 1000, price: 120)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($tsmc, shares: 100, price: 800)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($foxconn, shares: 1000, price: 120)->create(['user_id' => $this->user->id]);
 
         $this->actingAs($this->user)->getJson('/api/stocks/portfolio')
             ->assertOk()->assertJsonCount(2);

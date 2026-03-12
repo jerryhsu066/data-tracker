@@ -86,7 +86,7 @@ class CashflowImportExportController extends Controller
         $types              = CashflowType::where('user_id', $userId)->whereNull('deleted_at')->get()->keyBy('name');
         $subtypes           = CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->get()->groupBy('name');
         $typesWithSubtypes  = array_flip(
-            CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->pluck('type_id')->unique()->all()
+            CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->pluck('cashflow_type_id')->unique()->all()
         );
 
         $invalid    = [];
@@ -124,7 +124,7 @@ class CashflowImportExportController extends Controller
             $subtypeId        = null;
 
             if ($subtypeName !== '') {
-                $match = $subtypes->get($subtypeName)?->first(fn($s) => $s->type_id === $type->id);
+                $match = $subtypes->get($subtypeName)?->first(fn($s) => $s->cashflow_type_id === $type->id);
                 if (!$match) {
                     $invalid[] = ['row' => $rowNum, 'reason' => "Unknown subtype '{$subtypeName}' for type '{$typeName}'"];
                     continue;
@@ -136,8 +136,8 @@ class CashflowImportExportController extends Controller
             }
 
             if (CashflowRecord::where('user_id', $userId)
-                    ->where('type_id', $type->id)
-                    ->where('subtype_id', $subtypeId)
+                    ->where('cashflow_type_id', $type->id)
+                    ->where('cashflow_subtype_id', $subtypeId)
                     ->whereYear('recorded_at', $year)
                     ->whereMonth('recorded_at', $month)
                     ->where('amount', (float) $amount)
@@ -176,7 +176,7 @@ class CashflowImportExportController extends Controller
         $types             = CashflowType::where('user_id', $userId)->whereNull('deleted_at')->get()->keyBy('name');
         $subtypes          = CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->get()->groupBy('name');
         $typesWithSubtypes = array_flip(
-            CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->pluck('type_id')->unique()->all()
+            CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->pluck('cashflow_type_id')->unique()->all()
         );
 
         $imported = 0;
@@ -214,7 +214,7 @@ class CashflowImportExportController extends Controller
             $subtypeId       = null;
 
             if ($subtypeName !== '') {
-                $match = $subtypes->get($subtypeName)?->first(fn($s) => $s->type_id === $type->id);
+                $match = $subtypes->get($subtypeName)?->first(fn($s) => $s->cashflow_type_id === $type->id);
                 if (!$match) {
                     $skipped[] = ['row' => $rowNum, 'reason' => "Unknown subtype '{$subtypeName}' for type '{$typeName}'"];
                     continue;
@@ -226,8 +226,8 @@ class CashflowImportExportController extends Controller
             }
 
             if ($skipDuplicates && CashflowRecord::where('user_id', $userId)
-                    ->where('type_id', $type->id)
-                    ->where('subtype_id', $subtypeId)
+                    ->where('cashflow_type_id', $type->id)
+                    ->where('cashflow_subtype_id', $subtypeId)
                     ->whereYear('recorded_at', $year)
                     ->whereMonth('recorded_at', $month)
                     ->where('amount', (float) $amount)
@@ -237,12 +237,12 @@ class CashflowImportExportController extends Controller
             }
 
             CashflowRecord::create([
-                'user_id'     => $userId,
-                'type_id'     => $type->id,
-                'subtype_id'  => $subtypeId,
-                'amount'      => $amount,
-                'note'        => $row['note'] === '' ? null : $row['note'],
-                'recorded_at' => sprintf('%04d-%02d-01', $year, $month),
+                'user_id'             => $userId,
+                'cashflow_type_id'    => $type->id,
+                'cashflow_subtype_id' => $subtypeId,
+                'amount'              => $amount,
+                'note'                => $row['note'] === '' ? null : $row['note'],
+                'recorded_at'         => sprintf('%04d-%02d-01', $year, $month),
             ]);
 
             $imported++;

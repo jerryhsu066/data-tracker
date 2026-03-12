@@ -33,7 +33,7 @@ class Stock extends Model
 
     public function transactions(): HasMany
     {
-        return $this->hasMany(Transaction::class);
+        return $this->hasMany(StockTransaction::class);
     }
 
     public function priceHistories(): HasMany

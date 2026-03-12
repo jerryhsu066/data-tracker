@@ -187,8 +187,8 @@ function getRows(section) {
                 // Sum all visible subtype records for this type/month
                 const sum = section.records.reduce((total, r) => {
                     const rm = new Date(r.recorded_at).getMonth() + 1;
-                    if (rm !== m || r.type_id !== col.typeId) return total;
-                    if (!col.subtypeIds.includes(r.subtype_id)) return total;
+                    if (rm !== m || r.cashflow_type_id !== col.typeId) return total;
+                    if (!col.subtypeIds.includes(r.cashflow_subtype_id)) return total;
                     return total + Number(r.amount);
                 }, 0);
                 cells[col.key] = sum > 0 ? { amount: sum, _merged: true } : null;
@@ -196,10 +196,10 @@ function getRows(section) {
                 cells[col.key] = section.records.find(r => {
                     const rm = new Date(r.recorded_at).getMonth() + 1;
                     if (rm !== m) return false;
-                    if (r.type_id !== col.typeId) return false;
+                    if (r.cashflow_type_id !== col.typeId) return false;
                     return col.subtypeId !== null
-                        ? r.subtype_id === col.subtypeId
-                        : r.subtype_id === null;
+                        ? r.cashflow_subtype_id === col.subtypeId
+                        : r.cashflow_subtype_id === null;
                 }) ?? null;
             }
         }
@@ -331,8 +331,8 @@ async function commitCell() {
         if (!amount) return;
         const { data } = await api.post('/cashflow/records', {
             recorded_at: recordedAt,
-            type_id:     col.typeId,
-            subtype_id:  col.subtypeId ?? null,
+            cashflow_type_id:    col.typeId,
+            cashflow_subtype_id: col.subtypeId ?? null,
             amount,
         });
         section.records.push(data);

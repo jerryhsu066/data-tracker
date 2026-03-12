@@ -19,7 +19,7 @@ class CashflowSettingsController extends Controller
 
         $types = CashflowType::with('subtypes')
             ->withCount(['records as unsubtyped_records_count' => function ($q) {
-                $q->whereNull('subtype_id');
+                $q->whereNull('cashflow_subtype_id');
             }])
             ->where('user_id', $userId)
             ->orderBy('sort_order')
@@ -67,7 +67,7 @@ class CashflowSettingsController extends Controller
         // Cascade is_disabled and is_private down to all subtypes
         $cascade = array_intersect_key($validated, array_flip(['is_disabled', 'is_private']));
         if (!empty($cascade)) {
-            CashflowSubtype::where('type_id', $type->id)->whereNull('deleted_at')->update($cascade);
+            CashflowSubtype::where('cashflow_type_id', $type->id)->whereNull('deleted_at')->update($cascade);
         }
 
         return response()->json($type->fresh()->load('subtypes'));
@@ -79,7 +79,7 @@ class CashflowSettingsController extends Controller
             abort(403);
         }
 
-        if (CashflowRecord::where('type_id', $type->id)->exists()) {
+        if (CashflowRecord::where('cashflow_type_id', $type->id)->exists()) {
             abort(422, 'This type has existing records. Disable it instead.');
         }
 
@@ -102,21 +102,21 @@ class CashflowSettingsController extends Controller
             'migrate_existing' => ['sometimes', 'boolean'],
         ]);
 
-        $isFirstSubtype = !CashflowSubtype::where('type_id', $type->id)->whereNull('deleted_at')->exists();
+        $isFirstSubtype = !CashflowSubtype::where('cashflow_type_id', $type->id)->whereNull('deleted_at')->exists();
 
         $subtype = CashflowSubtype::create([
-            'type_id'    => $type->id,
-            'user_id'    => $request->user()->id,
-            'name'       => $validated['name'],
-            'sort_order' => $validated['sort_order'] ?? 0,
+            'cashflow_type_id' => $type->id,
+            'user_id'          => $request->user()->id,
+            'name'             => $validated['name'],
+            'sort_order'       => $validated['sort_order'] ?? 0,
         ]);
 
         $migratedCount = 0;
         if ($isFirstSubtype && ($validated['migrate_existing'] ?? false)) {
-            $migratedCount = CashflowRecord::where('type_id', $type->id)
-                ->whereNull('subtype_id')
+            $migratedCount = CashflowRecord::where('cashflow_type_id', $type->id)
+                ->whereNull('cashflow_subtype_id')
                 ->whereNull('deleted_at')
-                ->update(['subtype_id' => $subtype->id]);
+                ->update(['cashflow_subtype_id' => $subtype->id]);
         }
 
         return response()->json(['subtype' => $subtype, 'migrated_count' => $migratedCount], 201);
@@ -146,7 +146,7 @@ class CashflowSettingsController extends Controller
             abort(403);
         }
 
-        if (CashflowRecord::where('subtype_id', $subtype->id)->exists()) {
+        if (CashflowRecord::where('cashflow_subtype_id', $subtype->id)->exists()) {
             abort(422, 'This subtype has existing records. Disable it instead.');
         }
 

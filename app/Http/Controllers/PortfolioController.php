@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Stock;
 use App\Models\StockPriceHistory;
-use App\Models\Transaction;
+use App\Models\StockTransaction;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,7 +32,7 @@ class PortfolioController extends Controller
         $userId = $request->user()->id;
 
         // All transactions for this user, ordered by date
-        $transactions = Transaction::where('user_id', $userId)
+        $transactions = StockTransaction::where('user_id', $userId)
             ->with('stock')
             ->orderBy('transacted_at')
             ->get();

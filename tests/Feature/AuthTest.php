@@ -42,17 +42,17 @@ class AuthTest extends TestCase
         $this->assertDatabaseHas('cashflow_types', ['user_id' => $user->id, 'name' => 'Subscription', 'is_expense' => true, 'merge_subtypes' => true]);
 
         $creditCard = \App\Models\CashflowType::where('user_id', $user->id)->where('name', 'Credit Card')->first();
-        $this->assertDatabaseHas('cashflow_subtypes', ['type_id' => $creditCard->id, 'name' => 'HSBC']);
-        $this->assertDatabaseHas('cashflow_subtypes', ['type_id' => $creditCard->id, 'name' => 'CTBC']);
+        $this->assertDatabaseHas('cashflow_subtypes', ['cashflow_type_id' => $creditCard->id, 'name' => 'HSBC']);
+        $this->assertDatabaseHas('cashflow_subtypes', ['cashflow_type_id' => $creditCard->id, 'name' => 'CTBC']);
 
         $housing = \App\Models\CashflowType::where('user_id', $user->id)->where('name', 'Housing')->first();
-        $this->assertDatabaseHas('cashflow_subtypes', ['type_id' => $housing->id, 'name' => 'Rent']);
-        $this->assertDatabaseHas('cashflow_subtypes', ['type_id' => $housing->id, 'name' => 'Electricity']);
-        $this->assertDatabaseHas('cashflow_subtypes', ['type_id' => $housing->id, 'name' => 'Water']);
+        $this->assertDatabaseHas('cashflow_subtypes', ['cashflow_type_id' => $housing->id, 'name' => 'Rent']);
+        $this->assertDatabaseHas('cashflow_subtypes', ['cashflow_type_id' => $housing->id, 'name' => 'Electricity']);
+        $this->assertDatabaseHas('cashflow_subtypes', ['cashflow_type_id' => $housing->id, 'name' => 'Water']);
 
         $subscription = \App\Models\CashflowType::where('user_id', $user->id)->where('name', 'Subscription')->first();
-        $this->assertDatabaseHas('cashflow_subtypes', ['type_id' => $subscription->id, 'name' => 'Netflix']);
-        $this->assertDatabaseHas('cashflow_subtypes', ['type_id' => $subscription->id, 'name' => 'Spotify']);
+        $this->assertDatabaseHas('cashflow_subtypes', ['cashflow_type_id' => $subscription->id, 'name' => 'Netflix']);
+        $this->assertDatabaseHas('cashflow_subtypes', ['cashflow_type_id' => $subscription->id, 'name' => 'Spotify']);
     }
 
     public function test_register_validates_required_fields(): void

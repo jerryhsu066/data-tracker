@@ -52,12 +52,12 @@
         <div v-if="showForm" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 mb-6">
             <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Add a stock to track</h2>
             <form @submit.prevent="addStock" class="flex flex-wrap gap-3 items-end">
-                <div>
+                <div class="w-36">
                     <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Symbol</label>
                     <input
                         v-model="form.symbol"
                         placeholder="e.g. 2330.TW"
-                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                     <p class="h-[1.1rem] text-xs text-red-500">{{ errors.symbol?.[0] ?? '' }}</p>
                 </div>

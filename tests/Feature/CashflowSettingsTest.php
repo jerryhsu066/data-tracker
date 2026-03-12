@@ -34,7 +34,7 @@ class CashflowSettingsTest extends TestCase
     {
         $other = User::factory()->create();
         $type  = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
+        CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
         CashflowType::create(['user_id' => $other->id, 'name' => 'Other Type', 'is_expense' => true]);
 
         $response = $this->actingAs($this->user)->getJson('/api/cashflow/settings/types');
@@ -52,8 +52,8 @@ class CashflowSettingsTest extends TestCase
     public function test_list_types_includes_unsubtyped_records_count(): void
     {
         $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        CashflowRecord::create(['user_id' => $this->user->id, 'type_id' => $type->id, 'subtype_id' => null, 'recorded_at' => now(), 'amount' => 100]);
-        CashflowRecord::create(['user_id' => $this->user->id, 'type_id' => $type->id, 'subtype_id' => null, 'recorded_at' => now(), 'amount' => 200]);
+        CashflowRecord::create(['user_id' => $this->user->id, 'cashflow_type_id' => $type->id, 'cashflow_subtype_id' => null, 'recorded_at' => now(), 'amount' => 100]);
+        CashflowRecord::create(['user_id' => $this->user->id, 'cashflow_type_id' => $type->id, 'cashflow_subtype_id' => null, 'recorded_at' => now(), 'amount' => 200]);
 
         $response = $this->actingAs($this->user)->getJson('/api/cashflow/settings/types');
 
@@ -113,7 +113,7 @@ class CashflowSettingsTest extends TestCase
     public function test_cannot_delete_type_with_existing_records(): void
     {
         $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        CashflowRecord::create(['user_id' => $this->user->id, 'type_id' => $type->id, 'recorded_at' => now(), 'amount' => 100]);
+        CashflowRecord::create(['user_id' => $this->user->id, 'cashflow_type_id' => $type->id, 'recorded_at' => now(), 'amount' => 100]);
 
         $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/types/{$type->id}")
              ->assertUnprocessable()
@@ -143,8 +143,8 @@ class CashflowSettingsTest extends TestCase
             'name' => 'Acme Corp',
         ]);
 
-        $response->assertCreated()->assertJsonFragment(['name' => 'Acme Corp', 'type_id' => $type->id]);
-        $this->assertDatabaseHas('cashflow_subtypes', ['type_id' => $type->id, 'name' => 'Acme Corp']);
+        $response->assertCreated()->assertJsonFragment(['name' => 'Acme Corp', 'cashflow_type_id' => $type->id]);
+        $this->assertDatabaseHas('cashflow_subtypes', ['cashflow_type_id' => $type->id, 'name' => 'Acme Corp']);
     }
 
     public function test_create_subtype_response_includes_migrated_count(): void
@@ -164,11 +164,11 @@ class CashflowSettingsTest extends TestCase
     {
         $type   = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
         $record = CashflowRecord::create([
-            'user_id'     => $this->user->id,
-            'type_id'     => $type->id,
-            'subtype_id'  => null,
-            'recorded_at' => now(),
-            'amount'      => 100,
+            'user_id'              => $this->user->id,
+            'cashflow_type_id'     => $type->id,
+            'cashflow_subtype_id'  => null,
+            'recorded_at'          => now(),
+            'amount'               => 100,
         ]);
 
         $response = $this->actingAs($this->user)->postJson("/api/cashflow/settings/types/{$type->id}/subtypes", [
@@ -178,18 +178,18 @@ class CashflowSettingsTest extends TestCase
 
         $response->assertCreated()->assertJsonPath('migrated_count', 1);
         $subtypeId = $response->json('subtype.id');
-        $this->assertDatabaseHas('cashflow_records', ['id' => $record->id, 'subtype_id' => $subtypeId]);
+        $this->assertDatabaseHas('cashflow_records', ['id' => $record->id, 'cashflow_subtype_id' => $subtypeId]);
     }
 
     public function test_creating_first_subtype_with_migrate_false_leaves_records_unchanged(): void
     {
         $type   = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
         $record = CashflowRecord::create([
-            'user_id'     => $this->user->id,
-            'type_id'     => $type->id,
-            'subtype_id'  => null,
-            'recorded_at' => now(),
-            'amount'      => 100,
+            'user_id'              => $this->user->id,
+            'cashflow_type_id'     => $type->id,
+            'cashflow_subtype_id'  => null,
+            'recorded_at'          => now(),
+            'amount'               => 100,
         ]);
 
         $response = $this->actingAs($this->user)->postJson("/api/cashflow/settings/types/{$type->id}/subtypes", [
@@ -198,19 +198,19 @@ class CashflowSettingsTest extends TestCase
         ]);
 
         $response->assertCreated()->assertJsonPath('migrated_count', 0);
-        $this->assertDatabaseHas('cashflow_records', ['id' => $record->id, 'subtype_id' => null]);
+        $this->assertDatabaseHas('cashflow_records', ['id' => $record->id, 'cashflow_subtype_id' => null]);
     }
 
     public function test_migrate_existing_is_ignored_when_type_already_has_subtypes(): void
     {
         $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Existing']);
+        CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Existing']);
         $record = CashflowRecord::create([
-            'user_id'     => $this->user->id,
-            'type_id'     => $type->id,
-            'subtype_id'  => null,
-            'recorded_at' => now(),
-            'amount'      => 100,
+            'user_id'              => $this->user->id,
+            'cashflow_type_id'     => $type->id,
+            'cashflow_subtype_id'  => null,
+            'recorded_at'          => now(),
+            'amount'               => 100,
         ]);
 
         $response = $this->actingAs($this->user)->postJson("/api/cashflow/settings/types/{$type->id}/subtypes", [
@@ -219,7 +219,7 @@ class CashflowSettingsTest extends TestCase
         ]);
 
         $response->assertCreated()->assertJsonPath('migrated_count', 0);
-        $this->assertDatabaseHas('cashflow_records', ['id' => $record->id, 'subtype_id' => null]);
+        $this->assertDatabaseHas('cashflow_records', ['id' => $record->id, 'cashflow_subtype_id' => null]);
     }
 
     public function test_cannot_add_subtype_to_another_users_type(): void
@@ -234,7 +234,7 @@ class CashflowSettingsTest extends TestCase
     public function test_can_update_subtype(): void
     {
         $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Old']);
+        $subtype = CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Old']);
 
         $response = $this->actingAs($this->user)->patchJson("/api/cashflow/settings/subtypes/{$subtype->id}", [
             'name' => 'New Sub',
@@ -247,7 +247,7 @@ class CashflowSettingsTest extends TestCase
     public function test_can_delete_subtype(): void
     {
         $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Sub']);
+        $subtype = CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Sub']);
 
         $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/subtypes/{$subtype->id}")
              ->assertNoContent();
@@ -258,8 +258,8 @@ class CashflowSettingsTest extends TestCase
     public function test_cannot_delete_subtype_with_existing_records(): void
     {
         $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Salary']);
-        CashflowRecord::create(['user_id' => $this->user->id, 'type_id' => $type->id, 'subtype_id' => $subtype->id, 'recorded_at' => now(), 'amount' => 100]);
+        $subtype = CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Salary']);
+        CashflowRecord::create(['user_id' => $this->user->id, 'cashflow_type_id' => $type->id, 'cashflow_subtype_id' => $subtype->id, 'recorded_at' => now(), 'amount' => 100]);
 
         $this->actingAs($this->user)->deleteJson("/api/cashflow/settings/subtypes/{$subtype->id}")
              ->assertUnprocessable()
@@ -272,7 +272,7 @@ class CashflowSettingsTest extends TestCase
     {
         $other   = User::factory()->create();
         $type    = CashflowType::create(['user_id' => $other->id, 'name' => 'Their Type', 'is_expense' => true]);
-        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $other->id, 'name' => 'Their Sub']);
+        $subtype = CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $other->id, 'name' => 'Their Sub']);
 
         $this->actingAs($this->user)->patchJson("/api/cashflow/settings/subtypes/{$subtype->id}", ['name' => 'Hijacked'])
              ->assertForbidden();
@@ -315,7 +315,7 @@ class CashflowSettingsTest extends TestCase
     public function test_can_disable_subtype(): void
     {
         $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
+        $subtype = CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
 
         $this->actingAs($this->user)->patchJson("/api/cashflow/settings/subtypes/{$subtype->id}", ['is_disabled' => true])
              ->assertOk()->assertJsonFragment(['is_disabled' => true]);
@@ -326,8 +326,8 @@ class CashflowSettingsTest extends TestCase
     public function test_disabling_type_cascades_to_subtypes(): void
     {
         $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        $sub1 = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Sub1']);
-        $sub2 = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Sub2']);
+        $sub1 = CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Sub1']);
+        $sub2 = CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Sub2']);
 
         $this->actingAs($this->user)->patchJson("/api/cashflow/settings/types/{$type->id}", ['is_disabled' => true])
              ->assertOk();
@@ -339,7 +339,7 @@ class CashflowSettingsTest extends TestCase
     public function test_setting_private_on_type_cascades_to_subtypes(): void
     {
         $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        $sub  = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Sub']);
+        $sub  = CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Sub']);
 
         $this->actingAs($this->user)->patchJson("/api/cashflow/settings/types/{$type->id}", ['is_private' => false])
              ->assertOk();
@@ -350,7 +350,7 @@ class CashflowSettingsTest extends TestCase
     public function test_can_set_private_on_subtype(): void
     {
         $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
+        $subtype = CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
 
         $this->actingAs($this->user)->patchJson("/api/cashflow/settings/subtypes/{$subtype->id}", ['is_private' => false])
              ->assertOk()->assertJsonFragment(['is_private' => false]);

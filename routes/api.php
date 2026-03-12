@@ -6,11 +6,11 @@ use App\Http\Controllers\CashflowRecordController;
 use App\Http\Controllers\CashflowSettingsController;
 use App\Http\Controllers\ExposureBundleController;
 use App\Http\Controllers\PortfolioController;
-use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\StockSettingsController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\StockImportExportController;
 use App\Http\Controllers\StockPriceHistoryController;
-use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\StockTransactionController;
 use Illuminate\Support\Facades\Route;
 
 // Auth
@@ -43,13 +43,13 @@ Route::prefix('stocks')->group(function () {
         Route::get('portfolio/history', [PortfolioController::class, 'history']);
 
         // Transactions
-        Route::post('transactions', [TransactionController::class, 'store']);
-        Route::put('transactions/{transaction}', [TransactionController::class, 'update']);
-        Route::delete('transactions/{transaction}', [TransactionController::class, 'destroy']);
+        Route::post('transactions', [StockTransactionController::class, 'store']);
+        Route::put('transactions/{stock_transaction}', [StockTransactionController::class, 'update']);
+        Route::delete('transactions/{stock_transaction}', [StockTransactionController::class, 'destroy']);
 
         // Settings
-        Route::get('settings', [SettingsController::class, 'show']);
-        Route::patch('settings', [SettingsController::class, 'update']);
+        Route::get('settings', [StockSettingsController::class, 'show']);
+        Route::patch('settings', [StockSettingsController::class, 'update']);
 
         // Import / Export
         Route::get('export', [StockImportExportController::class, 'export']);

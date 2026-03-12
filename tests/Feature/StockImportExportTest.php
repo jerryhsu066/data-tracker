@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Stock;
-use App\Models\Transaction;
+use App\Models\StockTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -22,7 +22,7 @@ class StockImportExportTest extends TestCase
         parent::setUp();
         $this->user  = User::factory()->create();
         $this->stock = Stock::create(['symbol' => '2330', 'name' => 'TSMC']);
-        Transaction::create([
+        StockTransaction::create([
             'user_id'          => $this->user->id,
             'stock_id'         => $this->stock->id,
             'type'             => 'buy',
@@ -64,7 +64,7 @@ class StockImportExportTest extends TestCase
     public function test_export_only_returns_own_transactions(): void
     {
         $other = User::factory()->create();
-        Transaction::create([
+        StockTransaction::create([
             'user_id' => $other->id, 'stock_id' => $this->stock->id,
             'type' => 'buy', 'shares' => 500, 'price_per_share' => 600,
             'handling_fee' => 20, 'transaction_tax' => 0, 'transacted_at' => '2024-02-01',
@@ -145,7 +145,7 @@ class StockImportExportTest extends TestCase
                          ->postJson('/api/stocks/import', ['file' => $file, 'format' => 'csv']);
 
         $response->assertOk()->assertJsonFragment(['imported' => 1]);
-        $this->assertDatabaseHas('transactions', [
+        $this->assertDatabaseHas('stock_transactions', [
             'user_id' => $this->user->id,
             'type'    => 'sell',
             'shares'  => 200,
@@ -254,7 +254,7 @@ class StockImportExportTest extends TestCase
                          ->postJson('/api/stocks/import', ['file' => $file, 'format' => 'csv']);
 
         $response->assertOk()->assertJsonFragment(['imported' => 0]);
-        $this->assertDatabaseCount('transactions', 1);
+        $this->assertDatabaseCount('stock_transactions', 1);
     }
 
     public function test_import_includes_duplicates_when_not_skipping(): void
@@ -267,7 +267,7 @@ class StockImportExportTest extends TestCase
                          ->postJson('/api/stocks/import', ['file' => $file, 'format' => 'csv', 'skip_duplicates' => false]);
 
         $response->assertOk()->assertJsonFragment(['imported' => 1]);
-        $this->assertDatabaseCount('transactions', 2);
+        $this->assertDatabaseCount('stock_transactions', 2);
     }
 
     public function test_malformed_csv_row_is_reported_not_silently_dropped(): void
@@ -307,7 +307,7 @@ class StockImportExportTest extends TestCase
              ->postJson('/api/stocks/import', ['file' => $file, 'format' => 'csv'])
              ->assertOk()->assertJsonFragment(['imported' => 1]);
 
-        $this->assertDatabaseHas('transactions', ['notes' => null]);
+        $this->assertDatabaseHas('stock_transactions', ['notes' => null]);
     }
 
     public function test_guest_cannot_import(): void

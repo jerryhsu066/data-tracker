@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Stock;
-use App\Models\Transaction;
+use App\Models\StockTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -38,7 +38,7 @@ class UserScopedTransactionTest extends TestCase
             'transacted_at' => '2025-01-01',
         ])->assertCreated();
 
-        $this->assertDatabaseHas('transactions', [
+        $this->assertDatabaseHas('stock_transactions', [
             'user_id' => $user->id,
             'stock_id' => $stock->id,
         ]);
@@ -50,8 +50,8 @@ class UserScopedTransactionTest extends TestCase
         $bob = User::factory()->create();
         $stock = Stock::factory()->create(['symbol' => '2330.TW']);
 
-        Transaction::factory()->buy($stock, shares: 500, price: 800)->create(['user_id' => $alice->id]);
-        Transaction::factory()->buy($stock, shares: 1000, price: 810)->create(['user_id' => $bob->id]);
+        StockTransaction::factory()->buy($stock, shares: 500, price: 800)->create(['user_id' => $alice->id]);
+        StockTransaction::factory()->buy($stock, shares: 1000, price: 810)->create(['user_id' => $bob->id]);
 
         $response = $this->actingAs($alice)->getJson('/api/stocks/2330.TW/transactions');
 
@@ -65,7 +65,7 @@ class UserScopedTransactionTest extends TestCase
         $bob = User::factory()->create();
         $stock = Stock::factory()->create();
 
-        $bobsTx = Transaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $bob->id]);
+        $bobsTx = StockTransaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $bob->id]);
 
         $this->actingAs($alice)->deleteJson("/api/stocks/transactions/{$bobsTx->id}")
             ->assertForbidden();
@@ -76,12 +76,12 @@ class UserScopedTransactionTest extends TestCase
         $user = User::factory()->create();
         $stock = Stock::factory()->create();
 
-        $tx = Transaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $user->id]);
+        $tx = StockTransaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $user->id]);
 
         $this->actingAs($user)->deleteJson("/api/stocks/transactions/{$tx->id}")
             ->assertNoContent();
 
-        $this->assertSoftDeleted('transactions', ['id' => $tx->id]);
+        $this->assertSoftDeleted('stock_transactions', ['id' => $tx->id]);
     }
 
     public function test_sell_validation_only_counts_users_own_shares(): void
@@ -91,7 +91,7 @@ class UserScopedTransactionTest extends TestCase
         $stock = Stock::factory()->create();
 
         // Bob has 500 shares but Alice has 0
-        Transaction::factory()->buy($stock, shares: 500, price: 800)->create(['user_id' => $bob->id]);
+        StockTransaction::factory()->buy($stock, shares: 500, price: 800)->create(['user_id' => $bob->id]);
 
         $this->actingAs($alice)->postJson('/api/stocks/transactions', [
             'stock_id' => $stock->id,
@@ -109,8 +109,8 @@ class UserScopedTransactionTest extends TestCase
         $bob = User::factory()->create();
         $stock = Stock::factory()->create(['current_price' => 900]);
 
-        Transaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $alice->id]);
-        Transaction::factory()->buy($stock, shares: 500, price: 700)->create(['user_id' => $bob->id]);
+        StockTransaction::factory()->buy($stock, shares: 100, price: 800)->create(['user_id' => $alice->id]);
+        StockTransaction::factory()->buy($stock, shares: 500, price: 700)->create(['user_id' => $bob->id]);
 
         $response = $this->actingAs($alice)->getJson('/api/stocks/portfolio');
 

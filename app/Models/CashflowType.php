@@ -22,13 +22,13 @@ class CashflowType extends Model
 
     public function subtypes(): HasMany
     {
-        return $this->hasMany(CashflowSubtype::class, 'type_id')
+        return $this->hasMany(CashflowSubtype::class, 'cashflow_type_id')
                     ->orderBy('sort_order')
                     ->orderBy('id');
     }
 
     public function records(): HasMany
     {
-        return $this->hasMany(CashflowRecord::class, 'type_id');
+        return $this->hasMany(CashflowRecord::class, 'cashflow_type_id');
     }
 }

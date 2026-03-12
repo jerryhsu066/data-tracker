@@ -3,14 +3,14 @@
 namespace Database\Factories;
 
 use App\Models\Stock;
-use App\Models\Transaction;
+use App\Models\StockTransaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Transaction>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\StockTransaction>
  */
-class TransactionFactory extends Factory
+class StockTransactionFactory extends Factory
 {
     public function definition(): array
     {

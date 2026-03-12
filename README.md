@@ -11,6 +11,7 @@ A personal stock portfolio tracker for Taiwan markets (TWSE / OTC), with support
 - **Market indices** — Track index symbols (e.g. `^TWII`, `^IXIC`, `^VIX`) for price history and charting without recording transactions
 - **Portfolio value history** — Daily portfolio value and cost basis from earliest transaction to today, with carry-forward for missing price dates
 - **Exposure bundles** — Group stocks with leverage multipliers to track effective market exposure separately from the main portfolio (useful for leveraged ETFs)
+- **Cashflow tracking** — Log monthly income and expenses by customisable types and subtypes; monthly overview with an editable grid and a log view; import/export CSV or JSON
 - **Price data** — Fetched from Yahoo Finance (no API key required); TWSE symbols use `.TW`, OTC symbols use `.TWO`; auto-retries `.TW` → `.TWO` on 404
 - **Scheduled price sync** — Prices fetched hourly on weekdays via a background queue worker; manual sync also available
 - **Privacy mode** — Eye icon in the navbar toggles visibility of portfolio-sensitive amounts (prices are always shown as public market data)
@@ -118,7 +119,7 @@ docker compose build app
 docker compose exec app php artisan test
 
 # Run a specific test file
-docker compose exec app php artisan test tests/Feature/TransactionApiTest.php
+docker compose exec app php artisan test tests/Feature/StockTransactionApiTest.php
 
 # Run tests matching a name
 docker compose exec app php artisan test --filter=test_can_record_a_buy_transaction
@@ -145,20 +146,29 @@ docker compose logs -f worker
 ```
 app/
 ├── Http/Controllers/
-│   ├── AuthController.php               # Register, login, logout, me
-│   ├── StockController.php              # Stock CRUD, price fetch, sync history
-│   ├── StockPriceHistoryController.php  # Daily price history for a stock
-│   ├── TransactionController.php        # Buy/sell transaction CRUD
-│   ├── PortfolioController.php          # Aggregated positions + value history
-│   ├── SettingsController.php           # Per-user handling fee discount
-│   └── ExposureBundleController.php     # Exposure bundle and entry management
+│   ├── AuthController.php                  # Register, login, logout, me, update profile
+│   ├── StockController.php                 # Stock CRUD, price fetch, sync history
+│   ├── StockPriceHistoryController.php     # Daily price history for a stock
+│   ├── StockTransactionController.php      # Buy/sell transaction CRUD
+│   ├── StockImportExportController.php     # Import/export stock transactions (CSV/JSON)
+│   ├── StockSettingsController.php         # Per-user handling fee discount
+│   ├── PortfolioController.php             # Aggregated positions + value history
+│   ├── ExposureBundleController.php        # Exposure bundle and entry management
+│   ├── CashflowSettingsController.php      # Cashflow type and subtype CRUD
+│   ├── CashflowRecordController.php        # Cashflow record CRUD + bulk operations
+│   └── CashflowImportExportController.php  # Import/export cashflow records (CSV/JSON)
 ├── Models/
 │   ├── User.php                    # Auth user; handling_fee_discount field
 │   ├── Stock.php                   # Tracked symbol; current price + change %
-│   ├── Transaction.php             # Buy/sell record; shares, price, fees
+│   ├── StockTransaction.php        # Buy/sell record; shares, price, fees
 │   ├── StockPriceHistory.php       # Daily close price per stock
 │   ├── ExposureBundle.php          # Named group of stocks for exposure calc
-│   └── ExposureBundleEntry.php     # Stock + leverage + optional shares override
+│   ├── ExposureBundleEntry.php     # Stock + leverage + optional shares override
+│   ├── CashflowType.php            # User-defined cashflow category (income/expense)
+│   ├── CashflowSubtype.php         # Sub-category under a cashflow type
+│   └── CashflowRecord.php          # Monthly cashflow entry; amount + optional note
+├── Actions/
+│   └── SeedDefaultCashflowTypes.php  # Seeds default types/subtypes for new users
 ├── Services/
 │   └── StockPriceService.php       # Yahoo Finance HTTP client; .TW → .TWO fallback
 ├── Jobs/
@@ -166,7 +176,7 @@ app/
 │   ├── FetchStockPrice.php         # Fetches and stores current price for one stock
 │   └── FetchHistoricalPrices.php   # Fetches daily closes from a given date to yesterday
 └── Policies/
-    └── TransactionPolicy.php       # Ownership checks: only the owner may update/delete
+    └── StockTransactionPolicy.php  # Ownership checks: only the owner may update/delete
 ```
 
 ### Frontend (`resources/js/`)
@@ -174,13 +184,17 @@ app/
 ```
 resources/js/
 ├── views/
-│   ├── HomeView.vue           # Overview: market indices + portfolio summary + exposure
-│   ├── DashboardView.vue      # Portfolio: positions table + allocation/gain charts
-│   ├── StocksView.vue         # Tracked stocks grid; add/delete stocks
-│   ├── StockDetailView.vue    # Single stock: price chart + transaction history
-│   ├── TransactionsView.vue   # All transactions across all stocks
-│   ├── ExposureView.vue       # Exposure bundles: leverage-weighted market exposure
-│   ├── SettingsView.vue       # Handling fee discount setting
+│   ├── HomeView.vue                # Overview: market indices + portfolio summary + exposure
+│   ├── DashboardView.vue           # Portfolio: positions table + allocation/gain charts
+│   ├── StocksView.vue              # Tracked stocks grid; add/delete stocks
+│   ├── StockDetailView.vue         # Single stock: price chart + transaction history
+│   ├── StockTransactionsView.vue   # All stock transactions across all stocks
+│   ├── ExposureView.vue            # Exposure bundles: leverage-weighted market exposure
+│   ├── SettingsView.vue            # Handling fee discount setting
+│   ├── CashflowHomeView.vue        # Cashflow monthly overview grid (editable cells)
+│   ├── CashflowLogView.vue         # Cashflow log: add/edit entries by type/subtype
+│   ├── CashflowSettingsView.vue    # Manage cashflow types and subtypes
+│   ├── UserSettingsView.vue        # Account settings (name, email, password, privacy lock)
 │   ├── LoginView.vue
 │   └── RegisterView.vue
 ├── components/
@@ -200,6 +214,8 @@ POST   /api/auth/register
 POST   /api/auth/login
 POST   /api/auth/logout
 GET    /api/auth/me
+PATCH  /api/auth/me                          # Update name / email / password
+POST   /api/auth/verify-password
 
 GET    /api/stocks                           # List all tracked stocks (public)
 POST   /api/stocks                           # Add a stock
@@ -213,12 +229,16 @@ POST   /api/stocks/sync-history              # Dispatch historical price fetch f
 GET    /api/stocks/portfolio                 # Aggregated positions
 GET    /api/stocks/portfolio/history         # Daily portfolio value + cost basis
 
-POST   /api/stocks/transactions              # Create transaction
-PUT    /api/stocks/transactions/{id}         # Update transaction
-DELETE /api/stocks/transactions/{id}         # Soft-delete transaction
+POST   /api/stocks/transactions              # Create stock transaction
+PUT    /api/stocks/transactions/{id}         # Update stock transaction
+DELETE /api/stocks/transactions/{id}         # Soft-delete stock transaction
 
 GET    /api/stocks/settings                  # Get handling fee discount
 PATCH  /api/stocks/settings                  # Update handling fee discount
+
+GET    /api/stocks/export                    # Export transactions (CSV or JSON)
+POST   /api/stocks/import/preview            # Preview import file
+POST   /api/stocks/import                    # Import transactions
 
 GET    /api/stocks/exposure/bundles                          # List exposure bundles
 POST   /api/stocks/exposure/bundles                          # Create bundle
@@ -227,6 +247,24 @@ DELETE /api/stocks/exposure/bundles/{id}                     # Delete bundle
 POST   /api/stocks/exposure/bundles/{id}/entries             # Add entry
 PATCH  /api/stocks/exposure/bundles/{id}/entries/{eid}       # Update entry
 DELETE /api/stocks/exposure/bundles/{id}/entries/{eid}       # Remove entry
+
+GET    /api/cashflow/settings/types                          # List types with subtypes
+POST   /api/cashflow/settings/types                          # Create type
+PATCH  /api/cashflow/settings/types/{id}                     # Update type
+DELETE /api/cashflow/settings/types/{id}                     # Delete type
+POST   /api/cashflow/settings/types/{id}/subtypes            # Create subtype
+PATCH  /api/cashflow/settings/subtypes/{id}                  # Update subtype
+DELETE /api/cashflow/settings/subtypes/{id}                  # Delete subtype
+
+GET    /api/cashflow/records                 # List records (filter by year/month)
+POST   /api/cashflow/records                 # Create record
+PATCH  /api/cashflow/records/{id}            # Update record
+DELETE /api/cashflow/records/{id}            # Soft-delete record
+POST   /api/cashflow/records/bulk            # Bulk create / update / delete
+
+GET    /api/cashflow/export                  # Export cashflow records (CSV or JSON)
+POST   /api/cashflow/import/preview          # Preview cashflow import file
+POST   /api/cashflow/import                  # Import cashflow records
 ```
 
 See [`API.md`](./API.md) for the full request/response reference.

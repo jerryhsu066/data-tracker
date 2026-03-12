@@ -98,19 +98,29 @@ Standard Laravel MVC structure:
 
 ### API Route Structure
 
-All stock-module routes share the `/stocks` prefix. Static paths are declared before `{symbol}` wildcard routes to avoid conflicts:
+Two top-level prefixes: `/stocks` for the stock/portfolio module, `/cashflow` for the cashflow module. Static paths are declared before `{symbol}` wildcard routes to avoid conflicts.
 
 ```
-/auth/*               — register, login, logout, me
+/auth/*               — register, login, logout, me, update profile
+
 /stocks               — list / create stocks
-/stocks/portfolio     — portfolio positions & history
-/stocks/transactions  — create / update / delete transactions
-/stocks/settings      — user settings
+/stocks/portfolio     — portfolio positions & value history
+/stocks/transactions  — create / update / delete stock transactions
+/stocks/settings      — per-user handling fee discount
+/stocks/export        — export transactions (CSV or JSON)
+/stocks/import        — import transactions (with /preview)
 /stocks/exposure/*    — exposure bundles & entries
 /stocks/sync-history  — bulk price history sync
 /stocks/{symbol}      — single stock CRUD & price fetch
 /stocks/{symbol}/prices       — price history
 /stocks/{symbol}/transactions — per-stock transactions
+
+/cashflow/settings/types        — cashflow type CRUD
+/cashflow/settings/types/{id}/subtypes — subtype management
+/cashflow/settings/subtypes/{id}       — subtype update/delete
+/cashflow/records     — cashflow record CRUD & bulk operations
+/cashflow/export      — export cashflow records (CSV or JSON)
+/cashflow/import      — import cashflow records (with /preview)
 ```
 
 ## Docker Infrastructure
@@ -152,6 +162,22 @@ Key frontend conventions:
 - `resources/js/stores/` — shared state composables: `useTheme` (dark mode), `usePrivacy` (hide/show amounts), `useAuth`
 - `app/Services/StockPriceService.php` — Yahoo Finance fetching with `.TW` → `.TWO` OTC fallback
 - `app/Jobs/` — queued jobs (`FetchAllStockPrices` dispatches per-stock `FetchStockPrice` jobs)
+- `app/Actions/SeedDefaultCashflowTypes.php` — seeds default cashflow types/subtypes for new users on registration
+- `app/Policies/StockTransactionPolicy.php` — ownership gate for stock transaction update/delete
+
+### Key naming conventions
+
+Models, controllers, tables, and columns are prefixed with their module to avoid ambiguity:
+
+| Module | Table | Model | Controller |
+|--------|-------|-------|------------|
+| Stocks | `stock_transactions` | `StockTransaction` | `StockTransactionController` |
+| Stocks | `stocks` | `Stock` | `StockController` |
+| Cashflow | `cashflow_records` | `CashflowRecord` | `CashflowRecordController` |
+| Cashflow | `cashflow_types` | `CashflowType` | `CashflowSettingsController` |
+| Cashflow | `cashflow_subtypes` | `CashflowSubtype` | `CashflowSettingsController` |
+
+Cashflow foreign key columns: `cashflow_type_id`, `cashflow_subtype_id` (not `type_id` / `subtype_id`).
 
 ## Taiwan Market Rules
 

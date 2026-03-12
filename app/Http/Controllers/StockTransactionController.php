@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\FetchHistoricalPrices;
 use App\Models\Stock;
-use App\Models\Transaction;
+use App\Models\StockTransaction;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-class TransactionController extends Controller
+class StockTransactionController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
@@ -50,7 +50,7 @@ class TransactionController extends Controller
             ? (int) $validated['transaction_tax']
             : ($validated['type'] === 'sell' ? (int) floor($tradeValue * 0.003) : 0);
 
-        $transaction = Transaction::create([
+        $transaction = StockTransaction::create([
             ...$validated,
             'user_id'         => $request->user()->id,
             'handling_fee'    => $handlingFee,
@@ -68,9 +68,9 @@ class TransactionController extends Controller
         return response()->json($transaction, 201);
     }
 
-    public function update(Request $request, Transaction $transaction): JsonResponse
+    public function update(Request $request, StockTransaction $stockTransaction): JsonResponse
     {
-        Gate::authorize('update', $transaction);
+        Gate::authorize('update', $stockTransaction);
 
         $validated = $request->validate([
             'type'             => ['required', Rule::in(['buy', 'sell'])],
@@ -82,23 +82,23 @@ class TransactionController extends Controller
             'notes'            => ['nullable', 'string'],
         ]);
 
-        $transaction->update($validated);
-        $transaction->load('stock');
+        $stockTransaction->update($validated);
+        $stockTransaction->load('stock');
 
         $today = Carbon::today('Asia/Taipei')->toDateString();
         $transactedAt = Carbon::parse($validated['transacted_at'])->toDateString();
         if ($transactedAt !== $today) {
-            FetchHistoricalPrices::dispatch($transaction->stock, $transactedAt);
+            FetchHistoricalPrices::dispatch($stockTransaction->stock, $transactedAt);
         }
 
-        return response()->json($transaction);
+        return response()->json($stockTransaction);
     }
 
-    public function destroy(Transaction $transaction): Response
+    public function destroy(StockTransaction $stockTransaction): Response
     {
-        Gate::authorize('delete', $transaction);
+        Gate::authorize('delete', $stockTransaction);
 
-        $transaction->delete();
+        $stockTransaction->delete();
 
         return response()->noContent();
     }

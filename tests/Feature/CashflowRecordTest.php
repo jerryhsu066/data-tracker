@@ -34,9 +34,9 @@ class CashflowRecordTest extends TestCase
     {
         $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
 
-        CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-03-01', 'type_id' => $type->id, 'amount' => 80000]);
-        CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-04-01', 'type_id' => $type->id, 'amount' => 80000]);
-        CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2025-03-01', 'type_id' => $type->id, 'amount' => 75000]);
+        CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-03-01', 'cashflow_type_id' => $type->id, 'amount' => 80000]);
+        CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-04-01', 'cashflow_type_id' => $type->id, 'amount' => 80000]);
+        CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2025-03-01', 'cashflow_type_id' => $type->id, 'amount' => 75000]);
 
         $response = $this->actingAs($this->user)->getJson('/api/cashflow/records?year=2026');
 
@@ -47,8 +47,8 @@ class CashflowRecordTest extends TestCase
     {
         $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
 
-        CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-03-01', 'type_id' => $type->id, 'amount' => 80000]);
-        CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-04-01', 'type_id' => $type->id, 'amount' => 80000]);
+        CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-03-01', 'cashflow_type_id' => $type->id, 'amount' => 80000]);
+        CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-04-01', 'cashflow_type_id' => $type->id, 'amount' => 80000]);
 
         $response = $this->actingAs($this->user)->getJson('/api/cashflow/records?year=2026&month=3');
 
@@ -60,7 +60,7 @@ class CashflowRecordTest extends TestCase
     {
         $other = User::factory()->create();
         $type  = CashflowType::create(['user_id' => $other->id, 'name' => 'Rent', 'is_expense' => true]);
-        CashflowRecord::create(['user_id' => $other->id, 'recorded_at' => '2026-03-01', 'type_id' => $type->id, 'amount' => 20000]);
+        CashflowRecord::create(['user_id' => $other->id, 'recorded_at' => '2026-03-01', 'cashflow_type_id' => $type->id, 'amount' => 20000]);
 
         $response = $this->actingAs($this->user)->getJson('/api/cashflow/records?year=2026');
 
@@ -74,32 +74,32 @@ class CashflowRecordTest extends TestCase
         $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Rent', 'is_expense' => true]);
 
         $response = $this->actingAs($this->user)->postJson('/api/cashflow/records', [
-            'recorded_at' => '2026-03-01',
-            'type_id'     => $type->id,
-            'amount'      => 25000,
+            'recorded_at'      => '2026-03-01',
+            'cashflow_type_id' => $type->id,
+            'amount'           => 25000,
         ]);
 
         $response->assertCreated()
-                 ->assertJsonStructure(['id', 'type_id', 'subtype_id', 'amount', 'recorded_at', 'note'])
-                 ->assertJsonFragment(['amount' => '25000.00', 'subtype_id' => null]);
+                 ->assertJsonStructure(['id', 'cashflow_type_id', 'cashflow_subtype_id', 'amount', 'recorded_at', 'note'])
+                 ->assertJsonFragment(['amount' => '25000.00', 'cashflow_subtype_id' => null]);
 
-        $this->assertDatabaseHas('cashflow_records', ['user_id' => $this->user->id, 'type_id' => $type->id]);
+        $this->assertDatabaseHas('cashflow_records', ['user_id' => $this->user->id, 'cashflow_type_id' => $type->id]);
     }
 
     public function test_can_create_record_with_subtype(): void
     {
         $type    = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
-        $subtype = CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
+        $subtype = CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'Acme']);
 
         $response = $this->actingAs($this->user)->postJson('/api/cashflow/records', [
-            'recorded_at' => '2026-03-01',
-            'type_id'     => $type->id,
-            'subtype_id'  => $subtype->id,
-            'amount'      => 80000,
+            'recorded_at'         => '2026-03-01',
+            'cashflow_type_id'    => $type->id,
+            'cashflow_subtype_id' => $subtype->id,
+            'amount'              => 80000,
         ]);
 
-        $response->assertCreated()->assertJsonFragment(['subtype_id' => $subtype->id]);
-        $this->assertDatabaseHas('cashflow_records', ['subtype_id' => $subtype->id]);
+        $response->assertCreated()->assertJsonFragment(['cashflow_subtype_id' => $subtype->id]);
+        $this->assertDatabaseHas('cashflow_records', ['cashflow_subtype_id' => $subtype->id]);
     }
 
     public function test_cannot_use_another_users_type(): void
@@ -108,24 +108,24 @@ class CashflowRecordTest extends TestCase
         $type  = CashflowType::create(['user_id' => $other->id, 'name' => 'Rent', 'is_expense' => true]);
 
         $this->actingAs($this->user)->postJson('/api/cashflow/records', [
-            'recorded_at' => '2026-03-01',
-            'type_id'     => $type->id,
-            'amount'      => 25000,
-        ])->assertUnprocessable()->assertJsonValidationErrors(['type_id']);
+            'recorded_at'      => '2026-03-01',
+            'cashflow_type_id' => $type->id,
+            'amount'           => 25000,
+        ])->assertUnprocessable()->assertJsonValidationErrors(['cashflow_type_id']);
     }
 
     public function test_cannot_use_subtype_from_different_type(): void
     {
         $typeA   = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Income', 'is_expense' => false]);
         $typeB   = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Card', 'is_expense' => true]);
-        $subtype = CashflowSubtype::create(['type_id' => $typeB->id, 'user_id' => $this->user->id, 'name' => 'CTBC']);
+        $subtype = CashflowSubtype::create(['cashflow_type_id' => $typeB->id, 'user_id' => $this->user->id, 'name' => 'CTBC']);
 
         $this->actingAs($this->user)->postJson('/api/cashflow/records', [
-            'recorded_at' => '2026-03-01',
-            'type_id'     => $typeA->id,
-            'subtype_id'  => $subtype->id,
-            'amount'      => 80000,
-        ])->assertUnprocessable()->assertJsonValidationErrors(['subtype_id']);
+            'recorded_at'         => '2026-03-01',
+            'cashflow_type_id'    => $typeA->id,
+            'cashflow_subtype_id' => $subtype->id,
+            'amount'              => 80000,
+        ])->assertUnprocessable()->assertJsonValidationErrors(['cashflow_subtype_id']);
     }
 
     public function test_type_id_is_required(): void
@@ -133,37 +133,37 @@ class CashflowRecordTest extends TestCase
         $this->actingAs($this->user)->postJson('/api/cashflow/records', [
             'recorded_at' => '2026-03-01',
             'amount'      => 100,
-        ])->assertUnprocessable()->assertJsonValidationErrors(['type_id']);
+        ])->assertUnprocessable()->assertJsonValidationErrors(['cashflow_type_id']);
     }
 
     public function test_cannot_create_record_without_required_subtype(): void
     {
         $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Card', 'is_expense' => true]);
-        CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'HSBC']);
+        CashflowSubtype::create(['cashflow_type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'HSBC']);
 
         $this->actingAs($this->user)->postJson('/api/cashflow/records', [
-            'recorded_at' => '2026-03-01',
-            'type_id'     => $type->id,
-            'amount'      => 5000,
-            // subtype_id intentionally omitted
-        ])->assertUnprocessable()->assertJsonValidationErrors(['subtype_id']);
+            'recorded_at'      => '2026-03-01',
+            'cashflow_type_id' => $type->id,
+            'amount'           => 5000,
+            // cashflow_subtype_id intentionally omitted
+        ])->assertUnprocessable()->assertJsonValidationErrors(['cashflow_subtype_id']);
     }
 
     public function test_cannot_change_type_to_one_with_subtypes_without_providing_subtype_id(): void
     {
         $typeNoSub  = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Rent',   'is_expense' => true]);
         $typeWithSub = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Card',  'is_expense' => true]);
-        CashflowSubtype::create(['type_id' => $typeWithSub->id, 'user_id' => $this->user->id, 'name' => 'HSBC']);
+        CashflowSubtype::create(['cashflow_type_id' => $typeWithSub->id, 'user_id' => $this->user->id, 'name' => 'HSBC']);
 
         $record = CashflowRecord::create([
             'user_id' => $this->user->id, 'recorded_at' => '2026-03-01',
-            'type_id' => $typeNoSub->id, 'amount' => 25000,
+            'cashflow_type_id' => $typeNoSub->id, 'amount' => 25000,
         ]);
 
         $this->actingAs($this->user)->patchJson("/api/cashflow/records/{$record->id}", [
-            'type_id' => $typeWithSub->id,
-            // subtype_id intentionally omitted
-        ])->assertUnprocessable()->assertJsonValidationErrors(['subtype_id']);
+            'cashflow_type_id' => $typeWithSub->id,
+            // cashflow_subtype_id intentionally omitted
+        ])->assertUnprocessable()->assertJsonValidationErrors(['cashflow_subtype_id']);
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
@@ -171,7 +171,7 @@ class CashflowRecordTest extends TestCase
     public function test_can_update_record(): void
     {
         $type   = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Rent', 'is_expense' => true]);
-        $record = CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-03-01', 'type_id' => $type->id, 'amount' => 25000]);
+        $record = CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-03-01', 'cashflow_type_id' => $type->id, 'amount' => 25000]);
 
         $response = $this->actingAs($this->user)->patchJson("/api/cashflow/records/{$record->id}", [
             'amount' => 26000,
@@ -186,7 +186,7 @@ class CashflowRecordTest extends TestCase
     {
         $other  = User::factory()->create();
         $type   = CashflowType::create(['user_id' => $other->id, 'name' => 'Rent', 'is_expense' => true]);
-        $record = CashflowRecord::create(['user_id' => $other->id, 'recorded_at' => '2026-03-01', 'type_id' => $type->id, 'amount' => 25000]);
+        $record = CashflowRecord::create(['user_id' => $other->id, 'recorded_at' => '2026-03-01', 'cashflow_type_id' => $type->id, 'amount' => 25000]);
 
         $this->actingAs($this->user)->patchJson("/api/cashflow/records/{$record->id}", ['amount' => 1])
              ->assertForbidden();
@@ -197,7 +197,7 @@ class CashflowRecordTest extends TestCase
     public function test_can_delete_record(): void
     {
         $type   = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Rent', 'is_expense' => true]);
-        $record = CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-03-01', 'type_id' => $type->id, 'amount' => 25000]);
+        $record = CashflowRecord::create(['user_id' => $this->user->id, 'recorded_at' => '2026-03-01', 'cashflow_type_id' => $type->id, 'amount' => 25000]);
 
         $this->actingAs($this->user)->deleteJson("/api/cashflow/records/{$record->id}")
              ->assertNoContent();
@@ -209,7 +209,7 @@ class CashflowRecordTest extends TestCase
     {
         $other  = User::factory()->create();
         $type   = CashflowType::create(['user_id' => $other->id, 'name' => 'Rent', 'is_expense' => true]);
-        $record = CashflowRecord::create(['user_id' => $other->id, 'recorded_at' => '2026-03-01', 'type_id' => $type->id, 'amount' => 25000]);
+        $record = CashflowRecord::create(['user_id' => $other->id, 'recorded_at' => '2026-03-01', 'cashflow_type_id' => $type->id, 'amount' => 25000]);
 
         $this->actingAs($this->user)->deleteJson("/api/cashflow/records/{$record->id}")
              ->assertForbidden();
