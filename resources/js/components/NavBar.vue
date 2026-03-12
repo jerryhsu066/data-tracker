@@ -2,7 +2,16 @@
     <nav class="fixed top-0 inset-x-0 z-50 bg-slate-900 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-13">
             <!-- App name -->
-            <span class="font-bold text-base tracking-tight text-white select-none">data-tracker</span>
+            <span class="flex items-center gap-2 font-bold text-xl tracking-tight text-white select-none">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="w-7 h-7 shrink-0">
+                    <rect width="32" height="32" rx="7" fill="#1e293b"/>
+                    <polygon points="16,3.5 26.8,9.75 26.8,22.25 16,28.5 5.2,22.25 5.2,9.75" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linejoin="round"/>
+                    <line x1="9.5" y1="12" x2="22.5" y2="12" stroke="#f1f5f9" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="9.5" y1="16" x2="20"   y2="16" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="9.5" y1="20" x2="16.5" y2="20" stroke="#f1f5f9" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                Tracker
+            </span>
 
             <!-- User controls -->
             <div class="flex items-center gap-2 sm:gap-3">
