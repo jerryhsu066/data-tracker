@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SeedDefaultCashflowTypes;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class AuthController extends Controller
         ]);
 
         $user = User::create($validated);
+        (new SeedDefaultCashflowTypes)->run($user);
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json(['token' => $token, 'user' => $user], 201);
