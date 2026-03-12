@@ -36,22 +36,54 @@ class StockApiTest extends TestCase
 
     public function test_can_add_a_stock_to_track(): void
     {
+        Http::fake([
+            '*finance.yahoo.com*' => Http::response([
+                'chart' => ['result' => [['meta' => [
+                    'regularMarketPrice' => 195.5,
+                    'chartPreviousClose' => 190.0,
+                ]]]],
+            ]),
+        ]);
+
         $this->actingAs($this->user)->postJson('/api/stocks', [
             'symbol' => 'AAPL',
             'name' => 'Apple Inc.',
-        ])->assertCreated()->assertJsonFragment(['symbol' => 'AAPL']);
+        ])->assertCreated()->assertJsonFragment(['symbol' => 'AAPL', 'current_price' => '195.5000']);
 
-        $this->assertDatabaseHas('stocks', ['symbol' => 'AAPL']);
+        $this->assertDatabaseHas('stocks', ['symbol' => 'AAPL', 'current_price' => 195.5]);
     }
 
     public function test_symbol_is_stored_uppercase(): void
     {
+        Http::fake([
+            '*finance.yahoo.com*' => Http::response([
+                'chart' => ['result' => [['meta' => [
+                    'regularMarketPrice' => 195.5,
+                    'chartPreviousClose' => 190.0,
+                ]]]],
+            ]),
+        ]);
+
         $this->actingAs($this->user)->postJson('/api/stocks', [
             'symbol' => 'aapl',
             'name' => 'Apple Inc.',
         ])->assertCreated();
 
         $this->assertDatabaseHas('stocks', ['symbol' => 'AAPL']);
+    }
+
+    public function test_cannot_add_stock_with_invalid_symbol(): void
+    {
+        Http::fake([
+            '*finance.yahoo.com*' => Http::response(['chart' => ['result' => null]]),
+        ]);
+
+        $this->actingAs($this->user)->postJson('/api/stocks', [
+            'symbol' => 'FAKEXYZ',
+            'name' => 'Fake Corp',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['symbol']);
+
+        $this->assertDatabaseMissing('stocks', ['symbol' => 'FAKEXYZ']);
     }
 
     public function test_cannot_add_duplicate_stock_symbol(): void

@@ -28,7 +28,7 @@ class StockPriceService
         return $response;
     }
 
-    public function updatePrice(Stock $stock): void
+    public function updatePrice(Stock $stock): bool
     {
         $response = $this->chartRequest($stock->symbol, [
             'interval' => '1d',
@@ -40,7 +40,7 @@ class StockPriceService
         if (empty($meta) || ! isset($meta['regularMarketPrice'])) {
             Log::warning("StockPriceService: no price data returned for {$stock->symbol}");
 
-            return;
+            return false;
         }
 
         $price = (float) $meta['regularMarketPrice'];
@@ -78,6 +78,8 @@ class StockPriceService
                 ['close_price' => $price],
             );
         }
+
+        return true;
     }
 
     public function fetchHistoricalPrices(Stock $stock, string $fromDate): void

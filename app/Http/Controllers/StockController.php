@@ -19,7 +19,7 @@ class StockController extends Controller
         return response()->json(Stock::orderBy('symbol')->get());
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, StockPriceService $service): JsonResponse
     {
         $request->merge(['symbol' => strtoupper($request->input('symbol', ''))]);
 
@@ -30,7 +30,14 @@ class StockController extends Controller
 
         $stock = Stock::create($validated);
 
-        return response()->json($stock, 201);
+        if (! $service->updatePrice($stock)) {
+            $stock->forceDelete();
+            throw ValidationException::withMessages([
+                'symbol' => ['Symbol not found on Yahoo Finance. Please check the symbol and try again.'],
+            ]);
+        }
+
+        return response()->json($stock->fresh(), 201);
     }
 
     public function show(string $symbol): JsonResponse
