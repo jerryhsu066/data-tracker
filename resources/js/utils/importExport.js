@@ -25,7 +25,7 @@ export async function uploadImport(url, file, format, extra = {}) {
     form.append('file', file);
     form.append('format', format);
     for (const [key, val] of Object.entries(extra)) {
-        form.append(key, String(val));
+        form.append(key, typeof val === 'boolean' ? (val ? '1' : '0') : String(val));
     }
     const { data } = await api.post(url, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
