@@ -139,6 +139,7 @@
                             class="px-2.5 py-0.5 text-xs font-medium bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md transition-colors shrink-0"
                         >Cancel</button>
                     </div>
+                    <p v-if="deleteError" class="px-5 pb-2 text-xs text-red-500">{{ deleteError }}</p>
                 </template>
 
                 <!-- ── Subtypes list ── -->
@@ -172,55 +173,107 @@
 
                         <!-- Subtype: edit mode -->
                         <template v-else>
-                            <input
-                                v-model="editingSubtype.name"
-                                type="text"
-                                class="flex-1 min-w-0 h-7 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ml-1"
-                                @keydown.enter="saveSubtype(type)"
-                                @keydown.escape="cancelEdit"
-                            />
-                            <button type="button" @click="editingSubtype.is_disabled = !editingSubtype.is_disabled"
-                                class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
-                                :class="editingSubtype.is_disabled ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
-                            >Disabled</button>
-                            <button type="button"
-                                @click="!editingSubtype.parentMerged && (editingSubtype.is_private = !editingSubtype.is_private)"
-                                class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
-                                :disabled="editingSubtype.parentMerged"
-                                :class="editingSubtype.parentMerged
-                                    ? 'bg-slate-100 dark:bg-slate-700 text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                                    : editingSubtype.is_private
-                                        ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400'
-                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
-                                :title="editingSubtype.parentMerged ? 'Controlled by parent type' : ''"
-                            >Private</button>
-                            <button @click="saveSubtype(type)"
-                                class="px-2.5 py-0.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors shrink-0"
-                            >Save</button>
-                            <button
-                                @click.stop="confirmingDelete === `sub-${editingSubtype.id}` ? deleteSubtype(type, editingSubtype.id) : (confirmingDelete = `sub-${editingSubtype.id}`)"
-                                class="px-2.5 py-0.5 text-xs font-medium text-white rounded-md transition-colors shrink-0"
-                                :class="confirmingDelete === `sub-${editingSubtype.id}` ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-red-500 hover:bg-red-600'"
-                            >{{ confirmingDelete === `sub-${editingSubtype.id}` ? 'Confirm?' : 'Delete' }}</button>
-                            <button @click="cancelEdit"
-                                class="px-2.5 py-0.5 text-xs font-medium bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md transition-colors shrink-0"
-                            >Cancel</button>
+                            <div class="w-full min-w-0 space-y-1 ml-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <input
+                                        v-model="editingSubtype.name"
+                                        type="text"
+                                        class="flex-1 min-w-0 h-7 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        @keydown.enter="saveSubtype(type)"
+                                        @keydown.escape="cancelEdit"
+                                    />
+                                    <button type="button" @click="editingSubtype.is_disabled = !editingSubtype.is_disabled"
+                                        class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
+                                        :class="editingSubtype.is_disabled ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                                    >Disabled</button>
+                                    <button type="button"
+                                        @click="!editingSubtype.parentMerged && (editingSubtype.is_private = !editingSubtype.is_private)"
+                                        class="px-2 py-0.5 text-xs font-medium rounded-full transition-colors shrink-0"
+                                        :disabled="editingSubtype.parentMerged"
+                                        :class="editingSubtype.parentMerged
+                                            ? 'bg-slate-100 dark:bg-slate-700 text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                                            : editingSubtype.is_private
+                                                ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400'
+                                                : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'"
+                                        :title="editingSubtype.parentMerged ? 'Controlled by parent type' : ''"
+                                    >Private</button>
+                                    <button @click="saveSubtype(type)"
+                                        class="px-2.5 py-0.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors shrink-0"
+                                    >Save</button>
+                                    <button
+                                        @click.stop="confirmingDelete === `sub-${editingSubtype.id}` ? deleteSubtype(type, editingSubtype.id) : (confirmingDelete = `sub-${editingSubtype.id}`)"
+                                        class="px-2.5 py-0.5 text-xs font-medium text-white rounded-md transition-colors shrink-0"
+                                        :class="confirmingDelete === `sub-${editingSubtype.id}` ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-red-500 hover:bg-red-600'"
+                                    >{{ confirmingDelete === `sub-${editingSubtype.id}` ? 'Confirm?' : 'Delete' }}</button>
+                                    <button @click="cancelEdit"
+                                        class="px-2.5 py-0.5 text-xs font-medium bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md transition-colors shrink-0"
+                                    >Cancel</button>
+                                </div>
+                                <p v-if="deleteError" class="text-xs text-red-500">{{ deleteError }}</p>
+                            </div>
                         </template>
                     </li>
                 </ul>
 
                 <!-- ── Add subtype ── -->
-                <form @submit.prevent="addSubtype(type)" class="flex gap-2 px-5 py-3" :class="type.subtypes.length ? 'border-t border-slate-100 dark:border-slate-700' : ''">
-                    <input
-                        v-model="newSubtypeName[type.id]"
-                        type="text" :placeholder="`Add subtype under ${type.name}…`"
-                        class="h-9 flex-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <button
-                        type="submit" :disabled="!newSubtypeName[type.id]?.trim()"
-                        class="h-9 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-40 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors"
-                    >Add</button>
-                </form>
+                <div :class="type.subtypes.length ? 'border-t border-slate-100 dark:border-slate-700' : ''">
+
+                    <!-- Normal input (hidden while awaiting old-records subtype name) -->
+                    <form v-if="!pendingNewSubtypeName[type.id]" @submit.prevent="requestAddSubtype(type)" class="flex gap-2 px-5 py-3">
+                        <input
+                            v-model="newSubtypeName[type.id]"
+                            type="text" :placeholder="`Add subtype under ${type.name}…`"
+                            class="h-9 flex-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <button
+                            type="submit" :disabled="!newSubtypeName[type.id]?.trim()"
+                            class="h-9 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-40 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors"
+                        >Add</button>
+                    </form>
+
+                    <!-- Confirmation panel (first subtype, type has unsubtyped records) -->
+                    <div v-if="migrateConfirmTypeId === type.id" :id="`migrate-confirm-${type.id}`"
+                         class="mx-5 mb-3 rounded-lg border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 space-y-2">
+                        <p class="text-sm font-medium text-amber-800 dark:text-amber-300">
+                            {{ type.unsubtyped_records_count }} existing record{{ type.unsubtyped_records_count === 1 ? '' : 's' }} have no subtype.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="onMigrateYes(type)"
+                                class="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-md transition-colors">
+                                Yes — assign all to "{{ newSubtypeName[type.id] }}"
+                            </button>
+                            <button @click="onMigrateNo(type)"
+                                class="h-8 px-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-md transition-colors">
+                                No — assign them to a different subtype
+                            </button>
+                            <button @click="migrateConfirmTypeId = null"
+                                class="h-8 px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xs transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: name the subtype for old records first, then original subtype is auto-created -->
+                    <div v-if="pendingNewSubtypeName[type.id]" :id="`old-records-${type.id}`"
+                         class="mx-5 mb-3 rounded-lg border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 space-y-2">
+                        <p class="text-sm text-amber-800 dark:text-amber-300">
+                            First, name the subtype for the <strong>{{ type.unsubtyped_records_count }}</strong> existing record{{ type.unsubtyped_records_count === 1 ? '' : 's' }}.
+                            Then <strong>{{ pendingNewSubtypeName[type.id] }}</strong> will be created automatically.
+                        </p>
+                        <form @submit.prevent="addOldRecordsSubtype(type)" class="flex gap-2">
+                            <input
+                                v-model="oldRecordsSubtypeName[type.id]"
+                                type="text" placeholder="e.g. Uncategorized"
+                                class="h-9 flex-1 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                            <button type="submit" :disabled="!oldRecordsSubtypeName[type.id]?.trim()"
+                                class="h-9 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium rounded-md transition-colors">
+                                Add
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
             </div>
         </template>
     </div>
@@ -235,7 +288,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, watch } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import api from '../api';
 import { downloadExport, previewImport, uploadImport } from '../utils/importExport';
 import ImportPreviewModal from '../components/ImportPreviewModal.vue';
@@ -331,9 +384,13 @@ const newTypeIsExpense = ref(true);
 const typeError        = ref('');
 const editingType      = ref(null);
 
-const newSubtypeName   = reactive({});
-const editingSubtype   = ref(null);
+const newSubtypeName        = reactive({});
+const migrateConfirmTypeId  = ref(null);
+const pendingNewSubtypeName = reactive({});  // original subtype name saved while user names the old-records subtype
+const oldRecordsSubtypeName = reactive({});
+const editingSubtype        = ref(null);
 const confirmingDelete = ref(null);
+const deleteError      = ref('');
 
 function resetConfirm() { confirmingDelete.value = null; }
 watch(confirmingDelete, (val) => {
@@ -370,6 +427,7 @@ async function addType() {
 function startEditType(type) {
     editingSubtype.value = null;
     confirmingDelete.value = null;
+    deleteError.value = '';
     editingType.value = {
         id: type.id,
         name: type.name,
@@ -391,30 +449,95 @@ async function saveType() {
 
 async function deleteType(id) {
     confirmingDelete.value = null;
-    editingType.value = null;
-    await api.delete(`/cashflow/settings/types/${id}`);
-    types.value = types.value.filter(t => t.id !== id);
+    try {
+        await api.delete(`/cashflow/settings/types/${id}`);
+        editingType.value = null;
+        types.value = types.value.filter(t => t.id !== id);
+    } catch (err) {
+        deleteError.value = err.response?.data?.message ?? 'Failed to delete.';
+    }
 }
 
 function cancelEdit() {
     editingType.value = null;
     editingSubtype.value = null;
     confirmingDelete.value = null;
+    deleteError.value = '';
 }
 
 // ── Subtypes CRUD ─────────────────────────────────────────────────────────────
 
-async function addSubtype(type) {
+function requestAddSubtype(type) {
     const name = (newSubtypeName[type.id] ?? '').trim();
     if (!name) return;
-    const { data } = await api.post(`/cashflow/settings/types/${type.id}/subtypes`, { name });
-    type.subtypes.push(data);
+    // First subtype for a type that has unsubtyped records → require explicit decision
+    if (type.subtypes.length === 0 && type.unsubtyped_records_count > 0) {
+        migrateConfirmTypeId.value = type.id;
+        nextTick(() => {
+            document.getElementById(`migrate-confirm-${type.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+        return;
+    }
+    createSubtype(type, newSubtypeName[type.id].trim(), false).then(() => {
+        newSubtypeName[type.id] = '';
+    });
+}
+
+// "Yes" — migrate all old records to the new subtype
+async function onMigrateYes(type) {
+    migrateConfirmTypeId.value = null;
+    const name = newSubtypeName[type.id].trim();
+    const ok = await createSubtype(type, name, true);
+    if (ok) {
+        newSubtypeName[type.id] = '';
+        type.unsubtyped_records_count = 0;
+    }
+}
+
+// "No" — save the new subtype name; user must name a subtype for old records first
+function onMigrateNo(type) {
+    migrateConfirmTypeId.value = null;
+    pendingNewSubtypeName[type.id] = newSubtypeName[type.id].trim();
     newSubtypeName[type.id] = '';
+    nextTick(() => {
+        document.getElementById(`old-records-${type.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+}
+
+// Step 2: create the old-records subtype (with migration), then auto-create the original subtype
+async function addOldRecordsSubtype(type) {
+    const oldName = (oldRecordsSubtypeName[type.id] ?? '').trim();
+    if (!oldName) return;
+    const newName = pendingNewSubtypeName[type.id];
+
+    // Create the old-records subtype first and migrate all unsubtyped records to it
+    const ok = await createSubtype(type, oldName, true);
+    if (!ok) return;
+    oldRecordsSubtypeName[type.id] = '';
+    delete pendingNewSubtypeName[type.id];
+    type.unsubtyped_records_count = 0;
+
+    // Now create the original subtype the user wanted (no records left to migrate)
+    await createSubtype(type, newName, false);
+}
+
+async function createSubtype(type, name, migrate) {
+    try {
+        const { data } = await api.post(`/cashflow/settings/types/${type.id}/subtypes`, {
+            name,
+            migrate_existing: migrate,
+        });
+        type.subtypes.push(data.subtype);
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 function startEditSubtype(type, sub) {
     editingType.value = null;
     confirmingDelete.value = null;
+    deleteError.value = '';
     editingSubtype.value = {
         id: sub.id,
         name: sub.name,
@@ -435,9 +558,13 @@ async function saveSubtype(type) {
 
 async function deleteSubtype(type, id) {
     confirmingDelete.value = null;
-    editingSubtype.value = null;
-    await api.delete(`/cashflow/settings/subtypes/${id}`);
-    type.subtypes = type.subtypes.filter(s => s.id !== id);
+    try {
+        await api.delete(`/cashflow/settings/subtypes/${id}`);
+        editingSubtype.value = null;
+        type.subtypes = type.subtypes.filter(s => s.id !== id);
+    } catch (err) {
+        deleteError.value = err.response?.data?.message ?? 'Failed to delete.';
+    }
 }
 
 // ── Drag & drop — types ───────────────────────────────────────────────────────

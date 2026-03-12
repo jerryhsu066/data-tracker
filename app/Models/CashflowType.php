@@ -26,4 +26,9 @@ class CashflowType extends Model
                     ->orderBy('sort_order')
                     ->orderBy('id');
     }
+
+    public function records(): HasMany
+    {
+        return $this->hasMany(CashflowRecord::class, 'type_id');
+    }
 }
