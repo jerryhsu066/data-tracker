@@ -20,7 +20,7 @@ export const modules = [
         home: '/cashflow/home',
         links: [
             { to: '/cashflow/home',     label: 'Home' },
-            { to: '/cashflow/enter',    label: 'Enter' },
+            { to: '/cashflow/log',      label: 'Log' },
             { to: '/cashflow/settings', label: 'Settings' },
         ],
     },
