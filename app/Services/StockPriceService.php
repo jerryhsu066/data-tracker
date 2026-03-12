@@ -28,6 +28,14 @@ class StockPriceService
         return $response;
     }
 
+    public function checkSymbol(string $symbol): bool
+    {
+        $response = $this->chartRequest($symbol, ['interval' => '1d', 'range' => '1d']);
+        $meta = $response->json('chart.result.0.meta');
+
+        return !empty($meta) && isset($meta['regularMarketPrice']);
+    }
+
     public function updatePrice(Stock $stock): bool
     {
         $response = $this->chartRequest($stock->symbol, [

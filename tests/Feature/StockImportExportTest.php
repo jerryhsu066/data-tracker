@@ -7,6 +7,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class StockImportExportTest extends TestCase
@@ -173,6 +174,15 @@ class StockImportExportTest extends TestCase
 
     public function test_import_creates_stock_if_not_found(): void
     {
+        Http::fake([
+            '*finance.yahoo.com*' => Http::response([
+                'chart' => ['result' => [['meta' => [
+                    'regularMarketPrice' => 150.0,
+                    'chartPreviousClose' => 148.0,
+                ]]]],
+            ]),
+        ]);
+
         $content = "date,symbol,type,shares,price_per_share,handling_fee,transaction_tax,notes\n"
                  . "2024-03-01,0050,buy,500,150,20,0,\n";
         $file = UploadedFile::fake()->createWithContent('import.csv', $content);
@@ -182,6 +192,42 @@ class StockImportExportTest extends TestCase
              ->assertOk()->assertJsonFragment(['imported' => 1]);
 
         $this->assertDatabaseHas('stocks', ['symbol' => '0050']);
+    }
+
+    public function test_import_skips_row_if_new_stock_not_on_yahoo(): void
+    {
+        Http::fake([
+            '*finance.yahoo.com*' => Http::response(['chart' => ['result' => null]]),
+        ]);
+
+        $content = "date,symbol,type,shares,price_per_share,handling_fee,transaction_tax,notes\n"
+                 . "2024-03-01,FAKEXYZ,buy,500,150,20,0,\n";
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+             ->postJson('/api/stocks/import', ['file' => $file, 'format' => 'csv'])
+             ->assertOk()->assertJsonFragment(['imported' => 0]);
+
+        $this->assertCount(1, $response->json('skipped'));
+        $this->assertDatabaseMissing('stocks', ['symbol' => 'FAKEXYZ']);
+    }
+
+    public function test_preview_marks_new_untrackable_symbols_as_invalid(): void
+    {
+        Http::fake([
+            '*finance.yahoo.com*' => Http::response(['chart' => ['result' => null]]),
+        ]);
+
+        $content = "date,symbol,type,shares,price_per_share,handling_fee,transaction_tax,notes\n"
+                 . "2024-03-01,FAKEXYZ,buy,500,150,20,0,\n";
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+             ->postJson('/api/stocks/import/preview', ['file' => $file, 'format' => 'csv'])
+             ->assertOk()->assertJsonFragment(['valid' => 0]);
+
+        $this->assertCount(1, $response->json('invalid'));
+        $this->assertDatabaseMissing('stocks', ['symbol' => 'FAKEXYZ']);
     }
 
     public function test_import_skips_rows_with_invalid_data(): void

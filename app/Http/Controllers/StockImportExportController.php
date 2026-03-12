@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Stock;
 use App\Models\Transaction;
+use App\Services\StockPriceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -77,7 +78,7 @@ class StockImportExportController extends Controller
 
     // ── Preview ───────────────────────────────────────────────────────────────
 
-    public function preview(Request $request): JsonResponse
+    public function preview(Request $request, StockPriceService $service): JsonResponse
     {
         $request->validate([
             'file'   => ['required', 'file'],
@@ -88,9 +89,10 @@ class StockImportExportController extends Controller
         $userId = $request->user()->id;
         $rows   = $this->parseFile($request->file('file'), $format);
 
-        $invalid    = [];
-        $duplicates = [];
-        $valid      = 0;
+        $invalid        = [];
+        $duplicates     = [];
+        $valid          = 0;
+        $symbolCache    = []; // symbol => bool (valid on Yahoo)
 
         foreach ($rows as $row) {
             $rowNum = $row['_row'];
@@ -111,7 +113,19 @@ class StockImportExportController extends Controller
                 continue;
             }
 
-            $stock = Stock::where('symbol', strtoupper($row['symbol']))->first();
+            $symbol = strtoupper($row['symbol']);
+            $stock  = Stock::where('symbol', $symbol)->first();
+
+            if (! $stock) {
+                if (! array_key_exists($symbol, $symbolCache)) {
+                    $symbolCache[$symbol] = $service->checkSymbol($symbol);
+                }
+                if (! $symbolCache[$symbol]) {
+                    $invalid[] = ['row' => $rowNum, 'reason' => 'Symbol not found on Yahoo Finance.'];
+                    continue;
+                }
+            }
+
             if ($stock && Transaction::where('user_id', $userId)
                     ->where('stock_id', $stock->id)
                     ->where('type', $row['type'])
@@ -121,7 +135,7 @@ class StockImportExportController extends Controller
                     ->exists()) {
                 $duplicates[] = [
                     'row'   => $rowNum,
-                    'label' => strtoupper($row['symbol']) . " {$row['type']} on {$row['date']}",
+                    'label' => $symbol . " {$row['type']} on {$row['date']}",
                 ];
                 continue;
             }
@@ -139,7 +153,7 @@ class StockImportExportController extends Controller
 
     // ── Import ────────────────────────────────────────────────────────────────
 
-    public function import(Request $request): JsonResponse
+    public function import(Request $request, StockPriceService $service): JsonResponse
     {
         $request->validate([
             'file'            => ['required', 'file'],
@@ -152,8 +166,9 @@ class StockImportExportController extends Controller
         $skipDuplicates = $request->boolean('skip_duplicates', true);
         $rows           = $this->parseFile($request->file('file'), $format);
 
-        $imported = 0;
-        $skipped  = [];
+        $imported    = 0;
+        $skipped     = [];
+        $symbolCache = []; // symbol => Stock|false (false = failed Yahoo validation)
 
         foreach ($rows as $row) {
             $rowNum = $row['_row'];
@@ -174,10 +189,29 @@ class StockImportExportController extends Controller
                 continue;
             }
 
-            $stock = Stock::firstOrCreate(
-                ['symbol' => strtoupper($row['symbol'])],
-                ['name'   => strtoupper($row['symbol'])]
-            );
+            $symbol = strtoupper($row['symbol']);
+
+            if (! array_key_exists($symbol, $symbolCache)) {
+                $existing = Stock::where('symbol', $symbol)->first();
+                if ($existing) {
+                    $symbolCache[$symbol] = $existing;
+                } else {
+                    $newStock = Stock::create(['symbol' => $symbol, 'name' => $symbol]);
+                    if ($service->updatePrice($newStock)) {
+                        $symbolCache[$symbol] = $newStock;
+                    } else {
+                        $newStock->forceDelete();
+                        $symbolCache[$symbol] = false;
+                    }
+                }
+            }
+
+            if ($symbolCache[$symbol] === false) {
+                $skipped[] = ['row' => $rowNum, 'reason' => 'Symbol not found on Yahoo Finance.'];
+                continue;
+            }
+
+            $stock = $symbolCache[$symbol];
 
             if ($skipDuplicates && Transaction::where('user_id', $userId)
                     ->where('stock_id', $stock->id)
