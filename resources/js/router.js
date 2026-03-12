@@ -15,7 +15,6 @@ const router = createRouter({
         { path: '/stocks/:symbol', component: () => import('./views/StockDetailView.vue'), meta: { auth: true } },
         { path: '/cashflow/home', component: () => import('./views/CashflowHomeView.vue'), meta: { auth: true } },
         { path: '/cashflow/enter', component: () => import('./views/CashflowEntryView.vue'), meta: { auth: true } },
-        { path: '/cashflow/overview', component: () => import('./views/CashflowGridView.vue'), meta: { auth: true } },
         { path: '/cashflow/settings', component: () => import('./views/CashflowSettingsView.vue'), meta: { auth: true } },
     ],
 });
