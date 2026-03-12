@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Jobs\FetchHistoricalPrices;
+use App\Jobs\FetchStockPrice;
 use App\Models\Stock;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -27,6 +28,7 @@ class IndexStockSeeder extends Seeder
 
             if ($stock->wasRecentlyCreated) {
                 FetchHistoricalPrices::dispatch($stock, $fromDate);
+                FetchStockPrice::dispatch($stock);
             }
         }
     }

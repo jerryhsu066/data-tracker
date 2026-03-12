@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\FetchHistoricalPrices;
+use App\Jobs\FetchStockPrice;
 use App\Models\Stock;
 use Database\Seeders\IndexStockSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -64,6 +65,18 @@ class IndexStockSeederTest extends TestCase
         $this->seed(IndexStockSeeder::class);
 
         $this->assertEquals(3, Stock::count());
+    }
+
+    public function test_seeder_dispatches_price_fetch_for_each_new_stock(): void
+    {
+        Queue::fake();
+
+        $this->seed(IndexStockSeeder::class);
+
+        Queue::assertPushed(FetchStockPrice::class, 3);
+        Queue::assertPushed(FetchStockPrice::class, fn ($job) => $job->stock->symbol === '^TWII');
+        Queue::assertPushed(FetchStockPrice::class, fn ($job) => $job->stock->symbol === '^IXIC');
+        Queue::assertPushed(FetchStockPrice::class, fn ($job) => $job->stock->symbol === '^VIX');
     }
 
     public function test_seeder_does_not_redispatch_for_existing_stocks(): void
