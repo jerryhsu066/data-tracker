@@ -83,8 +83,11 @@ class CashflowImportExportController extends Controller
         $userId = $request->user()->id;
         $rows   = $this->parseFile($request->file('file'), $format);
 
-        $types    = CashflowType::where('user_id', $userId)->whereNull('deleted_at')->get()->keyBy('name');
-        $subtypes = CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->get()->groupBy('name');
+        $types              = CashflowType::where('user_id', $userId)->whereNull('deleted_at')->get()->keyBy('name');
+        $subtypes           = CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->get()->groupBy('name');
+        $typesWithSubtypes  = array_flip(
+            CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->pluck('type_id')->unique()->all()
+        );
 
         $invalid    = [];
         $duplicates = [];
@@ -116,12 +119,20 @@ class CashflowImportExportController extends Controller
                 continue;
             }
 
-            $type      = $types[$typeName];
-            $subtypeId = null;
+            $type             = $types[$typeName];
+            $typeHasSubtypes  = isset($typesWithSubtypes[$type->id]);
+            $subtypeId        = null;
 
             if ($subtypeName !== '') {
-                $match     = $subtypes->get($subtypeName)?->first(fn($s) => $s->type_id === $type->id);
-                $subtypeId = $match?->id;
+                $match = $subtypes->get($subtypeName)?->first(fn($s) => $s->type_id === $type->id);
+                if (!$match) {
+                    $invalid[] = ['row' => $rowNum, 'reason' => "Unknown subtype '{$subtypeName}' for type '{$typeName}'"];
+                    continue;
+                }
+                $subtypeId = $match->id;
+            } elseif ($typeHasSubtypes) {
+                $invalid[] = ['row' => $rowNum, 'reason' => "Type '{$typeName}' requires a subtype"];
+                continue;
             }
 
             if (CashflowRecord::where('user_id', $userId)
@@ -162,8 +173,11 @@ class CashflowImportExportController extends Controller
         $skipDuplicates = $request->boolean('skip_duplicates', true);
         $rows           = $this->parseFile($request->file('file'), $format);
 
-        $types    = CashflowType::where('user_id', $userId)->whereNull('deleted_at')->get()->keyBy('name');
-        $subtypes = CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->get()->groupBy('name');
+        $types             = CashflowType::where('user_id', $userId)->whereNull('deleted_at')->get()->keyBy('name');
+        $subtypes          = CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->get()->groupBy('name');
+        $typesWithSubtypes = array_flip(
+            CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->pluck('type_id')->unique()->all()
+        );
 
         $imported = 0;
         $skipped  = [];
@@ -195,12 +209,20 @@ class CashflowImportExportController extends Controller
                 continue;
             }
 
-            $type      = $types[$typeName];
-            $subtypeId = null;
+            $type            = $types[$typeName];
+            $typeHasSubtypes = isset($typesWithSubtypes[$type->id]);
+            $subtypeId       = null;
 
             if ($subtypeName !== '') {
-                $match     = $subtypes->get($subtypeName)?->first(fn($s) => $s->type_id === $type->id);
-                $subtypeId = $match?->id;
+                $match = $subtypes->get($subtypeName)?->first(fn($s) => $s->type_id === $type->id);
+                if (!$match) {
+                    $skipped[] = ['row' => $rowNum, 'reason' => "Unknown subtype '{$subtypeName}' for type '{$typeName}'"];
+                    continue;
+                }
+                $subtypeId = $match->id;
+            } elseif ($typeHasSubtypes) {
+                $skipped[] = ['row' => $rowNum, 'reason' => "Type '{$typeName}' requires a subtype"];
+                continue;
             }
 
             if ($skipDuplicates && CashflowRecord::where('user_id', $userId)

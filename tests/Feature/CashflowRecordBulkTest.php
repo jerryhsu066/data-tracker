@@ -32,14 +32,25 @@ class CashflowRecordBulkTest extends TestCase
             'month'   => 3,
             'creates' => [
                 ['type_id' => $this->type->id, 'subtype_id' => $this->sub->id, 'amount' => 5000, 'note' => 'March pay'],
-                ['type_id' => $this->type->id, 'subtype_id' => null,           'amount' => 200,  'note' => null],
+                ['type_id' => $this->type->id, 'subtype_id' => $this->sub->id, 'amount' => 200,  'note' => null],
             ],
         ]);
 
         $response->assertOk();
         $this->assertDatabaseHas('cashflow_records', ['type_id' => $this->type->id, 'subtype_id' => $this->sub->id, 'amount' => 5000]);
-        $this->assertDatabaseHas('cashflow_records', ['type_id' => $this->type->id, 'subtype_id' => null, 'amount' => 200]);
+        $this->assertDatabaseHas('cashflow_records', ['type_id' => $this->type->id, 'subtype_id' => $this->sub->id, 'amount' => 200]);
         $this->assertCount(2, $response->json('created'));
+    }
+
+    public function test_bulk_cannot_create_record_without_required_subtype(): void
+    {
+        $this->actingAs($this->user)->postJson('/api/cashflow/records/bulk', [
+            'year'    => 2026,
+            'month'   => 3,
+            'creates' => [
+                ['type_id' => $this->type->id, 'subtype_id' => null, 'amount' => 5000, 'note' => null],
+            ],
+        ])->assertUnprocessable();
     }
 
     public function test_bulk_updates_records(): void
@@ -88,7 +99,7 @@ class CashflowRecordBulkTest extends TestCase
         $response = $this->actingAs($this->user)->postJson('/api/cashflow/records/bulk', [
             'year'    => 2026,
             'month'   => 3,
-            'creates' => [['type_id' => $this->type->id, 'subtype_id' => null, 'amount' => 300, 'note' => null]],
+            'creates' => [['type_id' => $this->type->id, 'subtype_id' => $this->sub->id, 'amount' => 300, 'note' => null]],
             'updates' => [['id' => $existing->id, 'amount' => 200, 'note' => null]],
             'deletes' => [$toDelete->id],
         ]);

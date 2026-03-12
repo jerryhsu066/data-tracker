@@ -258,6 +258,36 @@ class CashflowImportExportTest extends TestCase
         $this->assertDatabaseHas('cashflow_records', ['note' => null]);
     }
 
+    public function test_import_errors_when_type_has_subtypes_but_subtype_is_blank(): void
+    {
+        // Credit Card has HSBC subtype (from setUp); blank subtype should be invalid
+        $content = "year,month,type,subtype,amount,note\n"
+                 . "2024,2,Credit Card,,3000,bill\n";
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/cashflow/import', ['file' => $file, 'format' => 'csv']);
+
+        $response->assertOk()->assertJsonFragment(['imported' => 0]);
+        $this->assertCount(1, $response->json('skipped'));
+        $this->assertStringContainsString('requires a subtype', $response->json('skipped.0.reason'));
+    }
+
+    public function test_import_errors_when_subtype_does_not_exist_for_type(): void
+    {
+        // Credit Card exists but 'Ghost Bank' is not a known subtype for it
+        $content = "year,month,type,subtype,amount,note\n"
+                 . "2024,2,Credit Card,Ghost Bank,3000,bill\n";
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/cashflow/import', ['file' => $file, 'format' => 'csv']);
+
+        $response->assertOk()->assertJsonFragment(['imported' => 0]);
+        $this->assertCount(1, $response->json('skipped'));
+        $this->assertStringContainsString('Unknown subtype', $response->json('skipped.0.reason'));
+    }
+
     public function test_guest_cannot_import_cashflow(): void
     {
         $file = UploadedFile::fake()->createWithContent('import.csv', '');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashflowRecord;
+use App\Models\CashflowSubtype;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -30,7 +31,11 @@ class CashflowRecordController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId          = $request->user()->id;
+        $typeHasSubtypes = CashflowSubtype::where('user_id', $userId)
+            ->whereNull('deleted_at')
+            ->where('type_id', $request->type_id)
+            ->exists();
 
         $validated = $request->validate([
             'recorded_at' => ['required', 'date'],
@@ -41,7 +46,7 @@ class CashflowRecordController extends Controller
                     ->whereNull('deleted_at'),
             ],
             'subtype_id'  => [
-                'nullable',
+                $typeHasSubtypes ? 'required' : 'nullable',
                 Rule::exists('cashflow_subtypes', 'id')
                     ->where('type_id', $request->type_id)
                     ->where('user_id', $userId)
@@ -62,8 +67,12 @@ class CashflowRecordController extends Controller
             abort(403);
         }
 
-        $userId     = $request->user()->id;
-        $typeId     = $request->input('type_id', $record->type_id);
+        $userId          = $request->user()->id;
+        $typeId          = $request->input('type_id', $record->type_id);
+        $typeHasSubtypes = CashflowSubtype::where('user_id', $userId)
+            ->whereNull('deleted_at')
+            ->where('type_id', $typeId)
+            ->exists();
 
         $validated = $request->validate([
             'recorded_at' => ['sometimes', 'date'],
@@ -74,7 +83,7 @@ class CashflowRecordController extends Controller
                     ->whereNull('deleted_at'),
             ],
             'subtype_id'  => [
-                'sometimes',
+                $typeHasSubtypes ? 'required' : 'sometimes',
                 'nullable',
                 Rule::exists('cashflow_subtypes', 'id')
                     ->where('type_id', $typeId)
@@ -110,10 +119,13 @@ class CashflowRecordController extends Controller
             'deletes.*'            => ['required', 'integer'],
         ]);
 
-        $recordedAt = sprintf('%04d-%02d-01', $validated['year'], $validated['month']);
-        $created    = [];
+        $recordedAt        = sprintf('%04d-%02d-01', $validated['year'], $validated['month']);
+        $typesWithSubtypes = array_flip(
+            CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->pluck('type_id')->unique()->all()
+        );
+        $created = [];
 
-        DB::transaction(function () use ($validated, $userId, $recordedAt, &$created) {
+        DB::transaction(function () use ($validated, $userId, $recordedAt, $typesWithSubtypes, &$created) {
             if (!empty($validated['deletes'])) {
                 CashflowRecord::whereIn('id', $validated['deletes'])
                     ->where('user_id', $userId)
@@ -127,6 +139,9 @@ class CashflowRecordController extends Controller
             }
 
             foreach ($validated['creates'] ?? [] as $c) {
+                if (isset($typesWithSubtypes[$c['type_id']]) && empty($c['subtype_id'])) {
+                    abort(422, 'subtype_id is required for this type');
+                }
                 $created[] = CashflowRecord::create([
                     'user_id'     => $userId,
                     'recorded_at' => $recordedAt,

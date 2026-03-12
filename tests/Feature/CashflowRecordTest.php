@@ -136,6 +136,36 @@ class CashflowRecordTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors(['type_id']);
     }
 
+    public function test_cannot_create_record_without_required_subtype(): void
+    {
+        $type = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Card', 'is_expense' => true]);
+        CashflowSubtype::create(['type_id' => $type->id, 'user_id' => $this->user->id, 'name' => 'HSBC']);
+
+        $this->actingAs($this->user)->postJson('/api/cashflow/records', [
+            'recorded_at' => '2026-03-01',
+            'type_id'     => $type->id,
+            'amount'      => 5000,
+            // subtype_id intentionally omitted
+        ])->assertUnprocessable()->assertJsonValidationErrors(['subtype_id']);
+    }
+
+    public function test_cannot_change_type_to_one_with_subtypes_without_providing_subtype_id(): void
+    {
+        $typeNoSub  = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Rent',   'is_expense' => true]);
+        $typeWithSub = CashflowType::create(['user_id' => $this->user->id, 'name' => 'Card',  'is_expense' => true]);
+        CashflowSubtype::create(['type_id' => $typeWithSub->id, 'user_id' => $this->user->id, 'name' => 'HSBC']);
+
+        $record = CashflowRecord::create([
+            'user_id' => $this->user->id, 'recorded_at' => '2026-03-01',
+            'type_id' => $typeNoSub->id, 'amount' => 25000,
+        ]);
+
+        $this->actingAs($this->user)->patchJson("/api/cashflow/records/{$record->id}", [
+            'type_id' => $typeWithSub->id,
+            // subtype_id intentionally omitted
+        ])->assertUnprocessable()->assertJsonValidationErrors(['subtype_id']);
+    }
+
     // ── Update ────────────────────────────────────────────────────────────────
 
     public function test_can_update_record(): void
