@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CashflowImportExportController;
 use App\Http\Controllers\CashflowRecordController;
 use App\Http\Controllers\CashflowSettingsController;
 use App\Http\Controllers\ExposureBundleController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\StockImportExportController;
 use App\Http\Controllers\StockPriceHistoryController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -49,6 +51,10 @@ Route::prefix('stocks')->group(function () {
         Route::get('settings', [SettingsController::class, 'show']);
         Route::patch('settings', [SettingsController::class, 'update']);
 
+        // Import / Export
+        Route::get('export', [StockImportExportController::class, 'export']);
+        Route::post('import', [StockImportExportController::class, 'import']);
+
         // Exposure Bundles
         Route::get('exposure/bundles', [ExposureBundleController::class, 'index']);
         Route::post('exposure/bundles', [ExposureBundleController::class, 'store']);
@@ -82,6 +88,9 @@ Route::prefix('cashflow')->middleware('auth:sanctum')->group(function () {
         Route::patch('subtypes/{subtype}', [CashflowSettingsController::class, 'updateSubtype']);
         Route::delete('subtypes/{subtype}', [CashflowSettingsController::class, 'deleteSubtype']);
     });
+
+    Route::get('export', [CashflowImportExportController::class, 'export']);
+    Route::post('import', [CashflowImportExportController::class, 'import']);
 
     Route::get('records', [CashflowRecordController::class, 'index']);
     Route::post('records/bulk', [CashflowRecordController::class, 'bulk']);

@@ -2,6 +2,33 @@
     <div class="max-w-2xl mx-auto px-4 py-8 space-y-4">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Cashflow Settings</h1>
 
+        <!-- Import / Export -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4">
+            <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Import / Export</h2>
+
+            <div>
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Export Records</p>
+                <div class="flex gap-2">
+                    <button @click="doExport('csv')" class="h-9 px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors">CSV</button>
+                    <button @click="doExport('json')" class="h-9 px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors">JSON</button>
+                </div>
+            </div>
+
+            <div>
+                <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Import Records</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-2">CSV or JSON — columns: year, month, type, subtype, amount, note</p>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <label class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors cursor-pointer flex items-center">
+                        Choose File
+                        <input type="file" accept=".csv,.json" class="hidden" @change="doImport" :disabled="importing" />
+                    </label>
+                    <span v-if="importing" class="text-sm text-slate-400">Importing…</span>
+                    <span v-if="importResult" class="text-sm font-medium text-emerald-500">Imported {{ importResult.imported }} row(s){{ importResult.skipped.length ? `, ${importResult.skipped.length} skipped` : '' }}</span>
+                    <span v-if="importError" class="text-sm text-red-500">{{ importError }}</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Add new type -->
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
             <h2 class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-3">Add New Type</h2>
@@ -201,6 +228,33 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, watch } from 'vue';
 import api from '../api';
+import { downloadExport, uploadImport } from '../utils/importExport';
+
+// Import / Export
+const importing    = ref(false);
+const importResult = ref(null);
+const importError  = ref('');
+
+async function doExport(format) {
+    await downloadExport(`/cashflow/export?format=${format}`, `cashflow.${format}`);
+}
+
+async function doImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    importing.value = true;
+    importResult.value = null;
+    importError.value  = '';
+    try {
+        const format = file.name.endsWith('.json') ? 'json' : 'csv';
+        importResult.value = await uploadImport('/cashflow/import', file, format);
+    } catch (err) {
+        importError.value = err.response?.data?.message ?? 'Import failed.';
+    } finally {
+        importing.value = false;
+        e.target.value = '';
+    }
+}
 
 const types          = ref([]);
 const loading        = ref(true);
