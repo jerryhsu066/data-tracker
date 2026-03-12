@@ -82,6 +82,103 @@ class AuthTest extends TestCase
         $this->getJson('/api/auth/me')->assertUnauthorized();
     }
 
+    // ── Profile update ────────────────────────────────────────────────────────
+
+    public function test_user_can_update_name(): void
+    {
+        $user = User::factory()->create(['name' => 'Old Name']);
+
+        $this->actingAs($user)->patchJson('/api/auth/me', ['name' => 'New Name'])
+             ->assertOk()
+             ->assertJsonFragment(['name' => 'New Name']);
+
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'New Name']);
+    }
+
+    public function test_user_can_update_email(): void
+    {
+        $user = User::factory()->create(['email' => 'old@example.com']);
+
+        $this->actingAs($user)->patchJson('/api/auth/me', ['email' => 'new@example.com'])
+             ->assertOk()
+             ->assertJsonFragment(['email' => 'new@example.com']);
+    }
+
+    public function test_cannot_update_email_to_another_users_email(): void
+    {
+        User::factory()->create(['email' => 'taken@example.com']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->patchJson('/api/auth/me', ['email' => 'taken@example.com'])
+             ->assertUnprocessable()
+             ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_user_can_update_password(): void
+    {
+        $user = User::factory()->create(['password' => bcrypt('oldpass123')]);
+
+        $this->actingAs($user)->patchJson('/api/auth/me', [
+            'current_password'      => 'oldpass123',
+            'password'              => 'newpass456',
+            'password_confirmation' => 'newpass456',
+        ])->assertOk();
+
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('newpass456', $user->fresh()->password));
+    }
+
+    public function test_update_password_requires_correct_current_password(): void
+    {
+        $user = User::factory()->create(['password' => bcrypt('correct123')]);
+
+        $this->actingAs($user)->patchJson('/api/auth/me', [
+            'current_password'      => 'wrong',
+            'password'              => 'newpass456',
+            'password_confirmation' => 'newpass456',
+        ])->assertUnprocessable()
+          ->assertJsonValidationErrors(['current_password']);
+    }
+
+    public function test_user_can_set_privacy_lock(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->patchJson('/api/auth/me', ['privacy_lock' => true])
+             ->assertOk()
+             ->assertJsonFragment(['privacy_lock' => true]);
+
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'privacy_lock' => true]);
+    }
+
+    public function test_guest_cannot_update_profile(): void
+    {
+        $this->patchJson('/api/auth/me', ['name' => 'Hacker'])->assertUnauthorized();
+    }
+
+    // ── Verify password ───────────────────────────────────────────────────────
+
+    public function test_can_verify_correct_password(): void
+    {
+        $user = User::factory()->create(['password' => bcrypt('secret123')]);
+
+        $this->actingAs($user)->postJson('/api/auth/verify-password', ['password' => 'secret123'])
+             ->assertOk();
+    }
+
+    public function test_verify_password_rejects_wrong_password(): void
+    {
+        $user = User::factory()->create(['password' => bcrypt('secret123')]);
+
+        $this->actingAs($user)->postJson('/api/auth/verify-password', ['password' => 'wrong'])
+             ->assertUnprocessable()
+             ->assertJsonValidationErrors(['password']);
+    }
+
+    public function test_guest_cannot_verify_password(): void
+    {
+        $this->postJson('/api/auth/verify-password', ['password' => 'any'])->assertUnauthorized();
+    }
+
     public function test_user_can_logout_and_token_is_revoked(): void
     {
         $user = User::factory()->create();

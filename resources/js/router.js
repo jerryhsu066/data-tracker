@@ -6,6 +6,7 @@ const router = createRouter({
         { path: '/login', component: () => import('./views/LoginView.vue'), meta: { guest: true } },
         { path: '/register', component: () => import('./views/RegisterView.vue'), meta: { guest: true } },
         { path: '/', redirect: '/stocks/home' },
+        { path: '/user/settings', component: () => import('./views/UserSettingsView.vue'), meta: { auth: true } },
         { path: '/stocks/home', component: () => import('./views/HomeView.vue'), meta: { auth: true } },
         { path: '/stocks/dashboard', component: () => import('./views/DashboardView.vue'), meta: { auth: true } },
         { path: '/stocks/list', component: () => import('./views/StocksView.vue'), meta: { auth: true } },

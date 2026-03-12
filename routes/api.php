@@ -18,6 +18,8 @@ Route::prefix('auth')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
+        Route::patch('me', [AuthController::class, 'updateMe']);
+        Route::post('verify-password', [AuthController::class, 'verifyPassword']);
         Route::post('logout', [AuthController::class, 'logout']);
     });
 });
