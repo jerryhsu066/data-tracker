@@ -93,6 +93,45 @@ class StockImportExportTest extends TestCase
         $this->getJson('/api/stocks/export?format=csv')->assertUnauthorized();
     }
 
+    // ── Preview ───────────────────────────────────────────────────────────────
+
+    public function test_preview_returns_valid_invalid_and_duplicate_counts(): void
+    {
+        $content = "date,symbol,type,shares,price_per_share,handling_fee,transaction_tax,notes\n"
+                 . "2024-03-01,2330,sell,200,600,20,540,March sell\n"   // valid
+                 . "not-a-date,2330,buy,abc,550,20,0,\n";               // invalid
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/stocks/import/preview', ['file' => $file, 'format' => 'csv']);
+
+        $response->assertOk()
+                 ->assertJsonFragment(['total' => 2, 'valid' => 1]);
+        $this->assertCount(1, $response->json('invalid'));
+        $this->assertCount(0, $response->json('duplicates'));
+    }
+
+    public function test_preview_detects_duplicate_transactions(): void
+    {
+        // setUp created: 2330 buy 1000 shares @ 550 on 2024-01-15
+        $content = "date,symbol,type,shares,price_per_share,handling_fee,transaction_tax,notes\n"
+                 . "2024-01-15,2330,buy,1000,550,20,0,first buy\n";
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/stocks/import/preview', ['file' => $file, 'format' => 'csv']);
+
+        $response->assertOk()->assertJsonFragment(['valid' => 0]);
+        $this->assertCount(1, $response->json('duplicates'));
+        $this->assertCount(0, $response->json('invalid'));
+    }
+
+    public function test_guest_cannot_preview(): void
+    {
+        $file = UploadedFile::fake()->createWithContent('import.csv', '');
+        $this->postJson('/api/stocks/import/preview', ['file' => $file])->assertUnauthorized();
+    }
+
     // ── Import ────────────────────────────────────────────────────────────────
 
     public function test_can_import_transactions_from_csv(): void
@@ -156,6 +195,73 @@ class StockImportExportTest extends TestCase
 
         $response->assertOk()->assertJsonFragment(['imported' => 0]);
         $this->assertCount(1, $response->json('skipped'));
+    }
+
+    public function test_import_skips_duplicates_by_default(): void
+    {
+        // setUp created: 2330 buy 1000 shares @ 550 on 2024-01-15
+        $content = "date,symbol,type,shares,price_per_share,handling_fee,transaction_tax,notes\n"
+                 . "2024-01-15,2330,buy,1000,550,20,0,first buy\n";
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/stocks/import', ['file' => $file, 'format' => 'csv']);
+
+        $response->assertOk()->assertJsonFragment(['imported' => 0]);
+        $this->assertDatabaseCount('transactions', 1);
+    }
+
+    public function test_import_includes_duplicates_when_not_skipping(): void
+    {
+        $content = "date,symbol,type,shares,price_per_share,handling_fee,transaction_tax,notes\n"
+                 . "2024-01-15,2330,buy,1000,550,20,0,first buy\n";
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/stocks/import', ['file' => $file, 'format' => 'csv', 'skip_duplicates' => false]);
+
+        $response->assertOk()->assertJsonFragment(['imported' => 1]);
+        $this->assertDatabaseCount('transactions', 2);
+    }
+
+    public function test_malformed_csv_row_is_reported_not_silently_dropped(): void
+    {
+        // Row 3 has too few columns
+        $content = "date,symbol,type,shares,price_per_share,handling_fee,transaction_tax,notes\n"
+                 . "2024-03-01,2330,sell,200,600,20,540,ok\n"
+                 . "2024-03-02,2330\n";   // only 2 columns
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/stocks/import/preview', ['file' => $file, 'format' => 'csv']);
+
+        $response->assertOk()->assertJsonFragment(['total' => 2, 'valid' => 1]);
+        $this->assertCount(1, $response->json('invalid'));
+        $this->assertStringContainsString('column', $response->json('invalid.0.reason'));
+    }
+
+    public function test_invalid_json_file_is_reported(): void
+    {
+        $file = UploadedFile::fake()->createWithContent('import.json', 'not json at all');
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/stocks/import/preview', ['file' => $file, 'format' => 'json']);
+
+        $response->assertOk()->assertJsonFragment(['total' => 1]);
+        $this->assertCount(1, $response->json('invalid'));
+    }
+
+    public function test_import_stores_null_for_blank_notes(): void
+    {
+        $content = "date,symbol,type,shares,price_per_share,handling_fee,transaction_tax,notes\n"
+                 . "2024-03-01,2330,sell,200,600,20,540,   \n";   // notes = spaces only
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $this->actingAs($this->user)
+             ->postJson('/api/stocks/import', ['file' => $file, 'format' => 'csv'])
+             ->assertOk()->assertJsonFragment(['imported' => 1]);
+
+        $this->assertDatabaseHas('transactions', ['notes' => null]);
     }
 
     public function test_guest_cannot_import(): void

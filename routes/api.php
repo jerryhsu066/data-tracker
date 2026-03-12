@@ -53,6 +53,7 @@ Route::prefix('stocks')->group(function () {
 
         // Import / Export
         Route::get('export', [StockImportExportController::class, 'export']);
+        Route::post('import/preview', [StockImportExportController::class, 'preview']);
         Route::post('import', [StockImportExportController::class, 'import']);
 
         // Exposure Bundles
@@ -90,6 +91,7 @@ Route::prefix('cashflow')->middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('export', [CashflowImportExportController::class, 'export']);
+    Route::post('import/preview', [CashflowImportExportController::class, 'preview']);
     Route::post('import', [CashflowImportExportController::class, 'import']);
 
     Route::get('records', [CashflowRecordController::class, 'index']);

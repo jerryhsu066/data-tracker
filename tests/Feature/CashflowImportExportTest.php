@@ -90,6 +90,45 @@ class CashflowImportExportTest extends TestCase
         $this->getJson('/api/cashflow/export?format=csv')->assertUnauthorized();
     }
 
+    // ── Preview ───────────────────────────────────────────────────────────────
+
+    public function test_preview_returns_valid_invalid_and_duplicate_counts(): void
+    {
+        $content = "year,month,type,subtype,amount,note\n"
+                 . "2024,2,Credit Card,HSBC,3000,Feb bill\n"   // valid
+                 . "2024,2,Unknown Type,,1000,\n";             // invalid
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/cashflow/import/preview', ['file' => $file, 'format' => 'csv']);
+
+        $response->assertOk()
+                 ->assertJsonFragment(['total' => 2, 'valid' => 1]);
+        $this->assertCount(1, $response->json('invalid'));
+        $this->assertCount(0, $response->json('duplicates'));
+    }
+
+    public function test_preview_detects_duplicate_cashflow_records(): void
+    {
+        // setUp created: Credit Card / HSBC, amount 5000, 2024-01-01
+        $content = "year,month,type,subtype,amount,note\n"
+                 . "2024,1,Credit Card,HSBC,5000,Jan bill\n";
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/cashflow/import/preview', ['file' => $file, 'format' => 'csv']);
+
+        $response->assertOk()->assertJsonFragment(['valid' => 0]);
+        $this->assertCount(1, $response->json('duplicates'));
+        $this->assertCount(0, $response->json('invalid'));
+    }
+
+    public function test_guest_cannot_preview_cashflow(): void
+    {
+        $file = UploadedFile::fake()->createWithContent('import.csv', '');
+        $this->postJson('/api/cashflow/import/preview', ['file' => $file])->assertUnauthorized();
+    }
+
     // ── Import ────────────────────────────────────────────────────────────────
 
     public function test_can_import_cashflow_records_from_csv(): void
@@ -150,6 +189,73 @@ class CashflowImportExportTest extends TestCase
 
         $response->assertOk()->assertJsonFragment(['imported' => 1]);
         $this->assertDatabaseHas('cashflow_records', ['type_id' => $typeNoSub->id, 'subtype_id' => null]);
+    }
+
+    public function test_import_skips_duplicates_by_default(): void
+    {
+        // setUp created: Credit Card / HSBC, amount 5000, 2024-01-01
+        $content = "year,month,type,subtype,amount,note\n"
+                 . "2024,1,Credit Card,HSBC,5000,Jan bill\n";
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/cashflow/import', ['file' => $file, 'format' => 'csv']);
+
+        $response->assertOk()->assertJsonFragment(['imported' => 0]);
+        $this->assertDatabaseCount('cashflow_records', 1);
+    }
+
+    public function test_import_includes_duplicates_when_not_skipping(): void
+    {
+        $content = "year,month,type,subtype,amount,note\n"
+                 . "2024,1,Credit Card,HSBC,5000,Jan bill\n";
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/cashflow/import', ['file' => $file, 'format' => 'csv', 'skip_duplicates' => false]);
+
+        $response->assertOk()->assertJsonFragment(['imported' => 1]);
+        $this->assertDatabaseCount('cashflow_records', 2);
+    }
+
+    public function test_malformed_csv_row_is_reported_not_silently_dropped(): void
+    {
+        // Row 3 has too few columns
+        $content = "year,month,type,subtype,amount,note\n"
+                 . "2024,2,Credit Card,HSBC,3000,Feb bill\n"
+                 . "2024,3\n";   // only 2 columns
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/cashflow/import/preview', ['file' => $file, 'format' => 'csv']);
+
+        $response->assertOk()->assertJsonFragment(['total' => 2, 'valid' => 1]);
+        $this->assertCount(1, $response->json('invalid'));
+        $this->assertStringContainsString('column', $response->json('invalid.0.reason'));
+    }
+
+    public function test_invalid_json_file_is_reported(): void
+    {
+        $file = UploadedFile::fake()->createWithContent('import.json', 'not json at all');
+
+        $response = $this->actingAs($this->user)
+                         ->postJson('/api/cashflow/import/preview', ['file' => $file, 'format' => 'json']);
+
+        $response->assertOk()->assertJsonFragment(['total' => 1]);
+        $this->assertCount(1, $response->json('invalid'));
+    }
+
+    public function test_import_stores_null_for_blank_note(): void
+    {
+        $content = "year,month,type,subtype,amount,note\n"
+                 . "2024,2,Credit Card,HSBC,3000,   \n";   // note = spaces only
+        $file = UploadedFile::fake()->createWithContent('import.csv', $content);
+
+        $this->actingAs($this->user)
+             ->postJson('/api/cashflow/import', ['file' => $file, 'format' => 'csv'])
+             ->assertOk()->assertJsonFragment(['imported' => 1]);
+
+        $this->assertDatabaseHas('cashflow_records', ['note' => null]);
     }
 
     public function test_guest_cannot_import_cashflow(): void

@@ -18,9 +18,10 @@
                 <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Import Records</p>
                 <p class="text-xs text-slate-400 dark:text-slate-500 mb-2">CSV or JSON — columns: year, month, type, subtype, amount, note</p>
                 <div class="flex items-center gap-3 flex-wrap">
-                    <label class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors cursor-pointer flex items-center">
-                        Choose File
-                        <input type="file" accept=".csv,.json" class="hidden" @change="doImport" :disabled="importing" />
+                    <label class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors cursor-pointer flex items-center"
+                           :class="previewing ? 'opacity-50 pointer-events-none' : ''">
+                        {{ previewing ? 'Analyzing…' : 'Choose File' }}
+                        <input ref="fileInputRef" type="file" accept=".csv,.json" class="hidden" @change="onFileSelected" :disabled="previewing || importing" />
                     </label>
                     <span v-if="importing" class="text-sm text-slate-400">Importing…</span>
                     <span v-if="importResult" class="text-sm font-medium text-emerald-500">Imported {{ importResult.imported }} row(s){{ importResult.skipped.length ? `, ${importResult.skipped.length} skipped` : '' }}</span>
@@ -223,37 +224,103 @@
             </div>
         </template>
     </div>
+
+    <!-- Import preview modal -->
+    <ImportPreviewModal
+        v-if="previewData"
+        :preview="previewData"
+        @confirm="confirmImport"
+        @cancel="cancelImport"
+    />
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, watch } from 'vue';
 import api from '../api';
-import { downloadExport, uploadImport } from '../utils/importExport';
+import { downloadExport, previewImport, uploadImport } from '../utils/importExport';
+import ImportPreviewModal from '../components/ImportPreviewModal.vue';
 
 // Import / Export
-const importing    = ref(false);
-const importResult = ref(null);
-const importError  = ref('');
+const fileInputRef  = ref(null);
+const previewing    = ref(false);
+const previewData   = ref(null);
+const pendingFile   = ref(null);
+const importing     = ref(false);
+const importResult  = ref(null);
+const importError   = ref('');
 
 async function doExport(format) {
     await downloadExport(`/cashflow/export?format=${format}`, `cashflow.${format}`);
 }
 
-async function doImport(e) {
+async function onFileSelected(e) {
     const file = e.target.files[0];
     if (!file) return;
-    importing.value = true;
+    previewing.value   = true;
     importResult.value = null;
     importError.value  = '';
     try {
         const format = file.name.endsWith('.json') ? 'json' : 'csv';
-        importResult.value = await uploadImport('/cashflow/import', file, format);
+        const preview = await previewImport('/cashflow/import/preview', file, format);
+
+        // No issues at all — import directly without showing the modal
+        if (preview.invalid.length === 0 && preview.duplicates.length === 0) {
+            previewing.value = false;
+            if (preview.total === 0) {
+                importError.value = 'No rows found in file.';
+                clearFile();
+                return;
+            }
+            importing.value = true;
+            try {
+                importResult.value = await uploadImport('/cashflow/import', file, format, { skip_duplicates: true });
+            } catch (err) {
+                importError.value = err.response?.data?.message ?? 'Import failed.';
+            } finally {
+                importing.value = false;
+                clearFile();
+            }
+            return;
+        }
+
+        // Has invalid or duplicate rows — show the modal
+        pendingFile.value = file;
+        previewData.value = preview;
+    } catch (err) {
+        importError.value = err.response?.data?.message ?? 'Failed to read file.';
+        clearFile();
+    } finally {
+        previewing.value = false;
+    }
+}
+
+async function confirmImport(skipDuplicates) {
+    if (!pendingFile.value) return;
+    importing.value    = true;
+    importResult.value = null;
+    importError.value  = '';
+    const file = pendingFile.value;
+    previewData.value  = null;
+    pendingFile.value  = null;
+    try {
+        const format = file.name.endsWith('.json') ? 'json' : 'csv';
+        importResult.value = await uploadImport('/cashflow/import', file, format, { skip_duplicates: skipDuplicates });
     } catch (err) {
         importError.value = err.response?.data?.message ?? 'Import failed.';
     } finally {
         importing.value = false;
-        e.target.value = '';
+        clearFile();
     }
+}
+
+function cancelImport() {
+    previewData.value = null;
+    pendingFile.value = null;
+    clearFile();
+}
+
+function clearFile() {
+    if (fileInputRef.value) fileInputRef.value.value = '';
 }
 
 const types          = ref([]);

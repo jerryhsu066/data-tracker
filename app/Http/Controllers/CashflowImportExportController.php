@@ -70,9 +70,9 @@ class CashflowImportExportController extends Controller
         ]);
     }
 
-    // ── Import ────────────────────────────────────────────────────────────────
+    // ── Preview ───────────────────────────────────────────────────────────────
 
-    public function import(Request $request): JsonResponse
+    public function preview(Request $request): JsonResponse
     {
         $request->validate([
             'file'   => ['required', 'file'],
@@ -83,14 +83,100 @@ class CashflowImportExportController extends Controller
         $userId = $request->user()->id;
         $rows   = $this->parseFile($request->file('file'), $format);
 
-        // Build lookup caches
+        $types    = CashflowType::where('user_id', $userId)->whereNull('deleted_at')->get()->keyBy('name');
+        $subtypes = CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->get()->groupBy('name');
+
+        $invalid    = [];
+        $duplicates = [];
+        $valid      = 0;
+
+        foreach ($rows as $row) {
+            $rowNum = $row['_row'];
+
+            if (isset($row['_parse_error'])) {
+                $invalid[] = ['row' => $rowNum, 'reason' => $row['_parse_error']];
+                continue;
+            }
+
+            unset($row['_row']);
+            $row         = array_map('trim', $row);
+            $typeName    = $row['type']    ?? '';
+            $subtypeName = $row['subtype'] ?? '';
+            $year        = (int) ($row['year']  ?? 0);
+            $month       = (int) ($row['month'] ?? 0);
+            $amount      = $row['amount'] ?? '';
+
+            if (!$types->has($typeName)) {
+                $invalid[] = ['row' => $rowNum, 'reason' => "Unknown type: {$typeName}"];
+                continue;
+            }
+
+            if (!is_numeric($amount) || $year < 2000 || $month < 1 || $month > 12) {
+                $invalid[] = ['row' => $rowNum, 'reason' => 'Invalid amount or date'];
+                continue;
+            }
+
+            $type      = $types[$typeName];
+            $subtypeId = null;
+
+            if ($subtypeName !== '') {
+                $match     = $subtypes->get($subtypeName)?->first(fn($s) => $s->type_id === $type->id);
+                $subtypeId = $match?->id;
+            }
+
+            if (CashflowRecord::where('user_id', $userId)
+                    ->where('type_id', $type->id)
+                    ->where('subtype_id', $subtypeId)
+                    ->whereYear('recorded_at', $year)
+                    ->whereMonth('recorded_at', $month)
+                    ->where('amount', (float) $amount)
+                    ->exists()) {
+                $label = $typeName . ($subtypeName ? " / {$subtypeName}" : '') . " {$year}-{$month}";
+                $duplicates[] = ['row' => $rowNum, 'label' => $label];
+                continue;
+            }
+
+            $valid++;
+        }
+
+        return response()->json([
+            'total'      => count($rows),
+            'valid'      => $valid,
+            'invalid'    => $invalid,
+            'duplicates' => $duplicates,
+        ]);
+    }
+
+    // ── Import ────────────────────────────────────────────────────────────────
+
+    public function import(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file'            => ['required', 'file'],
+            'format'          => ['sometimes', 'in:csv,json'],
+            'skip_duplicates' => ['sometimes', 'boolean'],
+        ]);
+
+        $format         = $request->get('format', 'csv');
+        $userId         = $request->user()->id;
+        $skipDuplicates = $request->boolean('skip_duplicates', true);
+        $rows           = $this->parseFile($request->file('file'), $format);
+
         $types    = CashflowType::where('user_id', $userId)->whereNull('deleted_at')->get()->keyBy('name');
         $subtypes = CashflowSubtype::where('user_id', $userId)->whereNull('deleted_at')->get()->groupBy('name');
 
         $imported = 0;
         $skipped  = [];
 
-        foreach ($rows as $i => $row) {
+        foreach ($rows as $row) {
+            $rowNum = $row['_row'];
+
+            if (isset($row['_parse_error'])) {
+                $skipped[] = ['row' => $rowNum, 'reason' => $row['_parse_error']];
+                continue;
+            }
+
+            unset($row['_row']);
             $row = array_map('trim', $row);
 
             $typeName    = $row['type']    ?? '';
@@ -100,12 +186,12 @@ class CashflowImportExportController extends Controller
             $amount      = $row['amount'] ?? '';
 
             if (!$types->has($typeName)) {
-                $skipped[] = ['row' => $i + 2, 'reason' => "Unknown type: {$typeName}"];
+                $skipped[] = ['row' => $rowNum, 'reason' => "Unknown type: {$typeName}"];
                 continue;
             }
 
             if (!is_numeric($amount) || $year < 2000 || $month < 1 || $month > 12) {
-                $skipped[] = ['row' => $i + 2, 'reason' => 'Invalid amount or date'];
+                $skipped[] = ['row' => $rowNum, 'reason' => 'Invalid amount or date'];
                 continue;
             }
 
@@ -113,8 +199,19 @@ class CashflowImportExportController extends Controller
             $subtypeId = null;
 
             if ($subtypeName !== '') {
-                $match = $subtypes->get($subtypeName)?->first(fn($s) => $s->type_id === $type->id);
+                $match     = $subtypes->get($subtypeName)?->first(fn($s) => $s->type_id === $type->id);
                 $subtypeId = $match?->id;
+            }
+
+            if ($skipDuplicates && CashflowRecord::where('user_id', $userId)
+                    ->where('type_id', $type->id)
+                    ->where('subtype_id', $subtypeId)
+                    ->whereYear('recorded_at', $year)
+                    ->whereMonth('recorded_at', $month)
+                    ->where('amount', (float) $amount)
+                    ->exists()) {
+                $skipped[] = ['row' => $rowNum, 'reason' => 'Duplicate'];
+                continue;
             }
 
             CashflowRecord::create([
@@ -122,7 +219,7 @@ class CashflowImportExportController extends Controller
                 'type_id'     => $type->id,
                 'subtype_id'  => $subtypeId,
                 'amount'      => $amount,
-                'note'        => $row['note'] ?? null,
+                'note'        => $row['note'] === '' ? null : $row['note'],
                 'recorded_at' => sprintf('%04d-%02d-01', $year, $month),
             ]);
 
@@ -132,35 +229,62 @@ class CashflowImportExportController extends Controller
         return response()->json(['imported' => $imported, 'skipped' => $skipped]);
     }
 
+    // ── parseFile ─────────────────────────────────────────────────────────────
+    // Returns an array of rows. Each row always contains '_row' (1-based number).
+    // Rows that cannot be parsed include '_parse_error' instead of field data.
+
     private function parseFile($file, string $format): array
     {
         $content = file_get_contents($file->getRealPath());
 
         if ($format === 'json') {
-            $data = json_decode($content, true) ?? [];
-            return array_map(fn($item) => [
-                'year'    => $item['year']    ?? 0,
-                'month'   => $item['month']   ?? 0,
-                'type'    => $item['type']    ?? '',
-                'subtype' => $item['subtype'] ?? '',
-                'amount'  => $item['amount']  ?? '',
-                'note'    => $item['note']    ?? null,
-            ], $data);
+            $data = json_decode($content, true);
+            if (!is_array($data)) {
+                return [['_row' => 1, '_parse_error' => 'Invalid JSON — file could not be parsed']];
+            }
+            $rows = [];
+            foreach ($data as $i => $item) {
+                if (!is_array($item)) {
+                    $rows[] = ['_row' => $i + 1, '_parse_error' => 'Item is not a JSON object'];
+                    continue;
+                }
+                $rows[] = [
+                    '_row'    => $i + 1,
+                    'year'    => $item['year']    ?? 0,
+                    'month'   => $item['month']   ?? 0,
+                    'type'    => $item['type']    ?? '',
+                    'subtype' => $item['subtype'] ?? '',
+                    'amount'  => $item['amount']  ?? '',
+                    'note'    => $item['note']    ?? '',
+                ];
+            }
+            return $rows;
         }
 
-        $lines  = array_filter(explode("\n", trim($content)));
+        // CSV
+        $lines  = array_values(array_filter(explode("\n", trim($content)), fn($l) => trim($l) !== ''));
         $header = null;
+        $rowNum = 0;
         $rows   = [];
 
         foreach ($lines as $line) {
             $cols = str_getcsv($line);
             if ($header === null) {
                 $header = $cols;
+                $rowNum = 1;
                 continue;
             }
-            if (count($cols) === count($header)) {
-                $rows[] = array_combine($header, $cols);
+            $rowNum++;
+            if (count($cols) !== count($header)) {
+                $rows[] = [
+                    '_row'         => $rowNum,
+                    '_parse_error' => 'Expected ' . count($header) . ' columns, found ' . count($cols),
+                ];
+                continue;
             }
+            $row         = array_combine($header, $cols);
+            $row['_row'] = $rowNum;
+            $rows[]      = $row;
         }
 
         return $rows;
