@@ -92,7 +92,7 @@ docker compose exec app php artisan optimize:clear
 Standard Laravel MVC structure:
 - `app/Http/Controllers/` — request handlers
 - `app/Models/` — Eloquent models
-- `routes/api.php` — all API routes; auth under `/auth/*`, everything else under `/stocks/*`
+- `routes/api.php` — all API routes; auth under `/auth/*`, stocks under `/stocks/*`, cashflow under `/cashflow/*`
 - `database/migrations/` — schema migrations
 - `database/seeders/` — data seeders
 
@@ -105,7 +105,7 @@ Two top-level prefixes: `/stocks` for the stock/portfolio module, `/cashflow` fo
 
 /stocks               — list / create stocks
 /stocks/portfolio     — portfolio positions & value history
-/stocks/transactions  — create / update / delete stock transactions
+/stocks/transactions  — list all / create / update / delete stock transactions
 /stocks/settings      — per-user handling fee discount
 /stocks/export        — export transactions (CSV or JSON)
 /stocks/import        — import transactions (with /preview)
@@ -164,6 +164,8 @@ Key frontend conventions:
 - `app/Jobs/` — queued jobs (`FetchAllStockPrices` dispatches per-stock `FetchStockPrice` jobs)
 - `app/Actions/SeedDefaultCashflowTypes.php` — seeds default cashflow types/subtypes for new users on registration
 - `app/Policies/StockTransactionPolicy.php` — ownership gate for stock transaction update/delete
+- `app/Policies/ExposureBundlePolicy.php` — ownership gate for exposure bundle CRUD
+- `app/Http/Controllers/Concerns/ParsesImportFile.php` — shared CSV/JSON parsing trait for import controllers
 
 ### Key naming conventions
 
@@ -181,7 +183,7 @@ Cashflow foreign key columns: `cashflow_type_id`, `cashflow_subtype_id` (not `ty
 
 ## Taiwan Market Rules
 
-- All trading day calculations use **Asia/Taipei (UTC+8)**
+- App timezone is set to **Asia/Taipei (UTC+8)** in `config/app.php` — all date/time functions default to Taiwan time
 - Price history includes **today** — `StockPriceHistoryController` and `PortfolioController` cap at today, not yesterday
 - Missing price history dates use **carry-forward** — last known price on or before that date is used
 - Handling fee: `max(20, floor(tradeValue × 0.1425% × (1 − discount)))` — buy and sell

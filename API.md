@@ -236,6 +236,16 @@ GET /stocks/{symbol}/transactions
 
 ## Stock Transactions
 
+### List All Transactions
+```
+GET /stocks/transactions
+```
+🔒 Requires auth. Returns all transactions for the authenticated user across all stocks, ordered by date descending.
+
+**Response `200`** — array of transaction objects (same shape as per-stock transactions, each with `stock` relationship)
+
+---
+
 ### Create Stock Transaction
 ```
 POST /stocks/transactions
@@ -278,12 +288,12 @@ PUT /stocks/transactions/{id}
 | `type` | string | required, `buy` or `sell` |
 | `shares` | number | required, > 0 |
 | `price_per_share` | number | required, > 0 |
-| `handling_fee` | number | required, ≥ 0 |
-| `transaction_tax` | number | required, ≥ 0 |
+| `handling_fee` | number | optional, ≥ 0 (auto-calculated if omitted) |
+| `transaction_tax` | number | optional, ≥ 0 (auto-calculated if omitted) |
 | `transacted_at` | date | required |
 | `notes` | string | optional |
 
-Fee and tax are accepted as-is (user-overridable).
+Fee and tax follow the same auto-calculation logic as create when omitted.
 
 **Response `200`** — updated transaction object with `stock` relationship
 
@@ -529,7 +539,7 @@ PATCH /stocks/exposure/bundles/{bundle}
 | Field | Type | Rules |
 |---|---|---|
 | `name` | string | optional, max 255 |
-| `cash` | number | optional, ≥ 0 |
+| `cash` | number | optional, ≥ 0 (decimal, e.g. `50000.75`) |
 
 **Response `200`** — updated bundle object with entries
 
@@ -903,7 +913,7 @@ POST /cashflow/import
 
 ## Notes
 
-- All timestamps are in UTC. The app uses **Asia/Taipei (UTC+8)** for trading day calculations.
+- The app timezone is **Asia/Taipei (UTC+8)**. All timestamps and trading day calculations use Taiwan time.
 - Stock prices are fetched from **Yahoo Finance** (`query1.finance.yahoo.com/v8/finance/chart`). TWSE symbols use `.TW`; OTC symbols use `.TWO`. The service auto-retries `.TW` symbols with `.TWO` on 404.
 - Market index symbols (e.g. `^TWII`, `^IXIC`, `^VIX`) are supported but cannot be transacted — they are tracked for price history and charting only.
 - Handling fees follow Taiwan brokerage standard: **0.1425%** of trade value, minimum NT$20, reduced by `handling_fee_discount`.
