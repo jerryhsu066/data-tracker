@@ -252,6 +252,25 @@ class StockTransactionApiTest extends TestCase
             ->assertJsonFragment(['handling_fee' => '142.0000', 'transaction_tax' => '0.0000']);
     }
 
+    public function test_update_auto_calculates_fees_when_not_provided(): void
+    {
+        $stock = Stock::factory()->create();
+        $tx = StockTransaction::factory()->buy($stock, shares: 1000, price: 100)
+            ->create(['user_id' => $this->user->id, 'handling_fee' => 142, 'transaction_tax' => 0]);
+
+        // Update price but omit fees — should auto-calculate
+        // 1000 × 200 = 200,000; fee = max(20, floor(200000 × 0.001425)) = 285; tax = 0
+        $response = $this->actingAs($this->user)->putJson("/api/stocks/transactions/{$tx->id}", [
+            'type'            => 'buy',
+            'shares'          => 1000,
+            'price_per_share' => 200,
+            'transacted_at'   => '2025-01-15',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonFragment(['handling_fee' => '285.0000', 'transaction_tax' => '0.0000']);
+    }
+
     public function test_can_delete_own_transaction(): void
     {
         $stock = Stock::factory()->create();

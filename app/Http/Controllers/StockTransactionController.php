@@ -76,11 +76,22 @@ class StockTransactionController extends Controller
             'type'             => ['required', Rule::in(['buy', 'sell'])],
             'shares'           => ['required', 'numeric', 'gt:0'],
             'price_per_share'  => ['required', 'numeric', 'gt:0'],
-            'handling_fee'     => ['required', 'numeric', 'gte:0'],
-            'transaction_tax'  => ['required', 'numeric', 'gte:0'],
+            'handling_fee'     => ['nullable', 'numeric', 'gte:0'],
+            'transaction_tax'  => ['nullable', 'numeric', 'gte:0'],
             'transacted_at'    => ['required', 'date'],
             'notes'            => ['nullable', 'string'],
         ]);
+
+        $tradeValue = $validated['shares'] * $validated['price_per_share'];
+        $discount = (float) ($request->user()->handling_fee_discount ?? 0);
+
+        $validated['handling_fee'] = isset($validated['handling_fee'])
+            ? (int) $validated['handling_fee']
+            : (int) max(20, floor($tradeValue * 0.001425 * (1 - $discount)));
+
+        $validated['transaction_tax'] = isset($validated['transaction_tax'])
+            ? (int) $validated['transaction_tax']
+            : ($validated['type'] === 'sell' ? (int) floor($tradeValue * 0.003) : 0);
 
         $stockTransaction->update($validated);
         $stockTransaction->load('stock');
