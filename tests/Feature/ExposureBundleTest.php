@@ -76,6 +76,18 @@ class ExposureBundleTest extends TestCase
         ]);
     }
 
+    public function test_cash_supports_decimal_values(): void
+    {
+        $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'Decimal', 'cash' => 0]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/stocks/exposure/bundles/{$bundle->id}", [
+            'cash' => 50000.75,
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals(50000.75, (float) $response->json('cash'));
+    }
+
     public function test_delete_bundle(): void
     {
         $bundle = ExposureBundle::create(['user_id' => $this->user->id, 'name' => 'To Delete', 'cash' => 0]);

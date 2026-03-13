@@ -17,7 +17,7 @@ class ExposureBundleController extends Controller
         return [
             'id'      => $bundle->id,
             'name'    => $bundle->name,
-            'cash'    => (int) $bundle->cash,
+            'cash'    => (float) $bundle->cash,
             'entries' => $bundle->entries->map(fn (ExposureBundleEntry $entry) => [
                 'id'              => $entry->id,
                 'stock'           => $entry->stock,
@@ -69,7 +69,7 @@ class ExposureBundleController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
-            'cash' => ['sometimes', 'integer', 'min:0'],
+            'cash' => ['sometimes', 'numeric', 'min:0'],
         ]);
 
         $bundle->update($validated);
