@@ -63,13 +63,14 @@ cp .env.example .env
 
 The default `.env.example` is pre-configured for Docker (MySQL host is `mysql`, matching the Docker Compose service name). No changes are required for local development.
 
-### 3. Build and start all services
+### 3. Run the init command
 
 ```bash
-docker compose up -d --build
+chmod +x data_tracker.sh
+./data_tracker.sh init
 ```
 
-This starts six containers:
+This builds all images, generates the app key, runs migrations, and seeds the database in one step. It starts six containers:
 
 | Container | Role |
 |-----------|------|
@@ -80,22 +81,9 @@ This starts six containers:
 | `laravel_worker` | Queue worker — processes background jobs (price fetches) |
 | `laravel_scheduler` | Cron scheduler — dispatches the hourly weekday price sync |
 
-### 4. Install PHP dependencies and generate the app key
+The seeder inserts the three market index stocks (`^TWII`, `^IXIC`, `^VIX`) and dispatches a background job to fetch their last 30 days of price history.
 
-```bash
-docker compose exec app composer install
-docker compose exec app php artisan key:generate
-```
-
-### 5. Run database migrations and seed initial data
-
-```bash
-docker compose exec app php artisan migrate --seed
-```
-
-This migrates the schema and runs the seeder, which inserts the three market index stocks (`^TWII`, `^IXIC`, `^VIX`) and dispatches a background job to fetch their last 30 days of price history. The worker container processes the job automatically.
-
-### 6. Open the app
+### 4. Open the app
 
 Go to [http://localhost:8000](http://localhost:8000) and register an account.
 
@@ -103,35 +91,36 @@ Go to [http://localhost:8000](http://localhost:8000) and register an account.
 
 ---
 
-## Common Commands
+## Service Management
+
+A helper script `data_tracker.sh` wraps all common operations. Make it executable once after cloning:
 
 ```bash
-# Start all services
-docker compose up -d
+chmod +x data_tracker.sh
+```
 
-# Stop all services
-docker compose down
+| Command | What it does |
+|---------|-------------|
+| `./data_tracker.sh init` | First-time setup: build images, copy `.env`, generate app key, run migrations & seed |
+| `./data_tracker.sh start` | Start all services (detached) |
+| `./data_tracker.sh restart` | Restart all services |
+| `./data_tracker.sh stop` | Stop all services (data volumes are preserved) |
+| `./data_tracker.sh update` | `git pull` → rebuild PHP images → restart changed containers → run new migrations → clear caches |
+| `./data_tracker.sh logs [svc]` | Tail logs — all services, or one of: `app`, `nginx`, `worker`, `scheduler`, `mysql`, `node` |
+| `./data_tracker.sh shell` | Open a bash shell in the app container |
+| `./data_tracker.sh test [args]` | Run the test suite; pass extra args e.g. `--filter=SomeTest` |
+| `./data_tracker.sh artisan <cmd>` | Run any Artisan command e.g. `./data_tracker.sh artisan migrate:fresh --seed` |
 
-# Rebuild the PHP image (after Dockerfile or composer.json changes)
-docker compose build app
+> **`update` does not require a manual stop.** `docker compose up -d` recreates only the containers whose image changed, so the service stays available during the rebuild.
 
+### Raw Docker commands (if needed)
+
+```bash
 # Run all tests
 docker compose exec app php artisan test
 
-# Run a specific test file
-docker compose exec app php artisan test tests/Feature/StockTransactionApiTest.php
-
-# Run tests matching a name
-docker compose exec app php artisan test --filter=test_can_record_a_buy_transaction
-
 # Fresh migration (drops all tables and re-migrates)
-docker compose exec app php artisan migrate:fresh
-
-# Open a shell in the app container
-docker compose exec app bash
-
-# Tail application logs
-docker compose logs -f app
+docker compose exec app php artisan migrate:fresh --seed
 
 # Tail worker logs
 docker compose logs -f worker
