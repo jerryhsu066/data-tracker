@@ -176,4 +176,23 @@ class StockApiTest extends TestCase
         $this->postJson('/api/stocks/sync-history', ['from_date' => '2025-01-01'])
             ->assertUnauthorized();
     }
+
+    public function test_can_store_symbol_up_to_15_characters(): void
+    {
+        Http::fake([
+            '*finance.yahoo.com*' => Http::response([
+                'chart' => ['result' => [['meta' => [
+                    'regularMarketPrice' => 100.0,
+                    'chartPreviousClose' => 99.0,
+                ]]]],
+            ]),
+        ]);
+
+        $this->actingAs($this->user)->postJson('/api/stocks', [
+            'symbol' => 'ABCDEFGHIJ.KLMN',
+            'name'   => 'Long Symbol Corp',
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('stocks', ['symbol' => 'ABCDEFGHIJ.KLMN']);
+    }
 }
