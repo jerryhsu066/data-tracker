@@ -15,6 +15,16 @@ use Illuminate\Validation\ValidationException;
 
 class StockTransactionController extends Controller
 {
+    public function index(Request $request): JsonResponse
+    {
+        return response()->json(
+            StockTransaction::where('user_id', $request->user()->id)
+                ->with('stock')
+                ->orderByDesc('transacted_at')
+                ->get()
+        );
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([

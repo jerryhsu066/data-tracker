@@ -43,6 +43,7 @@ Route::prefix('stocks')->group(function () {
         Route::get('portfolio/history', [PortfolioController::class, 'history']);
 
         // Transactions
+        Route::get('transactions', [StockTransactionController::class, 'index']);
         Route::post('transactions', [StockTransactionController::class, 'store']);
         Route::put('transactions/{stock_transaction}', [StockTransactionController::class, 'update']);
         Route::delete('transactions/{stock_transaction}', [StockTransactionController::class, 'destroy']);

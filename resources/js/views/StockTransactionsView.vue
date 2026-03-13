@@ -267,18 +267,11 @@ function fmt(v) { return Number(v).toLocaleString('zh-TW', { minimumFractionDigi
 async function load() {
     try {
         const [txRes, stockRes] = await Promise.all([
-            // Fetch transactions per stock and flatten — or we build a combined list from portfolio stocks
+            api.get('/stocks/transactions'),
             api.get('/stocks'),
-            api.get('/stocks/portfolio'),
         ]);
-        stocks.value = txRes.data;
-        // Collect all transactions from each tracked stock for this user
-        const all = [];
-        for (const s of txRes.data) {
-            const { data } = await api.get(`/stocks/${s.symbol}/transactions`);
-            all.push(...data);
-        }
-        transactions.value = all.sort((a, b) => b.transacted_at.localeCompare(a.transacted_at));
+        transactions.value = txRes.data;
+        stocks.value = stockRes.data;
     } finally {
         loading.value = false;
     }

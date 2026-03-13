@@ -271,6 +271,28 @@ class StockTransactionApiTest extends TestCase
             ->assertJsonFragment(['handling_fee' => '285.0000', 'transaction_tax' => '0.0000']);
     }
 
+    public function test_can_list_all_own_transactions(): void
+    {
+        $stock1 = Stock::factory()->create(['symbol' => '2330.TW']);
+        $stock2 = Stock::factory()->create(['symbol' => '2317.TW']);
+        $other = User::factory()->create();
+
+        StockTransaction::factory()->buy($stock1, shares: 1000, price: 800)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock2, shares: 500, price: 100)->create(['user_id' => $this->user->id]);
+        StockTransaction::factory()->buy($stock1, shares: 200, price: 790)->create(['user_id' => $other->id]);
+
+        $response = $this->actingAs($this->user)->getJson('/api/stocks/transactions');
+
+        $response->assertOk()->assertJsonCount(2);
+        // Should include stock relationship
+        $this->assertNotNull($response->json('0.stock'));
+    }
+
+    public function test_list_all_transactions_requires_auth(): void
+    {
+        $this->getJson('/api/stocks/transactions')->assertUnauthorized();
+    }
+
     public function test_can_delete_own_transaction(): void
     {
         $stock = Stock::factory()->create();
