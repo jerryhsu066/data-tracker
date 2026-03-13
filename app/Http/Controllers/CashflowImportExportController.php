@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CashflowImportExportController extends Controller
 {
+    use Concerns\ParsesImportFile;
     // ── Export ────────────────────────────────────────────────────────────────
 
     public function export(Request $request): StreamedResponse|JsonResponse
@@ -251,64 +252,21 @@ class CashflowImportExportController extends Controller
         return response()->json(['imported' => $imported, 'skipped' => $skipped]);
     }
 
-    // ── parseFile ─────────────────────────────────────────────────────────────
-    // Returns an array of rows. Each row always contains '_row' (1-based number).
-    // Rows that cannot be parsed include '_parse_error' instead of field data.
-
     private function parseFile($file, string $format): array
     {
         $content = file_get_contents($file->getRealPath());
 
         if ($format === 'json') {
-            $data = json_decode($content, true);
-            if (!is_array($data)) {
-                return [['_row' => 1, '_parse_error' => 'Invalid JSON — file could not be parsed']];
-            }
-            $rows = [];
-            foreach ($data as $i => $item) {
-                if (!is_array($item)) {
-                    $rows[] = ['_row' => $i + 1, '_parse_error' => 'Item is not a JSON object'];
-                    continue;
-                }
-                $rows[] = [
-                    '_row'    => $i + 1,
-                    'year'    => $item['year']    ?? 0,
-                    'month'   => $item['month']   ?? 0,
-                    'type'    => $item['type']    ?? '',
-                    'subtype' => $item['subtype'] ?? '',
-                    'amount'  => $item['amount']  ?? '',
-                    'note'    => $item['note']    ?? '',
-                ];
-            }
-            return $rows;
+            return $this->parseJson($content, fn(array $item) => [
+                'year'    => $item['year']    ?? 0,
+                'month'   => $item['month']   ?? 0,
+                'type'    => $item['type']    ?? '',
+                'subtype' => $item['subtype'] ?? '',
+                'amount'  => $item['amount']  ?? '',
+                'note'    => $item['note']    ?? '',
+            ]);
         }
 
-        // CSV
-        $lines  = array_values(array_filter(explode("\n", trim($content)), fn($l) => trim($l) !== ''));
-        $header = null;
-        $rowNum = 0;
-        $rows   = [];
-
-        foreach ($lines as $line) {
-            $cols = str_getcsv($line);
-            if ($header === null) {
-                $header = $cols;
-                $rowNum = 1;
-                continue;
-            }
-            $rowNum++;
-            if (count($cols) !== count($header)) {
-                $rows[] = [
-                    '_row'         => $rowNum,
-                    '_parse_error' => 'Expected ' . count($header) . ' columns, found ' . count($cols),
-                ];
-                continue;
-            }
-            $row         = array_combine($header, $cols);
-            $row['_row'] = $rowNum;
-            $rows[]      = $row;
-        }
-
-        return $rows;
+        return $this->parseCsv($content);
     }
 }
