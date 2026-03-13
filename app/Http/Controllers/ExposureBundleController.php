@@ -7,6 +7,7 @@ use App\Models\ExposureBundleEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class ExposureBundleController extends Controller
 {
@@ -63,9 +64,7 @@ class ExposureBundleController extends Controller
 
     public function update(Request $request, ExposureBundle $bundle): JsonResponse
     {
-        if ($bundle->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('update', $bundle);
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
@@ -79,9 +78,7 @@ class ExposureBundleController extends Controller
 
     public function destroy(Request $request, ExposureBundle $bundle): Response
     {
-        if ($bundle->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('delete', $bundle);
 
         $bundle->delete();
 
@@ -90,9 +87,7 @@ class ExposureBundleController extends Controller
 
     public function addEntry(Request $request, ExposureBundle $bundle): JsonResponse
     {
-        if ($bundle->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('update', $bundle);
 
         $validated = $request->validate([
             'stock_id'        => ['required', 'integer', 'exists:stocks,id'],
@@ -116,9 +111,7 @@ class ExposureBundleController extends Controller
 
     public function updateEntry(Request $request, ExposureBundle $bundle, ExposureBundleEntry $entry): JsonResponse
     {
-        if ($bundle->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('update', $bundle);
 
         $validated = $request->validate([
             'shares_override' => ['nullable', 'numeric', 'gte:0'],
@@ -134,9 +127,7 @@ class ExposureBundleController extends Controller
 
     public function removeEntry(Request $request, ExposureBundle $bundle, ExposureBundleEntry $entry): Response
     {
-        if ($bundle->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('update', $bundle);
 
         $entry->delete();
 
