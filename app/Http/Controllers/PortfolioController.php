@@ -73,6 +73,9 @@ class PortfolioController extends Controller
                 ->all();
         }
 
+        // Pre-group transactions by stock_id to avoid O(n²) re-scanning
+        $txByStock = $transactions->groupBy('stock_id');
+
         // For each date, compute sum(sharesHeld × closePrice) for each stock
         $result = [];
 
@@ -84,8 +87,7 @@ class PortfolioController extends Controller
             $totalCostBasis = 0.0;
 
             foreach ($stockIds as $stockId) {
-                $txUpToDate = $transactions
-                    ->where('stock_id', $stockId)
+                $txUpToDate = ($txByStock[$stockId] ?? collect())
                     ->filter(fn ($t) => (string) $t->transacted_at <= $date);
 
                 $buysUpToDate  = $txUpToDate->where('type', 'buy');
