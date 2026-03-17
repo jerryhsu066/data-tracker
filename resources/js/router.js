@@ -7,16 +7,34 @@ const router = createRouter({
         { path: '/register', component: () => import('./views/RegisterView.vue'), meta: { guest: true } },
         { path: '/', redirect: '/stocks/home' },
         { path: '/user/settings', component: () => import('./views/UserSettingsView.vue'), meta: { auth: true } },
-        { path: '/stocks/home', component: () => import('./views/HomeView.vue'), meta: { auth: true } },
-        { path: '/stocks/dashboard', component: () => import('./views/DashboardView.vue'), meta: { auth: true } },
-        { path: '/stocks/list', component: () => import('./views/StocksView.vue'), meta: { auth: true } },
-        { path: '/stocks/transactions', component: () => import('./views/StockTransactionsView.vue'), meta: { auth: true } },
-        { path: '/stocks/exposure', component: () => import('./views/ExposureView.vue'), meta: { auth: true } },
-        { path: '/stocks/settings', component: () => import('./views/SettingsView.vue'), meta: { auth: true } },
-        { path: '/stocks/:symbol', component: () => import('./views/StockDetailView.vue'), meta: { auth: true } },
-        { path: '/cashflow/home', component: () => import('./views/CashflowHomeView.vue'), meta: { auth: true } },
-        { path: '/cashflow/log', component: () => import('./views/CashflowLogView.vue'), meta: { auth: true } },
-        { path: '/cashflow/settings', component: () => import('./views/CashflowSettingsView.vue'), meta: { auth: true } },
+
+        // Stocks module
+        {
+            path: '/stocks',
+            component: () => import('./layouts/ModuleLayout.vue'),
+            meta: { auth: true, module: 'stocks' },
+            children: [
+                { path: 'home', component: () => import('./views/HomeView.vue') },
+                { path: 'dashboard', component: () => import('./views/DashboardView.vue') },
+                { path: 'list', component: () => import('./views/StocksView.vue') },
+                { path: 'transactions', component: () => import('./views/StockTransactionsView.vue') },
+                { path: 'exposure', component: () => import('./views/ExposureView.vue') },
+                { path: 'settings', component: () => import('./views/SettingsView.vue') },
+                { path: ':symbol', component: () => import('./views/StockDetailView.vue') },
+            ],
+        },
+
+        // Cashflow module
+        {
+            path: '/cashflow',
+            component: () => import('./layouts/ModuleLayout.vue'),
+            meta: { auth: true, module: 'cashflow' },
+            children: [
+                { path: 'home', component: () => import('./views/CashflowHomeView.vue') },
+                { path: 'log', component: () => import('./views/CashflowLogView.vue') },
+                { path: 'settings', component: () => import('./views/CashflowSettingsView.vue') },
+            ],
+        },
     ],
 });
 

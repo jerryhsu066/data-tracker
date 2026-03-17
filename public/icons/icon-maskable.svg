@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Maskable: fill entire area, content in safe zone (center 80%) -->
+  <rect width="512" height="512" fill="#030712"/>
+  <polygon
+    points="256,102 393,162 393,350 256,410 119,350 119,162"
+    fill="none"
+    stroke="#6366f1"
+    stroke-width="16"
+    stroke-linejoin="round"
+  />
+  <line x1="176" y1="216" x2="336" y2="216" stroke="#f1f5f9" stroke-width="16" stroke-linecap="round"/>
+  <line x1="176" y1="256" x2="308" y2="256" stroke="#6366f1" stroke-width="16" stroke-linecap="round"/>
+  <line x1="176" y1="296" x2="264" y2="296" stroke="#f1f5f9" stroke-width="16" stroke-linecap="round"/>
+</svg>

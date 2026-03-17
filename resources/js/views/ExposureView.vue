@@ -1,385 +1,383 @@
 <template>
-    <div class="max-w-4xl mx-auto px-4 py-8">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">Exposure</h1>
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">Exposure</h1>
 
-        <div v-if="loading" class="text-center py-12 text-slate-400">Loading…</div>
+    <div v-if="loading" class="text-center py-12 text-slate-400">Loading…</div>
 
-        <template v-else>
-            <!-- Bundle tabs -->
-            <div class="flex items-center gap-1 mb-6 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
-                <button
-                    v-for="bundle in bundles"
-                    :key="bundle.id"
-                    class="relative group px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px"
-                    :class="activeId === bundle.id
-                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                        : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
-                    @click="activeId = bundle.id"
-                >
-                    <span v-if="renamingId !== bundle.id">{{ bundle.name }}</span>
-                    <input
-                        v-else
-                        ref="renameInput"
-                        v-model="renameValue"
-                        type="text"
-                        class="w-28 bg-transparent border-none outline-none text-sm font-medium"
-                        @keydown.enter="commitRename"
-                        @keydown.escape="renamingId = null"
-                        @blur="commitRename"
-                        @click.stop
-                    />
-                    <button
-                        v-if="renamingId !== bundle.id"
-                        class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xs"
-                        title="Rename"
-                        @click.stop="startRename(bundle)"
-                    >✎</button>
-                    <button
-                        v-if="renamingId !== bundle.id && bundles.length > 1"
-                        class="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-500 text-xs"
-                        title="Delete bundle"
-                        @click.stop="deleteBundle(bundle.id)"
-                    >✕</button>
-                </button>
-
-                <div v-if="addingBundle" class="flex items-center gap-1 px-2 pb-2">
-                    <input
-                        ref="newBundleInput"
-                        v-model="newBundleName"
-                        type="text"
-                        placeholder="Bundle name"
-                        class="h-7 w-32 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        @keydown.enter="commitNewBundle"
-                        @keydown.escape="addingBundle = false"
-                        @blur="commitNewBundle"
-                    />
-                </div>
-                <button
+    <template v-else>
+        <!-- Bundle tabs -->
+        <div class="flex items-center gap-1 mb-6 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
+            <button
+                v-for="bundle in bundles"
+                :key="bundle.id"
+                class="relative group px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px"
+                :class="activeId === bundle.id
+                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
+                @click="activeId = bundle.id"
+            >
+                <span v-if="renamingId !== bundle.id">{{ bundle.name }}</span>
+                <input
                     v-else
-                    class="px-3 py-2 text-sm text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors -mb-px border-b-2 border-transparent"
-                    @click="startAddBundle"
-                >+ New</button>
+                    ref="renameInput"
+                    v-model="renameValue"
+                    type="text"
+                    class="w-28 bg-transparent border-none outline-none text-sm font-medium"
+                    @keydown.enter="commitRename"
+                    @keydown.escape="renamingId = null"
+                    @blur="commitRename"
+                    @click.stop
+                />
+                <button
+                    v-if="renamingId !== bundle.id"
+                    class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xs"
+                    title="Rename"
+                    @click.stop="startRename(bundle)"
+                >✎</button>
+                <button
+                    v-if="renamingId !== bundle.id && bundles.length > 1"
+                    class="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-500 text-xs"
+                    title="Delete bundle"
+                    @click.stop="deleteBundle(bundle.id)"
+                >✕</button>
+            </button>
+
+            <div v-if="addingBundle" class="flex items-center gap-1 px-2 pb-2">
+                <input
+                    ref="newBundleInput"
+                    v-model="newBundleName"
+                    type="text"
+                    placeholder="Bundle name"
+                    class="h-7 w-32 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    @keydown.enter="commitNewBundle"
+                    @keydown.escape="addingBundle = false"
+                    @blur="commitNewBundle"
+                />
+            </div>
+            <button
+                v-else
+                class="px-3 py-2 text-sm text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors -mb-px border-b-2 border-transparent"
+                @click="startAddBundle"
+            >+ New</button>
+        </div>
+
+        <template v-if="active">
+            <!-- Summary cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(investValue) }}</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Market Exposure</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(totalExposure) }}</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Exposure Rate</p>
+                    <p class="text-2xl font-bold mt-1" :class="exposureRatioPct > 100 ? 'text-amber-500' : 'text-indigo-500 dark:text-indigo-400'">
+                        {{ exposureRatioPct.toFixed(1) }}%
+                    </p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss</p>
+                    <p class="text-2xl font-bold mt-1" :class="gainLoss >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                        {{ gainLoss >= 0 ? '+' : '' }}{{ gainLossPct.toFixed(2) }}%
+                    </p>
+                </div>
             </div>
 
-            <template v-if="active">
-                <!-- Summary cards -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
-                        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(investValue) }}</p>
-                    </div>
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Market Exposure</p>
-                        <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(totalExposure) }}</p>
-                    </div>
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Exposure Rate</p>
-                        <p class="text-2xl font-bold mt-1" :class="exposureRatioPct > 100 ? 'text-amber-500' : 'text-indigo-500 dark:text-indigo-400'">
-                            {{ exposureRatioPct.toFixed(1) }}%
-                        </p>
-                    </div>
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss</p>
-                        <p class="text-2xl font-bold mt-1" :class="gainLoss >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                            {{ gainLoss >= 0 ? '+' : '' }}{{ gainLossPct.toFixed(2) }}%
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Allocation bar -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-6">
-                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Allocation</h2>
-                    <div class="flex h-8 rounded-lg overflow-hidden gap-px bg-slate-100 dark:bg-slate-700">
-                        <div
-                            v-for="(seg, i) in allocationSegments"
-                            :key="seg.label"
-                            :style="{ width: seg.pct + '%', backgroundColor: PALETTE[i % PALETTE.length] }"
-                            :title="`${seg.label}: ${seg.pct.toFixed(1)}%`"
-                            class="relative flex items-center justify-center transition-all duration-300 overflow-hidden"
-                        >
-                            <span
-                                v-if="seg.pct >= 7"
-                                class="text-white text-xs font-semibold leading-none select-none drop-shadow"
-                            >{{ seg.pct.toFixed(1) }}%</span>
-                        </div>
-                    </div>
-                    <ul class="flex flex-wrap gap-x-4 gap-y-1 mt-3">
-                        <li
-                            v-for="(seg, i) in allocationSegments"
-                            :key="seg.label"
-                            class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400"
-                        >
-                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: PALETTE[i % PALETTE.length] }"></span>
-                            <span>{{ seg.label }}</span>
-                            <span class="text-slate-400 dark:text-slate-500">{{ seg.pct.toFixed(1) }}%</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Positions table header row with Add button -->
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Positions</span>
-                    <button
-                        @click="showAddForm = !showAddForm"
-                        class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
-                        :class="showAddForm
-                            ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
-                            : 'bg-indigo-600 hover:bg-indigo-500 text-white'"
+            <!-- Allocation bar -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-6">
+                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Allocation</h2>
+                <div class="flex h-8 rounded-lg overflow-hidden gap-px bg-slate-100 dark:bg-slate-700">
+                    <div
+                        v-for="(seg, i) in allocationSegments"
+                        :key="seg.label"
+                        :style="{ width: seg.pct + '%', backgroundColor: PALETTE[i % PALETTE.length] }"
+                        :title="`${seg.label}: ${seg.pct.toFixed(1)}%`"
+                        class="relative flex items-center justify-center transition-all duration-300 overflow-hidden"
                     >
-                        <span>{{ showAddForm ? '✕ Cancel' : '+ Add Position' }}</span>
-                    </button>
+                        <span
+                            v-if="seg.pct >= 7"
+                            class="text-white text-xs font-semibold leading-none select-none drop-shadow"
+                        >{{ seg.pct.toFixed(1) }}%</span>
+                    </div>
                 </div>
+                <ul class="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+                    <li
+                        v-for="(seg, i) in allocationSegments"
+                        :key="seg.label"
+                        class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400"
+                    >
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: PALETTE[i % PALETTE.length] }"></span>
+                        <span>{{ seg.label }}</span>
+                        <span class="text-slate-400 dark:text-slate-500">{{ seg.pct.toFixed(1) }}%</span>
+                    </li>
+                </ul>
+            </div>
 
-                <!-- Collapsible add entry form -->
-                <div v-if="showAddForm" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-3">
-                    <form @submit.prevent="addEntry" class="flex gap-3 items-end flex-wrap">
-                        <div class="flex-1 min-w-40">
-                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Symbol</label>
-                            <select
-                                v-model="form.stockId"
-                                class="h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                                <option value="" disabled>Select a stock…</option>
-                                <option v-for="s in stocks" :key="s.id" :value="s.id">
-                                    {{ s.symbol }} — {{ s.name }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="w-32">
-                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
-                                Shares
-                                <span v-if="form.sharesIsAuto" class="ml-1 text-indigo-400">(auto)</span>
-                            </label>
-                            <input
-                                v-model.number="form.shares"
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                class="h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                @input="form.sharesIsAuto = false"
-                            />
-                        </div>
-                        <div class="w-28">
-                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Leverage</label>
-                            <input
-                                v-model.number="form.leverage"
-                                type="number"
-                                min="0"
-                                step="0.5"
-                                placeholder="1"
-                                :disabled="form.isCash"
-                                class="h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-40"
-                            />
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs font-medium text-slate-500 dark:text-slate-400">Cash proxy</label>
-                            <label class="relative inline-flex items-center h-9 cursor-pointer">
-                                <input type="checkbox" v-model="form.isCash" class="sr-only" />
-                                <div
-                                    class="w-10 h-5 rounded-full transition-colors"
-                                    :class="form.isCash ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'"
-                                ></div>
-                                <div
-                                    class="absolute top-2 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
-                                    :class="form.isCash ? 'translate-x-5' : 'translate-x-0'"
-                                ></div>
-                            </label>
-                        </div>
-                        <button
-                            type="submit"
-                            :disabled="!form.stockId || submitting"
-                            class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium rounded-md transition-colors"
+            <!-- Positions table header row with Add button -->
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Positions</span>
+                <button
+                    @click="showAddForm = !showAddForm"
+                    class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
+                    :class="showAddForm
+                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                        : 'bg-indigo-600 hover:bg-indigo-500 text-white'"
+                >
+                    <span>{{ showAddForm ? '✕ Cancel' : '+ Add Position' }}</span>
+                </button>
+            </div>
+
+            <!-- Collapsible add entry form -->
+            <div v-if="showAddForm" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-3">
+                <form @submit.prevent="addEntry" class="flex gap-3 items-end flex-wrap">
+                    <div class="flex-1 min-w-40">
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Symbol</label>
+                        <select
+                            v-model="form.stockId"
+                            class="h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
-                            Add
-                        </button>
-                    </form>
-                    <p class="h-[1.1rem] text-xs text-red-500 mt-2">{{ formError }}</p>
-                </div>
+                            <option value="" disabled>Select a stock…</option>
+                            <option v-for="s in stocks" :key="s.id" :value="s.id">
+                                {{ s.symbol }} — {{ s.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="w-32">
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                            Shares
+                            <span v-if="form.sharesIsAuto" class="ml-1 text-indigo-400">(auto)</span>
+                        </label>
+                        <input
+                            v-model.number="form.shares"
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            class="h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            @input="form.sharesIsAuto = false"
+                        />
+                    </div>
+                    <div class="w-28">
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Leverage</label>
+                        <input
+                            v-model.number="form.leverage"
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            placeholder="1"
+                            :disabled="form.isCash"
+                            class="h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-40"
+                        />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-medium text-slate-500 dark:text-slate-400">Cash proxy</label>
+                        <label class="relative inline-flex items-center h-9 cursor-pointer">
+                            <input type="checkbox" v-model="form.isCash" class="sr-only" />
+                            <div
+                                class="w-10 h-5 rounded-full transition-colors"
+                                :class="form.isCash ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'"
+                            ></div>
+                            <div
+                                class="absolute top-2 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+                                :class="form.isCash ? 'translate-x-5' : 'translate-x-0'"
+                            ></div>
+                        </label>
+                    </div>
+                    <button
+                        type="submit"
+                        :disabled="!form.stockId || submitting"
+                        class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium rounded-md transition-colors"
+                    >
+                        Add
+                    </button>
+                </form>
+                <p class="h-[1.1rem] text-xs text-red-500 mt-2">{{ formError }}</p>
+            </div>
 
-                <!-- Positions table -->
-                <div v-if="active.entries.length > 0 || active.cash > 0" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
-                            <tr>
-                                <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Symbol</th>
-                                <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Price</th>
-                                <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Shares</th>
-                                <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Value</th>
-                                <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Leverage</th>
-                                <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Exposure</th>
-                                <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Allocation</th>
-                                <th class="px-4 py-3 w-8"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
-                            <template v-for="entry in active.entries" :key="entry.id">
-                                <!-- View row -->
-                                <tr v-if="editingEntry?.id !== entry.id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                                    <td class="px-4 py-3">
-                                        <div class="font-semibold text-slate-900 dark:text-slate-100">{{ entry.stock.symbol }}</div>
-                                        <div class="text-xs" :class="entry.is_cash ? 'text-slate-400' : 'text-indigo-400'">
-                                            {{ entry.is_cash ? 'cash proxy' : entry.leverage + 'x leverage' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
-                                        {{ fmt(entry.stock.current_price) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
-                                        {{ Number(entry.net_shares).toLocaleString() }}
-                                    </td>
-                                    <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
-                                        {{ hidden ? '••••' : fmt(Number(entry.net_shares) * Number(entry.stock.current_price)) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-right">
-                                        <span v-if="entry.is_cash" class="text-slate-400">—</span>
-                                        <span v-else class="text-slate-700 dark:text-slate-300">{{ entry.leverage }}x</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
-                                        <span v-if="!entry.is_cash">
-                                            {{ hidden ? '••••' : fmt(Number(entry.net_shares) * Number(entry.stock.current_price) * Number(entry.leverage)) }}
-                                        </span>
-                                        <span v-else class="text-slate-400">—</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">
-                                        <span v-if="totalValue > 0">
-                                            {{ ((Number(entry.net_shares) * Number(entry.stock.current_price) / totalValue) * 100).toFixed(1) }}%
-                                        </span>
-                                        <span v-else>—</span>
-                                    </td>
-                                    <td class="px-4 py-3 text-right">
-                                        <button
-                                            @click="startEdit(entry)"
-                                            class="text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors text-sm leading-none"
-                                            title="Edit"
-                                        >✎</button>
-                                    </td>
-                                </tr>
-
-                                <!-- Edit row -->
-                                <tr v-else class="bg-indigo-50/60 dark:bg-indigo-900/10">
-                                    <td colspan="8" class="px-4 py-3">
-                                        <div class="flex items-center gap-4 flex-wrap">
-                                            <span class="font-semibold text-slate-900 dark:text-slate-100 min-w-16">{{ entry.stock.symbol }}</span>
-                                            <div>
-                                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Shares</label>
-                                                <input
-                                                    v-model.number="editingEntry.shares"
-                                                    type="number"
-                                                    min="0"
-                                                    class="h-8 w-28 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Leverage</label>
-                                                <input
-                                                    v-model.number="editingEntry.leverage"
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.5"
-                                                    :disabled="editingEntry.isCash"
-                                                    class="h-8 w-20 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-40"
-                                                />
-                                            </div>
-                                            <div class="flex flex-col gap-1">
-                                                <label class="text-xs font-medium text-slate-500 dark:text-slate-400">Cash proxy</label>
-                                                <label class="relative inline-flex items-center h-8 cursor-pointer">
-                                                    <input type="checkbox" v-model="editingEntry.isCash" class="sr-only" />
-                                                    <div class="w-10 h-5 rounded-full transition-colors" :class="editingEntry.isCash ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'"></div>
-                                                    <div class="absolute top-1.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" :class="editingEntry.isCash ? 'translate-x-5' : 'translate-x-0'"></div>
-                                                </label>
-                                            </div>
-                                            <div class="flex gap-2 ml-auto">
-                                                <button
-                                                    @click="saveEdit(entry)"
-                                                    class="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors"
-                                                >Save</button>
-                                                <button
-                                                    @click="confirmingDelete ? removeEntry(entry.id) : (confirmingDelete = true)"
-                                                    class="h-8 px-3 text-white text-sm font-medium rounded-md transition-colors"
-                                                    :class="confirmingDelete ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-red-500 hover:bg-red-600'"
-                                                >{{ confirmingDelete ? 'Confirm?' : 'Delete' }}</button>
-                                                <button
-                                                    @click="cancelEdit"
-                                                    class="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors"
-                                                >Cancel</button>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </template>
-
-                            <!-- Cash row - view -->
-                            <tr v-if="!editingCash" class="bg-slate-50/60 dark:bg-slate-700/20 hover:bg-slate-100/60 dark:hover:bg-slate-700/40">
+            <!-- Positions table -->
+            <div v-if="active.entries.length > 0 || active.cash > 0" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
+                        <tr>
+                            <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Symbol</th>
+                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Price</th>
+                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Shares</th>
+                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Value</th>
+                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Leverage</th>
+                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Exposure</th>
+                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Allocation</th>
+                            <th class="px-4 py-3 w-8"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
+                        <template v-for="entry in active.entries" :key="entry.id">
+                            <!-- View row -->
+                            <tr v-if="editingEntry?.id !== entry.id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                 <td class="px-4 py-3">
-                                    <div class="font-semibold text-slate-900 dark:text-slate-100">Cash</div>
-                                    <div class="text-xs text-slate-400">actual cash</div>
+                                    <div class="font-semibold text-slate-900 dark:text-slate-100">{{ entry.stock.symbol }}</div>
+                                    <div class="text-xs" :class="entry.is_cash ? 'text-slate-400' : 'text-indigo-400'">
+                                        {{ entry.is_cash ? 'cash proxy' : entry.leverage + 'x leverage' }}
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3 text-right text-slate-400">—</td>
-                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(active.cash || 0) }}</td>
-                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(active.cash || 0) }}</td>
-                                <td class="px-4 py-3 text-right text-slate-400">—</td>
-                                <td class="px-4 py-3 text-right text-slate-400">—</td>
+                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+                                    {{ fmt(entry.stock.current_price) }}
+                                </td>
+                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+                                    {{ Number(entry.net_shares).toLocaleString() }}
+                                </td>
+                                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+                                    {{ hidden ? '••••' : fmt(Number(entry.net_shares) * Number(entry.stock.current_price)) }}
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <span v-if="entry.is_cash" class="text-slate-400">—</span>
+                                    <span v-else class="text-slate-700 dark:text-slate-300">{{ entry.leverage }}x</span>
+                                </td>
+                                <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
+                                    <span v-if="!entry.is_cash">
+                                        {{ hidden ? '••••' : fmt(Number(entry.net_shares) * Number(entry.stock.current_price) * Number(entry.leverage)) }}
+                                    </span>
+                                    <span v-else class="text-slate-400">—</span>
+                                </td>
                                 <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">
-                                    {{ totalValue > 0 ? (((active.cash || 0) / totalValue) * 100).toFixed(1) + '%' : '—' }}
+                                    <span v-if="totalValue > 0">
+                                        {{ ((Number(entry.net_shares) * Number(entry.stock.current_price) / totalValue) * 100).toFixed(1) }}%
+                                    </span>
+                                    <span v-else>—</span>
                                 </td>
                                 <td class="px-4 py-3 text-right">
                                     <button
-                                        @click="editingCash = true; cashInput = active.cash || 0"
+                                        @click="startEdit(entry)"
                                         class="text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors text-sm leading-none"
                                         title="Edit"
                                     >✎</button>
                                 </td>
                             </tr>
 
-                            <!-- Cash row - edit -->
+                            <!-- Edit row -->
                             <tr v-else class="bg-indigo-50/60 dark:bg-indigo-900/10">
                                 <td colspan="8" class="px-4 py-3">
-                                    <div class="flex items-center gap-4">
-                                        <span class="font-semibold text-slate-900 dark:text-slate-100">Cash</span>
+                                    <div class="flex items-center gap-4 flex-wrap">
+                                        <span class="font-semibold text-slate-900 dark:text-slate-100 min-w-16">{{ entry.stock.symbol }}</span>
                                         <div>
-                                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Amount</label>
+                                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Shares</label>
                                             <input
-                                                v-model.number="cashInput"
+                                                v-model.number="editingEntry.shares"
                                                 type="number"
                                                 min="0"
-                                                class="h-8 w-36 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                @keydown.enter="saveCash"
-                                                @keydown.escape="editingCash = false"
+                                                class="h-8 w-28 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             />
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Leverage</label>
+                                            <input
+                                                v-model.number="editingEntry.leverage"
+                                                type="number"
+                                                min="0"
+                                                step="0.5"
+                                                :disabled="editingEntry.isCash"
+                                                class="h-8 w-20 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-40"
+                                            />
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <label class="text-xs font-medium text-slate-500 dark:text-slate-400">Cash proxy</label>
+                                            <label class="relative inline-flex items-center h-8 cursor-pointer">
+                                                <input type="checkbox" v-model="editingEntry.isCash" class="sr-only" />
+                                                <div class="w-10 h-5 rounded-full transition-colors" :class="editingEntry.isCash ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'"></div>
+                                                <div class="absolute top-1.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" :class="editingEntry.isCash ? 'translate-x-5' : 'translate-x-0'"></div>
+                                            </label>
                                         </div>
                                         <div class="flex gap-2 ml-auto">
                                             <button
-                                                @click="saveCash"
+                                                @click="saveEdit(entry)"
                                                 class="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors"
                                             >Save</button>
                                             <button
-                                                @click="editingCash = false"
+                                                @click="confirmingDelete ? removeEntry(entry.id) : (confirmingDelete = true)"
+                                                class="h-8 px-3 text-white text-sm font-medium rounded-md transition-colors"
+                                                :class="confirmingDelete ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-red-500 hover:bg-red-600'"
+                                            >{{ confirmingDelete ? 'Confirm?' : 'Delete' }}</button>
+                                            <button
+                                                @click="cancelEdit"
                                                 class="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors"
                                             >Cancel</button>
                                         </div>
                                     </div>
                                 </td>
                             </tr>
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
+                        </template>
 
-                <!-- Empty state -->
-                <div v-else class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-                    <p class="text-slate-400 text-lg">No positions yet.</p>
-                    <p class="text-slate-400 text-sm mt-1">Use the form above to add stocks to this bundle.</p>
-                </div>
-            </template>
+                        <!-- Cash row - view -->
+                        <tr v-if="!editingCash" class="bg-slate-50/60 dark:bg-slate-700/20 hover:bg-slate-100/60 dark:hover:bg-slate-700/40">
+                            <td class="px-4 py-3">
+                                <div class="font-semibold text-slate-900 dark:text-slate-100">Cash</div>
+                                <div class="text-xs text-slate-400">actual cash</div>
+                            </td>
+                            <td class="px-4 py-3 text-right text-slate-400">—</td>
+                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(active.cash || 0) }}</td>
+                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(active.cash || 0) }}</td>
+                            <td class="px-4 py-3 text-right text-slate-400">—</td>
+                            <td class="px-4 py-3 text-right text-slate-400">—</td>
+                            <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">
+                                {{ totalValue > 0 ? (((active.cash || 0) / totalValue) * 100).toFixed(1) + '%' : '—' }}
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <button
+                                    @click="editingCash = true; cashInput = active.cash || 0"
+                                    class="text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors text-sm leading-none"
+                                    title="Edit"
+                                >✎</button>
+                            </td>
+                        </tr>
 
-            <!-- No bundles at all -->
-            <div v-else-if="!loading" class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-                <p class="text-slate-400 text-lg">No bundles yet.</p>
-                <p class="text-slate-400 text-sm mt-1">Click "+ New" to create your first exposure bundle.</p>
+                        <!-- Cash row - edit -->
+                        <tr v-else class="bg-indigo-50/60 dark:bg-indigo-900/10">
+                            <td colspan="8" class="px-4 py-3">
+                                <div class="flex items-center gap-4">
+                                    <span class="font-semibold text-slate-900 dark:text-slate-100">Cash</span>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Amount</label>
+                                        <input
+                                            v-model.number="cashInput"
+                                            type="number"
+                                            min="0"
+                                            class="h-8 w-36 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            @keydown.enter="saveCash"
+                                            @keydown.escape="editingCash = false"
+                                        />
+                                    </div>
+                                    <div class="flex gap-2 ml-auto">
+                                        <button
+                                            @click="saveCash"
+                                            class="h-8 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors"
+                                        >Save</button>
+                                        <button
+                                            @click="editingCash = false"
+                                            class="h-8 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors"
+                                        >Cancel</button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- Empty state -->
+            <div v-else class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+                <p class="text-slate-400 text-lg">No positions yet.</p>
+                <p class="text-slate-400 text-sm mt-1">Use the form above to add stocks to this bundle.</p>
             </div>
         </template>
-    </div>
+
+        <!-- No bundles at all -->
+        <div v-else-if="!loading" class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+            <p class="text-slate-400 text-lg">No bundles yet.</p>
+            <p class="text-slate-400 text-sm mt-1">Click "+ New" to create your first exposure bundle.</p>
+        </div>
+    </template>
 </template>
 
 <script setup>

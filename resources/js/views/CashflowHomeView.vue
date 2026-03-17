@@ -1,101 +1,99 @@
 <template>
-    <div class="max-w-full px-4 py-8">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">Monthly Overview</h1>
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">Monthly Overview</h1>
 
-        <div v-if="loading" class="text-center py-12 text-slate-400">Loading…</div>
+    <div v-if="loading" class="text-center py-12 text-slate-400">Loading…</div>
+
+    <template v-else>
+        <!-- No types configured -->
+        <div v-if="columns.length === 0" class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+            <p class="text-slate-400 text-lg">No types configured.</p>
+            <p class="text-slate-400 text-sm mt-1">Add types in
+                <RouterLink to="/cashflow/settings" class="text-indigo-500 hover:underline">Settings</RouterLink>
+                first.
+            </p>
+        </div>
 
         <template v-else>
-            <!-- No types configured -->
-            <div v-if="columns.length === 0" class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-                <p class="text-slate-400 text-lg">No types configured.</p>
-                <p class="text-slate-400 text-sm mt-1">Add types in
-                    <RouterLink to="/cashflow/settings" class="text-indigo-500 hover:underline">Settings</RouterLink>
-                    first.
-                </p>
-            </div>
-
-            <template v-else>
-                <div v-for="section in sections" :key="section.year" class="mb-4">
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-x-auto">
-                        <table class="text-sm border-collapse w-full">
-                            <thead>
-                                <!-- Year + column headers (clickable for past years) -->
-                                <tr
-                                    class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 transition-colors"
-                                    :class="section.year !== currentYear ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600/50 select-none' : ''"
-                                    @click="section.year !== currentYear && (section.expanded = !section.expanded)"
+            <div v-for="section in sections" :key="section.year" class="mb-4">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-x-auto">
+                    <table class="text-sm border-collapse w-full">
+                        <thead>
+                            <!-- Year + column headers (clickable for past years) -->
+                            <tr
+                                class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 transition-colors"
+                                :class="section.year !== currentYear ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600/50 select-none' : ''"
+                                @click="section.year !== currentYear && (section.expanded = !section.expanded)"
+                            >
+                                <th class="text-left px-4 py-4 sticky left-0 bg-slate-50 dark:bg-slate-700/50 z-10 min-w-28">
+                                    <span class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ section.year }}</span>
+                                </th>
+                                <th
+                                    v-for="col in columns" :key="col.key"
+                                    class="px-3 py-3 font-medium text-right min-w-32 whitespace-nowrap"
+                                    :class="colHeaderClass(col)"
                                 >
-                                    <th class="text-left px-4 py-4 sticky left-0 bg-slate-50 dark:bg-slate-700/50 z-10 min-w-28">
-                                        <span class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ section.year }}</span>
-                                    </th>
-                                    <th
-                                        v-for="col in columns" :key="col.key"
-                                        class="px-3 py-3 font-medium text-right min-w-32 whitespace-nowrap"
-                                        :class="colHeaderClass(col)"
+                                    <div class="text-xs uppercase tracking-wide opacity-70">{{ col.typeLabel }}</div>
+                                    <div>{{ col.label }}<span v-if="col.merged" class="ml-1 opacity-50 text-xs normal-case tracking-normal">∑</span></div>
+                                </th>
+                                <th class="px-4 py-3 font-medium text-right text-slate-500 dark:text-slate-400 min-w-32 whitespace-nowrap">
+                                    Net
+                                    <span v-if="section.year !== currentYear" class="ml-1 text-xs opacity-60">{{ section.expanded ? '▲' : '▼' }}</span>
+                                </th>
+                            </tr>
+                            <!-- Totals row — always visible -->
+                            <tr class="bg-slate-50 dark:bg-slate-700/30 font-semibold border-b-2 border-slate-200 dark:border-slate-600">
+                                <td class="px-4 py-3 text-slate-500 dark:text-slate-400 sticky left-0 bg-slate-50 dark:bg-slate-700/30 z-10 text-sm">Total</td>
+                                <td v-for="col in columns" :key="col.key" class="px-3 py-3 text-right" :class="colHeaderClass(col)">
+                                    {{ hidden ? '••••' : (colTotal(col, section) === 0 ? '—' : fmt(colTotal(col, section))) }}
+                                </td>
+                                <td class="px-4 py-3 text-right" :class="sectionNet(section) >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-red-500'">
+                                    {{ hidden ? '••••' : fmt(sectionNet(section)) }}
+                                </td>
+                            </tr>
+                        </thead>
+                        <tbody v-if="section.expanded" class="divide-y divide-slate-100 dark:divide-slate-700">
+                            <tr
+                                v-for="row in getRows(section)" :key="row.month"
+                                class="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors"
+                                :class="row.month === currentMonth && section.year === currentYear ? 'ring-1 ring-inset ring-indigo-300 dark:ring-indigo-700' : ''"
+                            >
+                                <td class="px-4 py-2 font-medium text-slate-600 dark:text-slate-400 sticky left-0 bg-white dark:bg-slate-800 z-10">
+                                    {{ monthName(row.month) }}
+                                </td>
+                                <td v-for="col in columns" :key="col.key" class="px-3 py-2 text-right">
+                                    <div
+                                        v-if="editingCell?.year === section.year && editingCell?.rowMonth === row.month && editingCell?.colKey === col.key"
+                                        class="flex justify-end"
                                     >
-                                        <div class="text-xs uppercase tracking-wide opacity-70">{{ col.typeLabel }}</div>
-                                        <div>{{ col.label }}<span v-if="col.merged" class="ml-1 opacity-50 text-xs normal-case tracking-normal">∑</span></div>
-                                    </th>
-                                    <th class="px-4 py-3 font-medium text-right text-slate-500 dark:text-slate-400 min-w-32 whitespace-nowrap">
-                                        Net
-                                        <span v-if="section.year !== currentYear" class="ml-1 text-xs opacity-60">{{ section.expanded ? '▲' : '▼' }}</span>
-                                    </th>
-                                </tr>
-                                <!-- Totals row — always visible -->
-                                <tr class="bg-slate-50 dark:bg-slate-700/30 font-semibold border-b-2 border-slate-200 dark:border-slate-600">
-                                    <td class="px-4 py-3 text-slate-500 dark:text-slate-400 sticky left-0 bg-slate-50 dark:bg-slate-700/30 z-10 text-sm">Total</td>
-                                    <td v-for="col in columns" :key="col.key" class="px-3 py-3 text-right" :class="colHeaderClass(col)">
-                                        {{ hidden ? '••••' : (colTotal(col, section) === 0 ? '—' : fmt(colTotal(col, section))) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-right" :class="sectionNet(section) >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-red-500'">
-                                        {{ hidden ? '••••' : fmt(sectionNet(section)) }}
-                                    </td>
-                                </tr>
-                            </thead>
-                            <tbody v-if="section.expanded" class="divide-y divide-slate-100 dark:divide-slate-700">
-                                <tr
-                                    v-for="row in getRows(section)" :key="row.month"
-                                    class="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors"
-                                    :class="row.month === currentMonth && section.year === currentYear ? 'ring-1 ring-inset ring-indigo-300 dark:ring-indigo-700' : ''"
-                                >
-                                    <td class="px-4 py-2 font-medium text-slate-600 dark:text-slate-400 sticky left-0 bg-white dark:bg-slate-800 z-10">
-                                        {{ monthName(row.month) }}
-                                    </td>
-                                    <td v-for="col in columns" :key="col.key" class="px-3 py-2 text-right">
-                                        <div
-                                            v-if="editingCell?.year === section.year && editingCell?.rowMonth === row.month && editingCell?.colKey === col.key"
-                                            class="flex justify-end"
-                                        >
-                                            <input
-                                                ref="cellInput"
-                                                v-model.number="editingValue"
-                                                type="number" min="0" step="1"
-                                                class="w-28 h-7 rounded border border-indigo-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm text-right focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                                @keydown.enter="commitCell"
-                                                @keydown.escape="cancelCell"
-                                                @blur="commitCell"
-                                            />
-                                        </div>
-                                        <button
-                                            v-else
-                                            @click="startEdit(section, row, col)"
-                                            class="w-full text-right px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                                            :class="cellValueClass(row, col)"
-                                        >
-                                            {{ hidden ? '••••' : cellDisplay(row, col) }}
-                                        </button>
-                                    </td>
-                                    <td class="px-4 py-2 text-right font-semibold" :class="rowNet(row) >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-red-500'">
-                                        {{ hidden ? '••••' : (rowNet(row) === 0 ? '—' : fmt(rowNet(row))) }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                                        <input
+                                            ref="cellInput"
+                                            v-model.number="editingValue"
+                                            type="number" min="0" step="1"
+                                            class="w-28 h-7 rounded border border-indigo-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm text-right focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                            @keydown.enter="commitCell"
+                                            @keydown.escape="cancelCell"
+                                            @blur="commitCell"
+                                        />
+                                    </div>
+                                    <button
+                                        v-else
+                                        @click="startEdit(section, row, col)"
+                                        class="w-full text-right px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                        :class="cellValueClass(row, col)"
+                                    >
+                                        {{ hidden ? '••••' : cellDisplay(row, col) }}
+                                    </button>
+                                </td>
+                                <td class="px-4 py-2 text-right font-semibold" :class="rowNet(row) >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-red-500'">
+                                    {{ hidden ? '••••' : (rowNet(row) === 0 ? '—' : fmt(rowNet(row))) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            </template>
+            </div>
         </template>
-    </div>
+    </template>
 </template>
 
 <script setup>

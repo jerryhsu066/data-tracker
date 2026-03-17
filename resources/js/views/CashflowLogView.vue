@@ -1,87 +1,86 @@
 <template>
-    <div class="max-w-2xl mx-auto px-4 py-8 space-y-4">
-
-        <!-- Header + Save -->
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Log Cashflow</h1>
-            <div class="flex items-center gap-3">
-                <span v-if="savedIndicator" class="text-sm font-medium text-emerald-500 dark:text-emerald-400">Saved ✓</span>
-                <button
-                    @click="saveAll"
-                    :disabled="saving"
-                    class="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium rounded-md transition-colors"
-                >{{ saving ? 'Saving…' : 'Save' }}</button>
-            </div>
-        </div>
-
-        <!-- Month navigation -->
+    <div class="max-w-2xl space-y-4">
+    <!-- Header + Save -->
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Log Cashflow</h1>
         <div class="flex items-center gap-3">
-            <button @click="prevMonth" class="p-1.5 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">‹</button>
-            <span class="text-base font-semibold text-slate-700 dark:text-slate-200 w-36 text-center">{{ monthLabel }}</span>
-            <button @click="nextMonth" :disabled="isCurrentMonth" class="p-1.5 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+            <span v-if="savedIndicator" class="text-sm font-medium text-emerald-500 dark:text-emerald-400">Saved ✓</span>
+            <button
+                @click="saveAll"
+                :disabled="saving"
+                class="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium rounded-md transition-colors"
+            >{{ saving ? 'Saving…' : 'Save' }}</button>
         </div>
+    </div>
 
-        <div v-if="loading" class="text-center py-16 text-slate-400">Loading…</div>
+    <!-- Month navigation -->
+    <div class="flex items-center gap-3">
+        <button @click="prevMonth" class="p-1.5 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">‹</button>
+        <span class="text-base font-semibold text-slate-700 dark:text-slate-200 w-36 text-center">{{ monthLabel }}</span>
+        <button @click="nextMonth" :disabled="isCurrentMonth" class="p-1.5 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+    </div>
 
-        <template v-else>
-            <div v-for="type in visibleTypes" :key="type.id" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+    <div v-if="loading" class="text-center py-16 text-slate-400">Loading…</div>
 
-                <!-- Type header -->
-                <div class="flex items-center gap-2 px-5 py-2.5 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700">
-                    <span class="flex-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ type.name }}</span>
-                    <span class="text-xs font-medium px-2 py-0.5 rounded-full"
-                        :class="type.is_expense
-                            ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-                            : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'"
-                    >{{ type.is_expense ? 'Expense' : 'Income' }}</span>
+    <template v-else>
+        <div v-for="type in visibleTypes" :key="type.id" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+
+            <!-- Type header -->
+            <div class="flex items-center gap-2 px-5 py-2.5 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700">
+                <span class="flex-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ type.name }}</span>
+                <span class="text-xs font-medium px-2 py-0.5 rounded-full"
+                    :class="type.is_expense
+                        ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'"
+                >{{ type.is_expense ? 'Expense' : 'Income' }}</span>
+            </div>
+
+            <!-- Subtype sections (or bare rows if no subtypes) -->
+            <template v-for="section in typeSections(type)" :key="section.key">
+
+                <!-- Subtype label row (only when type has subtypes) -->
+                <div v-if="section.subtypeId" class="flex items-center gap-2 px-5 pt-2.5 pb-1">
+                    <span class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{{ section.label }}</span>
                 </div>
 
-                <!-- Subtype sections (or bare rows if no subtypes) -->
-                <template v-for="section in typeSections(type)" :key="section.key">
+                <!-- Entry rows -->
+                <div
+                    v-for="row in section.rows" :key="row.tempId"
+                    class="flex items-center gap-2 px-5 py-1.5"
+                >
+                    <input
+                        v-model.number="row.amount"
+                        type="number" min="0" step="1" placeholder="0"
+                        class="h-8 w-28 shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        :class="{ 'blur-sm select-none': privacy.hidden.value && sectionIsPrivate(type, section) }"
+                    />
+                    <input
+                        v-model="row.note"
+                        type="text" placeholder="note…"
+                        class="h-8 flex-1 min-w-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <button
+                        @click="removeRow(section, row)"
+                        class="shrink-0 w-6 text-slate-300 dark:text-slate-600 hover:text-red-500 transition-colors text-base leading-none"
+                        title="Remove"
+                    >×</button>
+                </div>
 
-                    <!-- Subtype label row (only when type has subtypes) -->
-                    <div v-if="section.subtypeId" class="flex items-center gap-2 px-5 pt-2.5 pb-1">
-                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{{ section.label }}</span>
-                    </div>
+                <!-- Add entry row -->
+                <div class="px-5 pb-2.5 pt-1">
+                    <button
+                        @click="addRow(section)"
+                        class="text-xs text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+                    >+ add entry</button>
+                </div>
+            </template>
+        </div>
 
-                    <!-- Entry rows -->
-                    <div
-                        v-for="row in section.rows" :key="row.tempId"
-                        class="flex items-center gap-2 px-5 py-1.5"
-                    >
-                        <input
-                            v-model.number="row.amount"
-                            type="number" min="0" step="1" placeholder="0"
-                            class="h-8 w-28 shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            :class="{ 'blur-sm select-none': privacy.hidden.value && sectionIsPrivate(type, section) }"
-                        />
-                        <input
-                            v-model="row.note"
-                            type="text" placeholder="note…"
-                            class="h-8 flex-1 min-w-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                        <button
-                            @click="removeRow(section, row)"
-                            class="shrink-0 w-6 text-slate-300 dark:text-slate-600 hover:text-red-500 transition-colors text-base leading-none"
-                            title="Remove"
-                        >×</button>
-                    </div>
-
-                    <!-- Add entry row -->
-                    <div class="px-5 pb-2.5 pt-1">
-                        <button
-                            @click="addRow(section)"
-                            class="text-xs text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
-                        >+ add entry</button>
-                    </div>
-                </template>
-            </div>
-
-            <p v-if="visibleTypes.length === 0" class="text-center py-16 text-slate-400 text-sm">
-                No types configured. Add some in
-                <RouterLink to="/cashflow/settings" class="text-indigo-500 hover:underline">Settings</RouterLink>.
-            </p>
-        </template>
+        <p v-if="visibleTypes.length === 0" class="text-center py-16 text-slate-400 text-sm">
+            No types configured. Add some in
+            <RouterLink to="/cashflow/settings" class="text-indigo-500 hover:underline">Settings</RouterLink>.
+        </p>
+    </template>
     </div>
 </template>
 

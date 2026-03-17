@@ -1,133 +1,131 @@
 <template>
-    <div class="max-w-7xl mx-auto px-4 py-8">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">Portfolio</h1>
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">Portfolio</h1>
 
-        <!-- Summary cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                <p class="text-sm text-slate-500 dark:text-slate-400">Total Value</p>
-                <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(totalValue) }}</p>
-            </div>
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                <p class="text-sm text-slate-500 dark:text-slate-400">Unrealized Gain</p>
-                <p class="text-2xl font-bold mt-1" :class="totalUnrealized >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                    {{ hidden ? '••••' : (sign(totalUnrealized) + fmt(Math.abs(totalUnrealized))) }}
-                </p>
-            </div>
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss %</p>
-                <p class="text-2xl font-bold mt-1" :class="gainPct >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                    {{ sign(gainPct) }}{{ Math.abs(gainPct).toFixed(2) }}%
-                </p>
-            </div>
+    <!-- Summary cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+            <p class="text-sm text-slate-500 dark:text-slate-400">Total Value</p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(totalValue) }}</p>
         </div>
-
-        <!-- Loading -->
-        <div v-if="loading" class="text-center py-12 text-slate-400">Loading portfolio…</div>
-
-        <!-- Empty state -->
-        <div v-else-if="positions.length === 0" class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-            <p class="text-slate-400 text-lg">No positions yet.</p>
-            <RouterLink to="/stocks/list" class="mt-3 inline-block text-indigo-600 hover:underline text-sm">
-                Add stocks and record transactions →
-            </RouterLink>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+            <p class="text-sm text-slate-500 dark:text-slate-400">Unrealized Gain</p>
+            <p class="text-2xl font-bold mt-1" :class="totalUnrealized >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                {{ hidden ? '••••' : (sign(totalUnrealized) + fmt(Math.abs(totalUnrealized))) }}
+            </p>
         </div>
-
-        <template v-else>
-            <!-- Charts -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-                <!-- Allocation doughnut -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 flex flex-col">
-                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Allocation</h2>
-                    <div class="flex flex-1 items-center justify-center gap-6">
-                        <div class="relative w-2/5 flex-shrink-0">
-                            <canvas ref="donutCanvas"></canvas>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <p class="text-xs text-slate-400">Total</p>
-                                <p class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ hidden ? '••••' : fmt(totalValue) }}</p>
-                            </div>
-                        </div>
-                        <ul class="flex flex-col gap-2">
-                            <li v-for="(pos, i) in positions" :key="pos.stock.symbol" class="flex items-center gap-2 text-sm">
-                                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="`background:${PALETTE[i % PALETTE.length]}`"></span>
-                                <span class="font-medium text-slate-700 dark:text-slate-300">{{ pos.stock.symbol }}</span>
-                                <span class="text-slate-400 ml-auto pl-2 flex-shrink-0">{{ allocationPct(pos) }}%</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Unrealized gain/loss bar -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
-                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Unrealized Gain / Loss</h2>
-                    <canvas ref="barCanvas" height="160"></canvas>
-                </div>
-            </div>
-
-            <!-- Portfolio value history line chart -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 mb-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Portfolio Value</h2>
-                    <div class="flex gap-1">
-                        <button
-                            v-for="p in PERIODS" :key="p"
-                            @click="selectedPeriod = p"
-                            class="px-2.5 py-1 text-xs rounded-md transition-colors"
-                            :class="selectedPeriod === p ? 'bg-indigo-600 text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
-                        >{{ p }}</button>
-                    </div>
-                </div>
-                <canvas ref="lineCanvas" height="140"></canvas>
-            </div>
-
-            <!-- Positions table -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
-                        <tr>
-                            <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Stock</th>
-                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Shares</th>
-                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Avg Cost</th>
-                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Current Price</th>
-                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Value</th>
-                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Unrealized</th>
-                            <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Realized</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
-                        <tr
-                            v-for="pos in positions"
-                            :key="pos.stock.symbol"
-                            class="hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
-                            @click="$router.push(`/stocks/${pos.stock.symbol}`)"
-                        >
-                            <td class="px-4 py-3">
-                                <div class="font-semibold text-slate-900 dark:text-slate-100">{{ pos.stock.symbol }}</div>
-                                <div class="text-xs text-slate-400 dark:text-slate-500">{{ pos.stock.name }}</div>
-                            </td>
-                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ num(pos.net_shares) }}</td>
-                            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(pos.average_cost) }}</td>
-                            <td class="px-4 py-3 text-right">
-                                <div class="text-slate-900 dark:text-slate-100">{{ fmt(pos.stock.current_price) }}</div>
-                                <div v-if="pos.stock.change_percent" class="text-xs" :class="pos.stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                                    {{ pos.stock.change_percent >= 0 ? '+' : '' }}{{ Number(pos.stock.change_percent).toFixed(2) }}%
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">{{ hidden ? '••••' : fmt(pos.current_value) }}</td>
-                            <td class="px-4 py-3 text-right font-medium" :class="pos.unrealized_gain >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                                {{ hidden ? '••••' : (sign(pos.unrealized_gain) + fmt(Math.abs(pos.unrealized_gain))) }}
-                            </td>
-                            <td class="px-4 py-3 text-right font-medium" :class="pos.realized_gain >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                                {{ hidden ? '••••' : (sign(pos.realized_gain) + fmt(Math.abs(pos.realized_gain))) }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                </div>
-            </div>
-        </template>
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+            <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss %</p>
+            <p class="text-2xl font-bold mt-1" :class="gainPct >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                {{ sign(gainPct) }}{{ Math.abs(gainPct).toFixed(2) }}%
+            </p>
+        </div>
     </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="text-center py-12 text-slate-400">Loading portfolio…</div>
+
+    <!-- Empty state -->
+    <div v-else-if="positions.length === 0" class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+        <p class="text-slate-400 text-lg">No positions yet.</p>
+        <RouterLink to="/stocks/list" class="mt-3 inline-block text-indigo-600 hover:underline text-sm">
+            Add stocks and record transactions →
+        </RouterLink>
+    </div>
+
+    <template v-else>
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <!-- Allocation doughnut -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 flex flex-col">
+                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Allocation</h2>
+                <div class="flex flex-1 items-center justify-center gap-6">
+                    <div class="relative w-2/5 flex-shrink-0">
+                        <canvas ref="donutCanvas"></canvas>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <p class="text-xs text-slate-400">Total</p>
+                            <p class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ hidden ? '••••' : fmt(totalValue) }}</p>
+                        </div>
+                    </div>
+                    <ul class="flex flex-col gap-2">
+                        <li v-for="(pos, i) in positions" :key="pos.stock.symbol" class="flex items-center gap-2 text-sm">
+                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="`background:${PALETTE[i % PALETTE.length]}`"></span>
+                            <span class="font-medium text-slate-700 dark:text-slate-300">{{ pos.stock.symbol }}</span>
+                            <span class="text-slate-400 ml-auto pl-2 flex-shrink-0">{{ allocationPct(pos) }}%</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Unrealized gain/loss bar -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Unrealized Gain / Loss</h2>
+                <canvas ref="barCanvas" height="160"></canvas>
+            </div>
+        </div>
+
+        <!-- Portfolio value history line chart -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 mb-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Portfolio Value</h2>
+                <div class="flex gap-1">
+                    <button
+                        v-for="p in PERIODS" :key="p"
+                        @click="selectedPeriod = p"
+                        class="px-2.5 py-1 text-xs rounded-md transition-colors"
+                        :class="selectedPeriod === p ? 'bg-indigo-600 text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
+                    >{{ p }}</button>
+                </div>
+            </div>
+            <canvas ref="lineCanvas" height="140"></canvas>
+        </div>
+
+        <!-- Positions table -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
+                    <tr>
+                        <th class="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Stock</th>
+                        <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Shares</th>
+                        <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Avg Cost</th>
+                        <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Current Price</th>
+                        <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Value</th>
+                        <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Unrealized</th>
+                        <th class="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400">Realized</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
+                    <tr
+                        v-for="pos in positions"
+                        :key="pos.stock.symbol"
+                        class="hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
+                        @click="$router.push(`/stocks/${pos.stock.symbol}`)"
+                    >
+                        <td class="px-4 py-3">
+                            <div class="font-semibold text-slate-900 dark:text-slate-100">{{ pos.stock.symbol }}</div>
+                            <div class="text-xs text-slate-400 dark:text-slate-500">{{ pos.stock.name }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ num(pos.net_shares) }}</td>
+                        <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(pos.average_cost) }}</td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="text-slate-900 dark:text-slate-100">{{ fmt(pos.stock.current_price) }}</div>
+                            <div v-if="pos.stock.change_percent" class="text-xs" :class="pos.stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                                {{ pos.stock.change_percent >= 0 ? '+' : '' }}{{ Number(pos.stock.change_percent).toFixed(2) }}%
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">{{ hidden ? '••••' : fmt(pos.current_value) }}</td>
+                        <td class="px-4 py-3 text-right font-medium" :class="pos.unrealized_gain >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                            {{ hidden ? '••••' : (sign(pos.unrealized_gain) + fmt(Math.abs(pos.unrealized_gain))) }}
+                        </td>
+                        <td class="px-4 py-3 text-right font-medium" :class="pos.realized_gain >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                            {{ hidden ? '••••' : (sign(pos.realized_gain) + fmt(Math.abs(pos.realized_gain))) }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </template>
 </template>
 
 <script setup>

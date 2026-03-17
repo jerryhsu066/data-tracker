@@ -1,138 +1,136 @@
 <template>
-    <div class="max-w-7xl mx-auto px-4 py-8">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Overview</h1>
-            <div class="flex items-center gap-3">
-                <span v-if="fetchedAgoLabel && !syncing" class="text-xs text-slate-400 dark:text-slate-500">
-                    Prices: {{ fetchedAgoLabel }}
-                </span>
-                <button
-                    @click="syncPrices"
-                    :disabled="syncing"
-                    class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Overview</h1>
+        <div class="flex items-center gap-3">
+            <span v-if="fetchedAgoLabel && !syncing" class="text-xs text-slate-400 dark:text-slate-500">
+                Prices: {{ fetchedAgoLabel }}
+            </span>
+            <button
+                @click="syncPrices"
+                :disabled="syncing"
+                class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+                <span :class="syncing ? 'animate-spin' : ''">↻</span>
+                {{ syncing ? 'Syncing…' : 'Sync Prices' }}
+            </button>
+        </div>
+    </div>
+
+    <div v-if="loading" class="text-center py-12 text-slate-400">Loading…</div>
+
+    <template v-else>
+        <!-- Market Indices -->
+        <template v-if="indices.length > 0">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Market Indices</h2>
+                <div class="flex gap-1">
+                    <button
+                        v-for="p in PERIODS" :key="p"
+                        @click="setIndexPeriod(p)"
+                        class="px-2.5 py-1 text-xs rounded-md transition-colors"
+                        :class="indexPeriod === p
+                            ? 'bg-indigo-600 text-white'
+                            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
+                    >{{ p }}</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div
+                    v-for="(idx, i) in indices"
+                    :key="idx.stock.symbol"
+                    class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-4"
                 >
-                    <span :class="syncing ? 'animate-spin' : ''">↻</span>
-                    {{ syncing ? 'Syncing…' : 'Sync Prices' }}
-                </button>
+                    <p class="font-semibold text-sm text-slate-900 dark:text-slate-100">{{ idx.stock.name }}</p>
+                    <div class="flex items-baseline gap-2 mb-3">
+                        <span class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ fmtPrice(idx.stock.current_price) }}</span>
+                        <span v-if="idx.stock.change_percent" class="text-xs font-medium" :class="idx.stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                            {{ idx.stock.change_percent >= 0 ? '+' : '' }}{{ Number(idx.stock.change_percent).toFixed(2) }}%
+                        </span>
+                    </div>
+                    <canvas :ref="el => { if (el) indexCanvases[i] = el }" height="80"></canvas>
+                </div>
+            </div>
+        </template>
+
+        <!-- Portfolio summary -->
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Portfolio</h2>
+            <RouterLink to="/stocks/dashboard" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Details →</RouterLink>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+                <p class="text-sm text-slate-500 dark:text-slate-400">Total Value</p>
+                <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(totalValue) }}</p>
+            </div>
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+                <p class="text-sm text-slate-500 dark:text-slate-400">Unrealized Gain</p>
+                <p class="text-2xl font-bold mt-1" :class="totalUnrealized >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                    {{ hidden ? '••••' : (sign(totalUnrealized) + fmt(Math.abs(totalUnrealized))) }}
+                </p>
+            </div>
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+                <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss %</p>
+                <p class="text-2xl font-bold mt-1" :class="gainPct >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                    {{ sign(gainPct) }}{{ Math.abs(gainPct).toFixed(2) }}%
+                </p>
             </div>
         </div>
 
-        <div v-if="loading" class="text-center py-12 text-slate-400">Loading…</div>
-
-        <template v-else>
-            <!-- Market Indices -->
-            <template v-if="indices.length > 0">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Market Indices</h2>
-                    <div class="flex gap-1">
-                        <button
-                            v-for="p in PERIODS" :key="p"
-                            @click="setIndexPeriod(p)"
-                            class="px-2.5 py-1 text-xs rounded-md transition-colors"
-                            :class="indexPeriod === p
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
-                        >{{ p }}</button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div
-                        v-for="(idx, i) in indices"
-                        :key="idx.stock.symbol"
-                        class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-4"
-                    >
-                        <p class="font-semibold text-sm text-slate-900 dark:text-slate-100">{{ idx.stock.name }}</p>
-                        <div class="flex items-baseline gap-2 mb-3">
-                            <span class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ fmtPrice(idx.stock.current_price) }}</span>
-                            <span v-if="idx.stock.change_percent" class="text-xs font-medium" :class="idx.stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                                {{ idx.stock.change_percent >= 0 ? '+' : '' }}{{ Number(idx.stock.change_percent).toFixed(2) }}%
-                            </span>
-                        </div>
-                        <canvas :ref="el => { if (el) indexCanvases[i] = el }" height="80"></canvas>
-                    </div>
-                </div>
-            </template>
-
-            <!-- Portfolio summary -->
+        <!-- Exposure Bundles -->
+        <template v-if="bundlesWithStats.length > 0">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Portfolio</h2>
-                <RouterLink to="/stocks/dashboard" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Details →</RouterLink>
+                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Exposure Bundles</h2>
+                <RouterLink to="/stocks/exposure" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Manage →</RouterLink>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Total Value</p>
-                    <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(totalValue) }}</p>
-                </div>
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Unrealized Gain</p>
-                    <p class="text-2xl font-bold mt-1" :class="totalUnrealized >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                        {{ hidden ? '••••' : (sign(totalUnrealized) + fmt(Math.abs(totalUnrealized))) }}
-                    </p>
-                </div>
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss %</p>
-                    <p class="text-2xl font-bold mt-1" :class="gainPct >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                        {{ sign(gainPct) }}{{ Math.abs(gainPct).toFixed(2) }}%
-                    </p>
-                </div>
-            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <RouterLink
+                    v-for="b in bundlesWithStats"
+                    :key="b.id"
+                    to="/stocks/exposure"
+                    class="block bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 hover:ring-2 hover:ring-indigo-400 dark:hover:ring-indigo-500 transition-all"
+                >
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">{{ b.name }}</h3>
 
-            <!-- Exposure Bundles -->
-            <template v-if="bundlesWithStats.length > 0">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Exposure Bundles</h2>
-                    <RouterLink to="/stocks/exposure" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Manage →</RouterLink>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <RouterLink
-                        v-for="b in bundlesWithStats"
-                        :key="b.id"
-                        to="/stocks/exposure"
-                        class="block bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 hover:ring-2 hover:ring-indigo-400 dark:hover:ring-indigo-500 transition-all"
-                    >
-                        <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">{{ b.name }}</h3>
+                    <div class="grid grid-cols-3 gap-x-4 mb-4">
+                        <div>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Exposure Rate</p>
+                            <p class="text-2xl font-bold mt-1" :class="b.stats.exposureRatioPct > 100 ? 'text-amber-500' : 'text-indigo-500 dark:text-indigo-400'">
+                                {{ b.stats.exposureRatioPct.toFixed(1) }}%
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss</p>
+                            <p class="text-2xl font-bold mt-1" :class="b.stats.gainLossPct >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                                {{ b.stats.gainLossPct >= 0 ? '+' : '' }}{{ b.stats.gainLossPct.toFixed(2) }}%
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
+                            <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(b.stats.investValue) }}</p>
+                        </div>
+                    </div>
 
-                        <div class="grid grid-cols-3 gap-x-4 mb-4">
-                            <div>
-                                <p class="text-sm text-slate-500 dark:text-slate-400">Exposure Rate</p>
-                                <p class="text-2xl font-bold mt-1" :class="b.stats.exposureRatioPct > 100 ? 'text-amber-500' : 'text-indigo-500 dark:text-indigo-400'">
-                                    {{ b.stats.exposureRatioPct.toFixed(1) }}%
-                                </p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss</p>
-                                <p class="text-2xl font-bold mt-1" :class="b.stats.gainLossPct >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                                    {{ b.stats.gainLossPct >= 0 ? '+' : '' }}{{ b.stats.gainLossPct.toFixed(2) }}%
-                                </p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
-                                <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(b.stats.investValue) }}</p>
+                    <!-- Allocation bar -->
+                    <div v-if="b.stats.segments.length > 0" class="space-y-1">
+                        <div class="flex h-10 rounded-lg overflow-hidden gap-px">
+                            <div
+                                v-for="(seg, i) in b.stats.segments"
+                                :key="seg.label"
+                                class="flex flex-col items-center justify-center overflow-hidden"
+                                :style="`width:${seg.pct}%;background:${PALETTE[i % PALETTE.length]}`"
+                                :title="`${seg.label}: ${seg.pct.toFixed(1)}%`"
+                            >
+                                <template v-if="seg.pct >= 8">
+                                    <span class="text-sm font-bold text-white leading-none drop-shadow">{{ seg.label }}</span>
+                                    <span class="text-sm font-semibold text-white leading-none mt-0.5 drop-shadow">{{ seg.pct.toFixed(0) }}%</span>
+                                </template>
                             </div>
                         </div>
-
-                        <!-- Allocation bar -->
-                        <div v-if="b.stats.segments.length > 0" class="space-y-1">
-                            <div class="flex h-10 rounded-lg overflow-hidden gap-px">
-                                <div
-                                    v-for="(seg, i) in b.stats.segments"
-                                    :key="seg.label"
-                                    class="flex flex-col items-center justify-center overflow-hidden"
-                                    :style="`width:${seg.pct}%;background:${PALETTE[i % PALETTE.length]}`"
-                                    :title="`${seg.label}: ${seg.pct.toFixed(1)}%`"
-                                >
-                                    <template v-if="seg.pct >= 8">
-                                        <span class="text-sm font-bold text-white leading-none drop-shadow">{{ seg.label }}</span>
-                                        <span class="text-sm font-semibold text-white leading-none mt-0.5 drop-shadow">{{ seg.pct.toFixed(0) }}%</span>
-                                    </template>
-                                </div>
-                            </div>
-                        </div>
-                    </RouterLink>
-                </div>
-            </template>
+                    </div>
+                </RouterLink>
+            </div>
         </template>
-    </div>
+    </template>
 </template>
 
 <script setup>

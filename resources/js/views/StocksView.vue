@@ -1,147 +1,145 @@
 <template>
-    <div class="max-w-7xl mx-auto px-4 py-8">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Tracked Stocks</h1>
-            <div class="flex gap-2">
-                <button
-                    @click="showHistoryForm = !showHistoryForm; showForm = false"
-                    class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg transition-colors"
-                >
-                    ↻ Sync History
-                </button>
-                <button
-                    @click="showForm = !showForm; showHistoryForm = false"
-                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                    + Add Stock
-                </button>
-            </div>
-        </div>
-
-        <!-- Sync history form -->
-        <div v-if="showHistoryForm" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Sync Price History</h2>
-            <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Fetches daily closing prices for all tracked stocks from the specified start date up to yesterday.</p>
-            <div class="flex flex-wrap gap-3 items-end">
-                <div>
-                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Start Date</label>
-                    <input
-                        v-model="historyFromDate"
-                        type="date"
-                        :max="today()"
-                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                </div>
-                <button
-                    @click="syncHistory"
-                    :disabled="syncing || !historyFromDate"
-                    class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                    {{ syncing ? 'Syncing…' : 'Sync All' }}
-                </button>
-                <button
-                    type="button"
-                    @click="showHistoryForm = false"
-                    class="h-9 px-4 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg"
-                >Cancel</button>
-                <p v-if="historyResult" class="text-sm text-emerald-600 dark:text-emerald-400 self-center">{{ historyResult }}</p>
-            </div>
-        </div>
-
-        <!-- Add stock form -->
-        <div v-if="showForm" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 mb-6">
-            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Add a stock to track</h2>
-            <form @submit.prevent="addStock" class="flex flex-wrap gap-3 items-end">
-                <div class="w-36">
-                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Symbol</label>
-                    <input
-                        v-model="form.symbol"
-                        placeholder="e.g. 2330.TW"
-                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <p class="h-[1.1rem] text-xs text-red-500">{{ errors.symbol?.[0] ?? '' }}</p>
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Name</label>
-                    <input
-                        v-model="form.name"
-                        placeholder="e.g. TSMC"
-                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <p class="h-[1.1rem] text-xs text-red-500">{{ errors.name?.[0] ?? '' }}</p>
-                </div>
-                <div>
-                    <label class="block text-xs mb-1 invisible">_</label>
-                    <button type="submit" :disabled="adding" class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
-                        {{ adding ? 'Adding…' : 'Add' }}
-                    </button>
-                    <p class="h-[1.1rem]"></p>
-                </div>
-                <div>
-                    <label class="block text-xs mb-1 invisible">_</label>
-                    <button type="button" @click="showForm = false" class="h-9 px-4 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg">
-                        Cancel
-                    </button>
-                    <p class="h-[1.1rem]"></p>
-                </div>
-            </form>
-        </div>
-
-        <div v-if="loading" class="text-center py-12 text-slate-400">Loading…</div>
-
-        <div v-else-if="stocks.length === 0" class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm text-slate-400">
-            No stocks tracked yet. Add one above.
-        </div>
-
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div
-                v-for="stock in stocks"
-                :key="stock.symbol"
-                class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 flex flex-col gap-3"
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Tracked Stocks</h1>
+        <div class="flex gap-2">
+            <button
+                @click="showHistoryForm = !showHistoryForm; showForm = false"
+                class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg transition-colors"
             >
-                <!-- Header -->
-                <div class="flex items-start justify-between">
-                    <RouterLink :to="`/stocks/${stock.symbol}`" class="hover:text-indigo-600 transition-colors">
-                        <div class="font-bold text-slate-900 dark:text-slate-100 text-lg">{{ stock.symbol }}</div>
-                        <div class="text-sm text-slate-400 dark:text-slate-500">{{ stock.name }}</div>
-                    </RouterLink>
-                    <button
-                        @click="deleteStock(stock.symbol)"
-                        class="text-slate-300 dark:text-slate-600 hover:text-red-400 transition-colors text-lg leading-none"
-                        title="Untrack"
-                    >✕</button>
-                </div>
+                ↻ Sync History
+            </button>
+            <button
+                @click="showForm = !showForm; showHistoryForm = false"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+                + Add Stock
+            </button>
+        </div>
+    </div>
 
-                <!-- Price -->
-                <div>
-                    <div v-if="stock.current_price" class="flex items-baseline gap-2">
-                        <span class="text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ fmt(stock.current_price) }}</span>
-                        <span v-if="stock.change_percent" class="text-sm font-medium" :class="stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
-                            {{ stock.change_percent >= 0 ? '+' : '' }}{{ Number(stock.change_percent).toFixed(2) }}%
-                        </span>
-                    </div>
-                    <div v-else class="text-slate-400 dark:text-slate-500 text-sm">No price data</div>
-                    <div v-if="stock.last_fetched_at" class="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                        Updated {{ timeAgo(stock.last_fetched_at) }}
-                    </div>
-                </div>
+    <!-- Sync history form -->
+    <div v-if="showHistoryForm" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 mb-6">
+        <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Sync Price History</h2>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Fetches daily closing prices for all tracked stocks from the specified start date up to yesterday.</p>
+        <div class="flex flex-wrap gap-3 items-end">
+            <div>
+                <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Start Date</label>
+                <input
+                    v-model="historyFromDate"
+                    type="date"
+                    :max="today()"
+                    class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+            </div>
+            <button
+                @click="syncHistory"
+                :disabled="syncing || !historyFromDate"
+                class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+                {{ syncing ? 'Syncing…' : 'Sync All' }}
+            </button>
+            <button
+                type="button"
+                @click="showHistoryForm = false"
+                class="h-9 px-4 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg"
+            >Cancel</button>
+            <p v-if="historyResult" class="text-sm text-emerald-600 dark:text-emerald-400 self-center">{{ historyResult }}</p>
+        </div>
+    </div>
 
-                <!-- Actions -->
-                <div class="flex gap-2 pt-1">
-                    <button
-                        @click="fetchPrice(stock.symbol)"
-                        :disabled="fetching === stock.symbol"
-                        class="flex-1 py-1.5 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50 text-slate-600 dark:text-slate-300 rounded-lg transition-colors"
-                    >
-                        {{ fetching === stock.symbol ? 'Refreshing…' : '↻ Refresh price' }}
-                    </button>
-                    <RouterLink
-                        :to="`/stocks/${stock.symbol}`"
-                        class="flex-1 py-1.5 text-xs bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-center transition-colors"
-                    >
-                        View details →
-                    </RouterLink>
+    <!-- Add stock form -->
+    <div v-if="showForm" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 mb-6">
+        <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Add a stock to track</h2>
+        <form @submit.prevent="addStock" class="flex flex-wrap gap-3 items-end">
+            <div class="w-36">
+                <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Symbol</label>
+                <input
+                    v-model="form.symbol"
+                    placeholder="e.g. 2330.TW"
+                    class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <p class="h-[1.1rem] text-xs text-red-500">{{ errors.symbol?.[0] ?? '' }}</p>
+            </div>
+            <div>
+                <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Name</label>
+                <input
+                    v-model="form.name"
+                    placeholder="e.g. TSMC"
+                    class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg px-3 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <p class="h-[1.1rem] text-xs text-red-500">{{ errors.name?.[0] ?? '' }}</p>
+            </div>
+            <div>
+                <label class="block text-xs mb-1 invisible">_</label>
+                <button type="submit" :disabled="adding" class="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
+                    {{ adding ? 'Adding…' : 'Add' }}
+                </button>
+                <p class="h-[1.1rem]"></p>
+            </div>
+            <div>
+                <label class="block text-xs mb-1 invisible">_</label>
+                <button type="button" @click="showForm = false" class="h-9 px-4 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg">
+                    Cancel
+                </button>
+                <p class="h-[1.1rem]"></p>
+            </div>
+        </form>
+    </div>
+
+    <div v-if="loading" class="text-center py-12 text-slate-400">Loading…</div>
+
+    <div v-else-if="stocks.length === 0" class="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm text-slate-400">
+        No stocks tracked yet. Add one above.
+    </div>
+
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
+            v-for="stock in stocks"
+            :key="stock.symbol"
+            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 flex flex-col gap-3"
+        >
+            <!-- Header -->
+            <div class="flex items-start justify-between">
+                <RouterLink :to="`/stocks/${stock.symbol}`" class="hover:text-indigo-600 transition-colors">
+                    <div class="font-bold text-slate-900 dark:text-slate-100 text-lg">{{ stock.symbol }}</div>
+                    <div class="text-sm text-slate-400 dark:text-slate-500">{{ stock.name }}</div>
+                </RouterLink>
+                <button
+                    @click="deleteStock(stock.symbol)"
+                    class="text-slate-300 dark:text-slate-600 hover:text-red-400 transition-colors text-lg leading-none"
+                    title="Untrack"
+                >✕</button>
+            </div>
+
+            <!-- Price -->
+            <div>
+                <div v-if="stock.current_price" class="flex items-baseline gap-2">
+                    <span class="text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ fmt(stock.current_price) }}</span>
+                    <span v-if="stock.change_percent" class="text-sm font-medium" :class="stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                        {{ stock.change_percent >= 0 ? '+' : '' }}{{ Number(stock.change_percent).toFixed(2) }}%
+                    </span>
                 </div>
+                <div v-else class="text-slate-400 dark:text-slate-500 text-sm">No price data</div>
+                <div v-if="stock.last_fetched_at" class="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                    Updated {{ timeAgo(stock.last_fetched_at) }}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-2 pt-1">
+                <button
+                    @click="fetchPrice(stock.symbol)"
+                    :disabled="fetching === stock.symbol"
+                    class="flex-1 py-1.5 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50 text-slate-600 dark:text-slate-300 rounded-lg transition-colors"
+                >
+                    {{ fetching === stock.symbol ? 'Refreshing…' : '↻ Refresh price' }}
+                </button>
+                <RouterLink
+                    :to="`/stocks/${stock.symbol}`"
+                    class="flex-1 py-1.5 text-xs bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-center transition-colors"
+                >
+                    View details →
+                </RouterLink>
             </div>
         </div>
     </div>

@@ -1,5 +1,5 @@
 <template>
-    <div class="max-w-lg mx-auto px-4 py-8 space-y-6">
+    <div class="max-w-4xl space-y-6">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Account Settings</h1>
 
         <!-- Profile -->

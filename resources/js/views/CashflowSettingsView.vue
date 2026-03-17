@@ -1,5 +1,5 @@
 <template>
-    <div class="max-w-2xl mx-auto px-4 py-8 space-y-4">
+    <div class="max-w-4xl space-y-4">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Cashflow Settings</h1>
 
         <!-- Import / Export -->
