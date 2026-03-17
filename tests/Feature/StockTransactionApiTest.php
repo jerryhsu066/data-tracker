@@ -115,6 +115,42 @@ class StockTransactionApiTest extends TestCase
         $response->assertCreated()->assertJsonFragment(['handling_fee' => '726.0000']);
     }
 
+    public function test_odd_lot_minimum_handling_fee_is_one(): void
+    {
+        $stock = Stock::factory()->create();
+
+        // 1 share × 50 = 50 trade value
+        // Odd lot (not a multiple of 1000): min fee = 1
+        // handling_fee = max(1, floor(50 × 0.001425)) = max(1, 0) = 1
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
+            'stock_id' => $stock->id,
+            'type' => 'buy',
+            'shares' => 1,
+            'price_per_share' => 50,
+            'transacted_at' => '2025-01-15',
+        ]);
+
+        $response->assertCreated()->assertJsonFragment(['handling_fee' => '1.0000']);
+    }
+
+    public function test_round_lot_minimum_handling_fee_is_twenty(): void
+    {
+        $stock = Stock::factory()->create();
+
+        // 1000 shares × 1 = 1000 trade value
+        // Round lot (1000): min fee = 20
+        // handling_fee = max(20, floor(1000 × 0.001425)) = max(20, 1) = 20
+        $response = $this->actingAs($this->user)->postJson('/api/stocks/transactions', [
+            'stock_id' => $stock->id,
+            'type' => 'buy',
+            'shares' => 1000,
+            'price_per_share' => 1,
+            'transacted_at' => '2025-01-15',
+        ]);
+
+        $response->assertCreated()->assertJsonFragment(['handling_fee' => '20.0000']);
+    }
+
     public function test_can_record_a_sell_transaction(): void
     {
         $stock = Stock::factory()->create();

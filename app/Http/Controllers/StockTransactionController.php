@@ -52,9 +52,10 @@ class StockTransactionController extends Controller
         $tradeValue = $validated['shares'] * $validated['price_per_share'];
         $discount = (float) ($request->user()->handling_fee_discount ?? 0);
 
+        $minFee = $validated['shares'] >= 1000 && fmod($validated['shares'], 1000) == 0 ? 20 : 1;
         $handlingFee = isset($validated['handling_fee'])
             ? (int) $validated['handling_fee']
-            : (int) max(20, floor($tradeValue * 0.001425 * (1 - $discount)));
+            : (int) max($minFee, floor($tradeValue * 0.001425 * (1 - $discount)));
 
         $transactionTax = isset($validated['transaction_tax'])
             ? (int) $validated['transaction_tax']
@@ -95,9 +96,10 @@ class StockTransactionController extends Controller
         $tradeValue = $validated['shares'] * $validated['price_per_share'];
         $discount = (float) ($request->user()->handling_fee_discount ?? 0);
 
+        $minFee = $validated['shares'] >= 1000 && fmod($validated['shares'], 1000) == 0 ? 20 : 1;
         $validated['handling_fee'] = isset($validated['handling_fee'])
             ? (int) $validated['handling_fee']
-            : (int) max(20, floor($tradeValue * 0.001425 * (1 - $discount)));
+            : (int) max($minFee, floor($tradeValue * 0.001425 * (1 - $discount)));
 
         $validated['transaction_tax'] = isset($validated['transaction_tax'])
             ? (int) $validated['transaction_tax']

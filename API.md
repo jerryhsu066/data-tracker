@@ -265,7 +265,7 @@ POST /stocks/transactions
 | `notes` | string | optional |
 
 Fee and tax are auto-calculated from the user's `handling_fee_discount` setting if not supplied:
-- **Handling fee** = `max(20, floor(tradeValue × 0.1425% × (1 − discount)))`
+- **Handling fee** = `max(minFee, floor(tradeValue × 0.1425% × (1 − discount)))` where `minFee` is 20 for round lots (shares is a multiple of 1000), 1 for odd lots
 - **Transaction tax** = `floor(tradeValue × 0.3%)` for sells; `0` for buys
 
 For sell transactions, validates that shares owned ≥ shares to sell.

@@ -157,7 +157,8 @@ class PortfolioController extends Controller
         // Deduct estimated sell fees from unrealized gain so it reflects actual net proceeds.
         $unrealizedGain = 0.0;
         if ($netShares > 0 && $currentPrice > 0) {
-            $sellHandlingFee = (int) max(20, floor($currentValue * 0.001425 * (1 - $discount)));
+            $minFee = $netShares >= 1000 && fmod($netShares, 1000) == 0 ? 20 : 1;
+            $sellHandlingFee = (int) max($minFee, floor($currentValue * 0.001425 * (1 - $discount)));
             $sellTax = (int) floor($currentValue * 0.003);
             $unrealizedGain = $currentValue - ($averageCost * $netShares) - $sellHandlingFee - $sellTax;
         }

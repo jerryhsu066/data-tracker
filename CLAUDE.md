@@ -186,7 +186,7 @@ Cashflow foreign key columns: `cashflow_type_id`, `cashflow_subtype_id` (not `ty
 - App timezone is set to **Asia/Taipei (UTC+8)** in `config/app.php` — all date/time functions default to Taiwan time
 - Price history includes **today** — `StockPriceHistoryController` and `PortfolioController` cap at today, not yesterday
 - Missing price history dates use **carry-forward** — last known price on or before that date is used
-- Handling fee: `max(20, floor(tradeValue × 0.1425% × (1 − discount)))` — buy and sell
+- Handling fee: `max(minFee, floor(tradeValue × 0.1425% × (1 − discount)))` — buy and sell. `minFee` is 20 for round lots (shares is a multiple of 1000), 1 for odd lots.
 - Transaction tax: `floor(tradeValue × 0.3%)` — sell only, 0 for buys
 - Yahoo Finance: TWSE symbols use `.TW` suffix; OTC (TWO) symbols use `.TWO`; the service auto-retries with `.TWO` on 404
 - Market index symbols (`^TWII`, `^IXIC`, `^VIX`) are supported for price tracking — symbol regex allows `^` prefix

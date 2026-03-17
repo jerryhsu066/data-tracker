@@ -239,7 +239,9 @@ watchEffect(() => {
     const { handling: handlingRate, tax: taxRate } = feeRates.value;
     const tradeValue = Number(form.value.shares) * Number(form.value.price_per_share);
     if (!tradeValue) return;
-    form.value.handling_fee = Math.max(20, Math.floor(tradeValue * handlingRate / 100));
+    const shares = Number(form.value.shares);
+    const minFee = shares >= 1000 && shares % 1000 === 0 ? 20 : 1;
+    form.value.handling_fee = Math.max(minFee, Math.floor(tradeValue * handlingRate / 100));
     form.value.transaction_tax = form.value.type === 'sell'
         ? Math.floor(tradeValue * taxRate / 100)
         : 0;

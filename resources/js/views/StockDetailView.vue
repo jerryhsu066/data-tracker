@@ -292,7 +292,9 @@ watchEffect(() => {
     const { handling: handlingRate, tax: taxRate } = feeRates.value;
     const tradeValue = Number(txForm.value.shares) * Number(txForm.value.price_per_share);
     if (!tradeValue) return;
-    txForm.value.handling_fee = Math.max(20, Math.floor(tradeValue * handlingRate / 100));
+    const shares = Number(txForm.value.shares);
+    const minFee = shares >= 1000 && shares % 1000 === 0 ? 20 : 1;
+    txForm.value.handling_fee = Math.max(minFee, Math.floor(tradeValue * handlingRate / 100));
     txForm.value.transaction_tax = txForm.value.type === 'sell'
         ? Math.floor(tradeValue * taxRate / 100)
         : 0;
@@ -444,7 +446,9 @@ async function submitTransaction() {
     const tradeValue = Number(txForm.value.shares) * Number(txForm.value.price_per_share);
     if (tradeValue > 0) {
         const { handling: handlingRate, tax: taxRate } = feeRates.value;
-        txForm.value.handling_fee = Math.max(20, Math.floor(tradeValue * handlingRate / 100));
+        const shares = Number(txForm.value.shares);
+        const minFee = shares >= 1000 && shares % 1000 === 0 ? 20 : 1;
+        txForm.value.handling_fee = Math.max(minFee, Math.floor(tradeValue * handlingRate / 100));
         txForm.value.transaction_tax = txForm.value.type === 'sell'
             ? Math.floor(tradeValue * taxRate / 100)
             : 0;
