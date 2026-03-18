@@ -79,6 +79,7 @@
                     <select v-model="form.seat_class" class="h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="">—</option>
                         <option value="economy">Economy</option>
+                        <option value="economy+">Economy+</option>
                         <option value="business">Business</option>
                         <option value="first">First</option>
                     </select>
@@ -108,19 +109,19 @@
                 </div>
             </div>
 
-            <div class="flex gap-2">
-                <button @click="saveFlight" :disabled="saving"
-                    class="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50">
-                    {{ saving ? 'Saving…' : (editing ? 'Update' : 'Save') }}
+            <div class="flex gap-2 justify-end">
+                <button v-if="editing" @click="confirmDelete({ id: editing })"
+                    class="h-9 px-4 text-sm font-medium rounded-md transition-colors mr-auto"
+                    :class="deleteTarget?.id === editing ? 'bg-red-600 text-white animate-pulse' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'">
+                    {{ deleteTarget?.id === editing ? 'Confirm Delete?' : 'Delete Flight' }}
                 </button>
                 <button v-if="editing" @click="cancelEdit"
                     class="h-9 px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-md transition-colors">
                     Cancel
                 </button>
-                <button v-if="editing" @click="confirmDelete({ id: editing })"
-                    class="h-9 px-4 text-sm font-medium rounded-md transition-colors ml-auto"
-                    :class="deleteTarget?.id === editing ? 'bg-red-600 text-white animate-pulse' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'">
-                    {{ deleteTarget?.id === editing ? 'Confirm Delete?' : 'Delete Flight' }}
+                <button @click="saveFlight" :disabled="saving"
+                    class="h-9 px-5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50">
+                    {{ saving ? 'Saving…' : (editing ? 'Update' : 'Save') }}
                 </button>
             </div>
         </div>
@@ -134,41 +135,76 @@
         </div>
 
         <div v-else class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-x-auto">
-            <table class="text-sm border-collapse w-full">
+            <table class="text-sm border-collapse w-full font-mono">
                 <thead>
                     <tr class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
                         <th class="px-4 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Date</th>
-                        <th class="px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Airline</th>
                         <th class="px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Flight</th>
                         <th class="px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">From</th>
                         <th class="px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">To</th>
-                        <th class="px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Aircraft</th>
-                        <th class="px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Class</th>
-                        <th class="px-3 py-3 text-right font-medium text-slate-500 dark:text-slate-400">Price</th>
-                        <th class="px-3 py-3 text-right font-medium text-slate-500 dark:text-slate-400"></th>
+                        <th class="portrait:hidden px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Reg</th>
+                        <th class="portrait:hidden px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Aircraft</th>
+                        <th class="portrait:hidden px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Dep</th>
+                        <th class="portrait:hidden px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Arr</th>
+                        <th class="portrait:hidden px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Seat</th>
+                        <th class="portrait:hidden px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Class</th>
+                        <th class="portrait:hidden px-3 py-3 text-right font-medium text-slate-500 dark:text-slate-400"></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="f in flights" :key="f.id"
                         class="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                        <td class="px-4 py-2.5 text-slate-900 dark:text-slate-100 whitespace-nowrap">{{ f.flight_date?.split('T')[0] }}</td>
-                        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">{{ f.airline }}</td>
-                        <td class="px-3 py-2.5 font-mono text-slate-700 dark:text-slate-300">{{ f.flight_number }}</td>
-                        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">
-                            <span class="font-mono font-semibold">{{ f.departure_airport }}</span>
-                            <span class="text-xs text-slate-400 ml-1">{{ airportCity(f.departure_airport) }}</span>
+                        <!-- Date -->
+                        <td class="px-4 py-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ f.flight_date?.split('T')[0] }}</td>
+                        <!-- Flight: airline logo + number -->
+                        <td class="px-3 py-2.5">
+                            <div class="flex items-center gap-2">
+                                <img :src="airlineLogo(f.flight_number)" :alt="f.airline"
+                                    class="h-6 w-6 object-contain rounded shrink-0"
+                                    @error="e => e.currentTarget.style.display = 'none'" />
+                                <span class="text-slate-700 dark:text-slate-300">{{ f.flight_number }}</span>
+                            </div>
                         </td>
-                        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300">
-                            <span class="font-mono font-semibold">{{ f.arrival_airport }}</span>
-                            <span class="text-xs text-slate-400 ml-1">{{ airportCity(f.arrival_airport) }}</span>
+                        <!-- From: flag + IATA + city (city hidden in portrait) -->
+                        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                            <span class="mr-1">{{ countryFlag(f.departure_airport) }}</span>
+                            <span>{{ f.departure_airport }}</span>
+                            <span class="portrait:hidden text-xs text-slate-400 dark:text-slate-500 ml-1">{{ airportCity(f.departure_airport) }}</span>
                         </td>
-                        <td class="px-3 py-2.5 text-slate-500 dark:text-slate-400">{{ f.aircraft_type || '—' }}</td>
-                        <td class="px-3 py-2.5 text-slate-500 dark:text-slate-400 capitalize">{{ f.seat_class || '—' }}</td>
-                        <td class="px-3 py-2.5 text-right text-slate-700 dark:text-slate-300">
-                            {{ f.ticket_price ? (hidden ? '••••' : '$' + Number(f.ticket_price).toLocaleString()) : '—' }}
+                        <!-- To: flag + IATA + city (city hidden in portrait) -->
+                        <td class="px-3 py-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                            <span class="mr-1">{{ countryFlag(f.arrival_airport) }}</span>
+                            <span>{{ f.arrival_airport }}</span>
+                            <span class="portrait:hidden text-xs text-slate-400 dark:text-slate-500 ml-1">{{ airportCity(f.arrival_airport) }}</span>
                         </td>
-                        <td class="px-3 py-2.5 text-right">
-                            <button @click="editFlight(f)" class="text-indigo-500 hover:text-indigo-700 text-xs font-medium">Edit</button>
+                        <!-- Reg (tail number) -->
+                        <td class="portrait:hidden px-3 py-2.5 text-slate-700 dark:text-slate-300">{{ f.tail_number || '—' }}</td>
+                        <!-- Aircraft -->
+                        <td class="portrait:hidden px-3 py-2.5 text-slate-700 dark:text-slate-300">{{ formatAircraft(f.aircraft_type) }}</td>
+                        <!-- Dep time: hh:mm (UTC+X) -->
+                        <td class="portrait:hidden px-3 py-2.5 whitespace-nowrap">
+                            <template v-if="formatTime(f.departure_time, f.departure_airport)">
+                                <span class="text-slate-700 dark:text-slate-300">{{ formatTime(f.departure_time, f.departure_airport).time }}</span>
+                                <span class="text-xs text-slate-400 dark:text-slate-500 ml-1">{{ formatTime(f.departure_time, f.departure_airport).offset }}</span>
+                            </template>
+                            <span v-else class="text-xs text-slate-400 dark:text-slate-500">—</span>
+                        </td>
+                        <!-- Arr time: hh:mm +N (UTC+X) -->
+                        <td class="portrait:hidden px-3 py-2.5 whitespace-nowrap">
+                            <template v-if="formatTime(f.arrival_time, f.arrival_airport)">
+                                <span class="text-slate-700 dark:text-slate-300">
+                                    {{ formatTime(f.arrival_time, f.arrival_airport).time }}<sup v-if="dayOffset(f) > 0" class="text-[0.6em] font-semibold ml-0.5">+{{ dayOffset(f) }}</sup>
+                                </span>
+                                <span class="text-xs text-slate-400 dark:text-slate-500 ml-1">{{ formatTime(f.arrival_time, f.arrival_airport).offset }}</span>
+                            </template>
+                            <span v-else class="text-xs text-slate-400 dark:text-slate-500">—</span>
+                        </td>
+                        <!-- Seat number -->
+                        <td class="portrait:hidden px-3 py-2.5 text-slate-700 dark:text-slate-300">{{ f.seat_number || '—' }}</td>
+                        <!-- Class -->
+                        <td class="portrait:hidden px-3 py-2.5 text-slate-700 dark:text-slate-300 capitalize">{{ f.seat_class || '—' }}</td>
+                        <td class="portrait:hidden px-3 py-2.5 text-right">
+                            <button @click="editFlight(f)" class="font-sans text-indigo-500 hover:text-indigo-700 text-xs font-medium">Edit</button>
                         </td>
                     </tr>
                 </tbody>
@@ -267,16 +303,14 @@ async function saveFlight() {
         }
 
         if (editing.value) {
-            const { data } = await api.patch(`/flights/${editing.value}`, payload);
-            const idx = flights.value.findIndex(f => f.id === editing.value);
-            if (idx >= 0) flights.value[idx] = data;
+            await api.patch(`/flights/${editing.value}`, payload);
             editing.value = null;
         } else {
-            const { data } = await api.post('/flights', payload);
-            flights.value.unshift(data);
+            await api.post('/flights', payload);
         }
-        // Reload airport cache in case new airports were fetched on-demand
+        // Reload airport cache then re-fetch list in correct server order
         await reloadAirports();
+        await fetchFlights();
         form.value = emptyForm();
         showForm.value = false;
         lookupMsg.value = '';
@@ -346,6 +380,83 @@ async function deleteFlight(f) {
 
 function airportCity(iata) {
     return getAirport(iata)?.city || '';
+}
+
+// IATA aircraft type code → human-readable short label
+// Codes not in this map are returned as-is (e.g. user already stored "A330-300")
+const aircraftIataMap = {
+    // Airbus narrow-body
+    '318': 'A318', '319': 'A319', '320': 'A320', '321': 'A321',
+    '32A': 'A320n', '32B': 'A321n', '32N': 'A320n', '32Q': 'A321n',
+    // Airbus wide-body
+    '332': 'A332', '333': 'A333',
+    '342': 'A342', '343': 'A343', '345': 'A345', '346': 'A346',
+    '350': 'A350', '351': 'A351', '359': 'A359', '35K': 'A35K',
+    '388': 'A388',
+    // Boeing narrow-body
+    '732': 'B732', '733': 'B733', '734': 'B734', '735': 'B735',
+    '736': 'B736', '737': 'B737', '738': 'B738', '739': 'B739',
+    '73G': 'B73G', '73H': 'B73H', '73W': 'B73W',
+    '7M7': 'B737M', '7M8': 'B737M', '7M9': 'B737M',
+    // Boeing wide-body
+    '741': 'B741', '742': 'B742', '743': 'B743', '744': 'B744', '748': 'B748',
+    '752': 'B752', '753': 'B753',
+    '762': 'B762', '763': 'B763', '764': 'B764', '76W': 'B763', '76X': 'B764',
+    '772': 'B772', '773': 'B773', '77L': 'B77L', '77W': 'B77W',
+    '788': 'B788', '789': 'B789', '78X': 'B78X',
+    // Embraer
+    'E70': 'E170', 'E75': 'E175', 'E90': 'E190', 'E95': 'E195', 'E7W': 'E175',
+    // Bombardier CRJ
+    'CR2': 'CRJ2', 'CR7': 'CRJ7', 'CR9': 'CRJ9',
+    // ATR
+    'AT4': 'ATR42', 'AT7': 'ATR72',
+};
+
+function formatAircraft(type) {
+    if (!type) return '—';
+    return aircraftIataMap[type.toUpperCase()] ?? type;
+}
+
+// Extract IATA airline code from flight number (e.g. "CI123" → "CI")
+function airlineCode(flightNumber) {
+    return flightNumber?.match(/^[A-Z]{2,3}/)?.[0] || '';
+}
+
+function airlineLogo(flightNumber) {
+    const code = airlineCode(flightNumber);
+    return code ? `https://www.gstatic.com/flights/airline_logos/70px/${code}.png` : '';
+}
+
+function countryFlag(iata) {
+    const code = getAirport(iata)?.country_code;
+    if (!code || code.length !== 2) return '';
+    return String.fromCodePoint(...[...code].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+}
+
+// Returns day difference between arr and dep based on the date portion of the stored local-time strings
+function dayOffset(f) {
+    if (!f.departure_time || !f.arrival_time) return 0;
+    const depDate = f.departure_time.slice(0, 10);
+    const arrDate = f.arrival_time.slice(0, 10);
+    return Math.round((new Date(arrDate) - new Date(depDate)) / 86400000);
+}
+
+// Returns { time: "08:30", offset: "(UTC+8)" } or null
+// dt is stored as a naive local-time string ("2026-03-15T08:30") — no TZ conversion needed.
+function formatTime(dt, iata) {
+    if (!dt) return null;
+    const tz = getAirport(iata)?.tz;
+    // Extract HH:mm directly — value is already in airport local time
+    const time = dt.slice(11, 16);
+    // Compute UTC offset label using the flight date as reference (append Z so Date parses as UTC,
+    // giving a close-enough epoch for DST lookup on that date)
+    const ref = new Date(dt.length === 16 ? dt + ':00Z' : dt);
+    const offsetRaw = new Intl.DateTimeFormat('en', {
+        timeZone: tz || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timeZoneName: 'shortOffset',
+    }).formatToParts(ref).find(p => p.type === 'timeZoneName')?.value || '';
+    const offset = '(' + offsetRaw.replace('GMT', 'UTC') + ')';
+    return { time, offset };
 }
 
 onMounted(async () => {
