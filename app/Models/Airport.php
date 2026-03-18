@@ -11,6 +11,7 @@ class Airport extends Model
         'name',
         'city',
         'country',
+        'country_code',
         'lat',
         'lng',
         'tz',

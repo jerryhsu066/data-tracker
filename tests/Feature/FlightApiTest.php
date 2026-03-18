@@ -194,7 +194,28 @@ class FlightApiTest extends TestCase
 
     // ── Airport Auto-Resolve ───────────────────────────────────────────────────
 
-    public function test_store_resolves_unknown_airports_from_api(): void
+    public function test_store_resolves_unknown_airports_via_keyless_api(): void
+    {
+        Http::fake([
+            'www.airport-data.com/*' => Http::sequence()
+                ->push(['iata' => 'HND', 'name' => 'Haneda', 'location' => 'Tokyo', 'country' => 'Japan', 'lat' => '35.5494', 'lng' => '139.7798', 'tz' => 'Asia/Tokyo'])
+                ->push(['iata' => 'GAJ', 'name' => 'Yamagata', 'location' => 'Yamagata', 'country' => 'Japan', 'lat' => '38.4119', 'lng' => '140.3717', 'tz' => 'Asia/Tokyo']),
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson('/api/flights', [
+            'flight_date'       => '2026-02-01',
+            'airline'           => 'JAL',
+            'flight_number'     => 'JL175',
+            'departure_airport' => 'HND',
+            'arrival_airport'   => 'GAJ',
+        ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('airports', ['iata' => 'GAJ', 'tz' => 'Asia/Tokyo']);
+        $this->assertDatabaseHas('airports', ['iata' => 'HND', 'tz' => 'Asia/Tokyo']);
+    }
+
+    public function test_store_falls_back_to_aviationstack_when_keyless_fails(): void
     {
         FlightSetting::create([
             'user_id'           => $this->user->id,
@@ -202,6 +223,7 @@ class FlightApiTest extends TestCase
         ]);
 
         Http::fake([
+            'www.airport-data.com/*' => Http::response([], 500),
             'api.aviationstack.com/*' => Http::sequence()
                 ->push(['data' => [['airport_name' => 'Yamagata', 'iata_code' => 'GAJ', 'city_iata_code' => 'GAJ', 'country_name' => 'Japan', 'latitude' => '38.4119', 'longitude' => '140.3717', 'timezone' => 'Asia/Tokyo']]])
                 ->push(['data' => [['airport_name' => 'Haneda', 'iata_code' => 'HND', 'city_iata_code' => 'TYO', 'country_name' => 'Japan', 'latitude' => '35.5494', 'longitude' => '139.7798', 'timezone' => 'Asia/Tokyo']]]),
@@ -216,8 +238,6 @@ class FlightApiTest extends TestCase
         ]);
 
         $response->assertCreated();
-
-        // Both airports should now be in the DB
         $this->assertDatabaseHas('airports', ['iata' => 'GAJ', 'tz' => 'Asia/Tokyo']);
         $this->assertDatabaseHas('airports', ['iata' => 'HND', 'tz' => 'Asia/Tokyo']);
     }

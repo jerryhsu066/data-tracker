@@ -24,7 +24,7 @@ class AirportController extends Controller
         }
 
         return response()->json(
-            $query->orderBy('iata')->get(['iata', 'name', 'city', 'country', 'lat', 'lng', 'tz'])
+            $query->orderBy('iata')->get(['iata', 'name', 'city', 'country', 'country_code', 'lat', 'lng', 'tz'])
         );
     }
 
@@ -45,6 +45,6 @@ class AirportController extends Controller
             return response()->json(['message' => 'Airport not found'], 404);
         }
 
-        return response()->json($airport->only(['iata', 'name', 'city', 'country', 'lat', 'lng', 'tz']));
+        return response()->json($airport->only(['iata', 'name', 'city', 'country', 'country_code', 'lat', 'lng', 'tz']));
     }
 }

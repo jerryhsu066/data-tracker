@@ -3,17 +3,26 @@
 namespace Database\Seeders;
 
 use App\Models\Airport;
+use App\Services\AirportService;
 use Illuminate\Database\Seeder;
 
 class AirportSeeder extends Seeder
 {
     public function run(): void
     {
-        Airport::upsert(
-            self::airports(),
-            ['iata'],
-            ['name', 'city', 'country', 'lat', 'lng', 'tz'],
-        );
+        // Use insertOrIgnore so re-running the seeder never touches existing rows
+        // (no data change → updated_at stays pristine, so you can tell when a
+        //  row was last updated by the live fetch logic vs the initial seed)
+        Airport::insertOrIgnore(self::airports());
+
+        // Backfill country_code for any row that doesn't have it yet
+        Airport::whereNull('country_code')->get()->each(function (Airport $airport) {
+            $code = AirportService::countryNameToCode($airport->country);
+            if ($code) {
+                $airport->timestamps = false;
+                $airport->update(['country_code' => $code]);
+            }
+        });
     }
 
     private static function airports(): array
@@ -47,6 +56,7 @@ class AirportSeeder extends Seeder
             ['iata' => 'HND', 'name' => 'Haneda', 'city' => 'Tokyo', 'country' => 'Japan', 'lat' => 35.5494, 'lng' => 139.7798, 'tz' => 'Asia/Tokyo'],
             ['iata' => 'KIX', 'name' => 'Kansai International', 'city' => 'Osaka', 'country' => 'Japan', 'lat' => 34.4347, 'lng' => 135.2440, 'tz' => 'Asia/Tokyo'],
             ['iata' => 'ITM', 'name' => 'Itami', 'city' => 'Osaka', 'country' => 'Japan', 'lat' => 34.7855, 'lng' => 135.4381, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'UKB', 'name' => 'Kobe Airport', 'city' => 'Kobe', 'country' => 'Japan', 'lat' => 34.6328, 'lng' => 135.2238, 'tz' => 'Asia/Tokyo'],
             ['iata' => 'NGO', 'name' => 'Chubu Centrair', 'city' => 'Nagoya', 'country' => 'Japan', 'lat' => 34.8584, 'lng' => 136.8125, 'tz' => 'Asia/Tokyo'],
             ['iata' => 'CTS', 'name' => 'New Chitose', 'city' => 'Sapporo', 'country' => 'Japan', 'lat' => 42.7752, 'lng' => 141.6925, 'tz' => 'Asia/Tokyo'],
             ['iata' => 'FUK', 'name' => 'Fukuoka', 'city' => 'Fukuoka', 'country' => 'Japan', 'lat' => 33.5859, 'lng' => 130.4507, 'tz' => 'Asia/Tokyo'],
