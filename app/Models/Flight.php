@@ -31,8 +31,8 @@ class Flight extends Model
 
     protected $casts = [
         'flight_date'    => 'date:Y-m-d',
-        'departure_time' => 'datetime',
-        'arrival_time'   => 'datetime',
+        'departure_time' => 'string',
+        'arrival_time'   => 'string',
         'ticket_price'   => 'decimal:2',
     ];
 

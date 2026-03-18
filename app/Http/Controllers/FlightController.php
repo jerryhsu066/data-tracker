@@ -21,7 +21,7 @@ class FlightController extends Controller
             $query->whereYear('flight_date', $request->year);
         }
 
-        return response()->json($query->orderByDesc('flight_date')->get());
+        return response()->json($query->orderByDesc('flight_date')->orderByDesc('departure_time')->get());
     }
 
     public function store(Request $request): JsonResponse
