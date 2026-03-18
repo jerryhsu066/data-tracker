@@ -1,5 +1,8 @@
 <template>
-    <div ref="mapContainer" :style="{ height: height + 'px' }" class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700"></div>
+    <div ref="mapContainer"
+         :style="{ height: height + 'px' }"
+         class="isolate rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 portrait:aspect-[4/3] portrait:!h-auto">
+    </div>
 </template>
 
 <script setup>
@@ -20,8 +23,9 @@ let map = null;
 let tileLayer = null;
 let markersGroup = null;
 let routesGroup = null;
+let resizeObserver = null;
 
-const LIGHT_TILES = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>';
 
@@ -43,6 +47,9 @@ function initMap() {
     markersGroup = L.layerGroup().addTo(map);
     routesGroup = L.layerGroup().addTo(map);
 
+    resizeObserver = new ResizeObserver(() => { map?.invalidateSize(); drawFlights(); });
+    resizeObserver.observe(mapContainer.value);
+
     drawFlights();
 }
 
@@ -53,16 +60,10 @@ function drawFlights() {
     routesGroup.clearLayers();
 
     const airportVisits = {};
-    const routeFreqs = {};
 
     for (const f of props.flights) {
-        const dep = f.departure_airport;
-        const arr = f.arrival_airport;
-        airportVisits[dep] = (airportVisits[dep] || 0) + 1;
-        airportVisits[arr] = (airportVisits[arr] || 0) + 1;
-
-        const key = [dep, arr].sort().join('-');
-        routeFreqs[key] = (routeFreqs[key] || 0) + 1;
+        airportVisits[f.departure_airport] = (airportVisits[f.departure_airport] || 0) + 1;
+        airportVisits[f.arrival_airport]   = (airportVisits[f.arrival_airport]   || 0) + 1;
     }
 
     const bounds = [];
@@ -75,7 +76,8 @@ function drawFlights() {
         const airport = getAirport(iata);
         if (!airport) continue;
 
-        const radius = Math.min(4 + count * 1.5, 12);
+        const isMobile = (mapContainer.value?.offsetWidth ?? 768) < 768;
+        const radius = isMobile ? 3 : 5;
         const marker = L.circleMarker([airport.lat, airport.lng], {
             radius,
             fillColor: markerColor,
@@ -93,7 +95,6 @@ function drawFlights() {
     }
 
     // Draw route arcs
-    const maxFreq = Math.max(1, ...Object.values(routeFreqs));
     const drawnRoutes = new Set();
 
     for (const f of props.flights) {
@@ -104,13 +105,11 @@ function drawFlights() {
         const points = getArcPoints(f.departure_airport, f.arrival_airport, 50);
         if (points.length < 2) continue;
 
-        const freq = routeFreqs[key];
-        const weight = Math.max(1.5, Math.min(4, (freq / maxFreq) * 4));
-        const opacity = Math.max(0.3, Math.min(0.8, 0.3 + (freq / maxFreq) * 0.5));
+        const opacity = 0.5;
 
         L.polyline(points, {
             color: routeColor,
-            weight,
+            weight: 1.5,
             opacity,
             smoothFactor: 1,
         }).addTo(routesGroup);
@@ -138,6 +137,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    resizeObserver?.disconnect();
     if (map) {
         map.remove();
         map = null;
