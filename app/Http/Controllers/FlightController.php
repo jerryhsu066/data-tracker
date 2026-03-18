@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class FlightController extends Controller
 {
@@ -53,9 +54,7 @@ class FlightController extends Controller
 
     public function update(Request $request, Flight $flight): JsonResponse
     {
-        if ($flight->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('update', $flight);
 
         $validated = $request->validate([
             'flight_date'       => ['sometimes', 'date'],
@@ -86,9 +85,7 @@ class FlightController extends Controller
 
     public function destroy(Request $request, Flight $flight): Response
     {
-        if ($flight->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('delete', $flight);
 
         $flight->delete();
 
@@ -99,25 +96,22 @@ class FlightController extends Controller
     {
         $userId = $request->user()->id;
 
-        $totalFlights = Flight::where('user_id', $userId)->count();
+        $flights = Flight::where('user_id', $userId)
+            ->select('departure_airport', 'arrival_airport', 'airline')
+            ->get();
 
-        $allAirports = Flight::where('user_id', $userId)
-            ->pluck('departure_airport')
-            ->merge(Flight::where('user_id', $userId)->pluck('arrival_airport'))
-            ->unique()
-            ->count();
+        $totalFlights = $flights->count();
 
-        $uniqueAirlines = Flight::where('user_id', $userId)
-            ->distinct('airline')->count('airline');
+        $allCodes = $flights->pluck('departure_airport')
+            ->merge($flights->pluck('arrival_airport'));
+
+        $allAirports = $allCodes->unique()->count();
+
+        $uniqueAirlines = $flights->pluck('airline')->unique()->count();
 
         $mostVisited = null;
         if ($totalFlights > 0) {
-            $airportCounts = Flight::where('user_id', $userId)
-                ->pluck('departure_airport')
-                ->merge(Flight::where('user_id', $userId)->pluck('arrival_airport'))
-                ->countBy()
-                ->sortDesc();
-            $mostVisited = $airportCounts->keys()->first();
+            $mostVisited = $allCodes->countBy()->sortDesc()->keys()->first();
         }
 
         $isSqlite = DB::getDriverName() === 'sqlite';

@@ -11,6 +11,13 @@ class FetchHistoricalPrices implements ShouldQueue
 {
     use Queueable;
 
+    public int $tries = 3;
+
+    public function backoff(): array
+    {
+        return [30, 120, 300];
+    }
+
     public function __construct(
         public readonly Stock $stock,
         public readonly string $fromDate,

@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class CashflowRecordController extends Controller
@@ -63,9 +64,7 @@ class CashflowRecordController extends Controller
 
     public function update(Request $request, CashflowRecord $record): JsonResponse
     {
-        if ($record->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('update', $record);
 
         $userId          = $request->user()->id;
         $typeId          = $request->input('cashflow_type_id', $record->cashflow_type_id);
@@ -158,9 +157,7 @@ class CashflowRecordController extends Controller
 
     public function destroy(Request $request, CashflowRecord $record): Response
     {
-        if ($record->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        Gate::authorize('delete', $record);
 
         $record->delete();
 
