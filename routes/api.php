@@ -5,6 +5,9 @@ use App\Http\Controllers\CashflowImportExportController;
 use App\Http\Controllers\CashflowRecordController;
 use App\Http\Controllers\CashflowSettingsController;
 use App\Http\Controllers\ExposureBundleController;
+use App\Http\Controllers\AirportController;
+use App\Http\Controllers\FlightController;
+use App\Http\Controllers\FlightImportExportController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\StockSettingsController;
 use App\Http\Controllers\StockController;
@@ -100,4 +103,26 @@ Route::prefix('cashflow')->middleware('auth:sanctum')->group(function () {
     Route::post('records', [CashflowRecordController::class, 'store']);
     Route::patch('records/{record}', [CashflowRecordController::class, 'update']);
     Route::delete('records/{record}', [CashflowRecordController::class, 'destroy']);
+});
+
+// Flights module
+Route::prefix('flights')->middleware('auth:sanctum')->group(function () {
+    Route::get('airports', [AirportController::class, 'index']);
+    Route::get('airports/{iata}', [AirportController::class, 'show']);
+
+    Route::get('stats', [FlightController::class, 'stats']);
+
+    Route::get('export', [FlightImportExportController::class, 'export']);
+    Route::post('import/preview', [FlightImportExportController::class, 'preview']);
+    Route::post('import', [FlightImportExportController::class, 'import']);
+
+    Route::post('lookup', [FlightController::class, 'lookup']);
+
+    Route::get('settings', [FlightController::class, 'showSettings']);
+    Route::patch('settings', [FlightController::class, 'updateSettings']);
+
+    Route::get('/', [FlightController::class, 'index']);
+    Route::post('/', [FlightController::class, 'store']);
+    Route::patch('{flight}', [FlightController::class, 'update']);
+    Route::delete('{flight}', [FlightController::class, 'destroy']);
 });

@@ -1,0 +1,685 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Airport;
+use Illuminate\Database\Seeder;
+
+class AirportSeeder extends Seeder
+{
+    public function run(): void
+    {
+        Airport::upsert(
+            self::airports(),
+            ['iata'],
+            ['name', 'city', 'country', 'lat', 'lng', 'tz'],
+        );
+    }
+
+    private static function airports(): array
+    {
+        $now = now()->toDateTimeString();
+
+        return array_map(fn ($a) => array_merge($a, [
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]), [
+            // =====================================================================
+            // Taiwan (12)
+            // =====================================================================
+            ['iata' => 'TPE', 'name' => 'Taoyuan International', 'city' => 'Taipei', 'country' => 'Taiwan', 'lat' => 25.0777, 'lng' => 121.2325, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'TSA', 'name' => 'Songshan', 'city' => 'Taipei', 'country' => 'Taiwan', 'lat' => 25.0694, 'lng' => 121.5525, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'KHH', 'name' => 'Kaohsiung International', 'city' => 'Kaohsiung', 'country' => 'Taiwan', 'lat' => 22.5771, 'lng' => 120.3500, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'RMQ', 'name' => 'Taichung International', 'city' => 'Taichung', 'country' => 'Taiwan', 'lat' => 24.2647, 'lng' => 120.6210, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'TNN', 'name' => 'Tainan', 'city' => 'Tainan', 'country' => 'Taiwan', 'lat' => 22.9504, 'lng' => 120.2057, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'TTT', 'name' => 'Taitung', 'city' => 'Taitung', 'country' => 'Taiwan', 'lat' => 22.7550, 'lng' => 121.1019, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'KNH', 'name' => 'Kinmen', 'city' => 'Kinmen', 'country' => 'Taiwan', 'lat' => 24.4279, 'lng' => 118.3593, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'MZG', 'name' => 'Magong', 'city' => 'Penghu', 'country' => 'Taiwan', 'lat' => 23.5687, 'lng' => 119.6283, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'HUN', 'name' => 'Hualien', 'city' => 'Hualien', 'country' => 'Taiwan', 'lat' => 24.0231, 'lng' => 121.6162, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'GNI', 'name' => 'Green Island', 'city' => 'Green Island', 'country' => 'Taiwan', 'lat' => 22.6739, 'lng' => 121.4662, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'LZN', 'name' => 'Matsu Nangan', 'city' => 'Matsu', 'country' => 'Taiwan', 'lat' => 26.1598, 'lng' => 119.9588, 'tz' => 'Asia/Taipei'],
+            ['iata' => 'CMJ', 'name' => 'Chi Mei', 'city' => 'Chi Mei', 'country' => 'Taiwan', 'lat' => 23.2131, 'lng' => 119.4189, 'tz' => 'Asia/Taipei'],
+
+            // =====================================================================
+            // Japan (55)
+            // =====================================================================
+            ['iata' => 'NRT', 'name' => 'Narita International', 'city' => 'Tokyo', 'country' => 'Japan', 'lat' => 35.7647, 'lng' => 140.3864, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'HND', 'name' => 'Haneda', 'city' => 'Tokyo', 'country' => 'Japan', 'lat' => 35.5494, 'lng' => 139.7798, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'KIX', 'name' => 'Kansai International', 'city' => 'Osaka', 'country' => 'Japan', 'lat' => 34.4347, 'lng' => 135.2440, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'ITM', 'name' => 'Itami', 'city' => 'Osaka', 'country' => 'Japan', 'lat' => 34.7855, 'lng' => 135.4381, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'NGO', 'name' => 'Chubu Centrair', 'city' => 'Nagoya', 'country' => 'Japan', 'lat' => 34.8584, 'lng' => 136.8125, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'CTS', 'name' => 'New Chitose', 'city' => 'Sapporo', 'country' => 'Japan', 'lat' => 42.7752, 'lng' => 141.6925, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'FUK', 'name' => 'Fukuoka', 'city' => 'Fukuoka', 'country' => 'Japan', 'lat' => 33.5859, 'lng' => 130.4507, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'OKA', 'name' => 'Naha', 'city' => 'Okinawa', 'country' => 'Japan', 'lat' => 26.1958, 'lng' => 127.6459, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'ISG', 'name' => 'New Ishigaki', 'city' => 'Ishigaki', 'country' => 'Japan', 'lat' => 24.3964, 'lng' => 124.2450, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'SDJ', 'name' => 'Sendai', 'city' => 'Sendai', 'country' => 'Japan', 'lat' => 38.1397, 'lng' => 140.9170, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'HIJ', 'name' => 'Hiroshima', 'city' => 'Hiroshima', 'country' => 'Japan', 'lat' => 34.4361, 'lng' => 132.9194, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'GAJ', 'name' => 'Yamagata', 'city' => 'Yamagata', 'country' => 'Japan', 'lat' => 38.4119, 'lng' => 140.3717, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'KOJ', 'name' => 'Kagoshima', 'city' => 'Kagoshima', 'country' => 'Japan', 'lat' => 31.8034, 'lng' => 130.7194, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'KMQ', 'name' => 'Komatsu', 'city' => 'Kanazawa', 'country' => 'Japan', 'lat' => 36.3946, 'lng' => 136.4066, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'NGS', 'name' => 'Nagasaki', 'city' => 'Nagasaki', 'country' => 'Japan', 'lat' => 32.9169, 'lng' => 129.9136, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'OIT', 'name' => 'Oita', 'city' => 'Oita', 'country' => 'Japan', 'lat' => 33.4794, 'lng' => 131.7372, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'KMI', 'name' => 'Miyazaki', 'city' => 'Miyazaki', 'country' => 'Japan', 'lat' => 31.8772, 'lng' => 131.4486, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'TAK', 'name' => 'Takamatsu', 'city' => 'Takamatsu', 'country' => 'Japan', 'lat' => 34.2142, 'lng' => 134.0156, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'MYJ', 'name' => 'Matsuyama', 'city' => 'Matsuyama', 'country' => 'Japan', 'lat' => 33.8272, 'lng' => 132.6997, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'TOY', 'name' => 'Toyama', 'city' => 'Toyama', 'country' => 'Japan', 'lat' => 36.6483, 'lng' => 137.1876, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'AOJ', 'name' => 'Aomori', 'city' => 'Aomori', 'country' => 'Japan', 'lat' => 40.7347, 'lng' => 140.6908, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'AKJ', 'name' => 'Asahikawa', 'city' => 'Asahikawa', 'country' => 'Japan', 'lat' => 43.6708, 'lng' => 142.4475, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'MMJ', 'name' => 'Matsumoto', 'city' => 'Matsumoto', 'country' => 'Japan', 'lat' => 36.1668, 'lng' => 137.9228, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'KCZ', 'name' => 'Kochi Ryoma', 'city' => 'Kochi', 'country' => 'Japan', 'lat' => 33.5461, 'lng' => 133.6694, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'UBJ', 'name' => 'Yamaguchi Ube', 'city' => 'Ube', 'country' => 'Japan', 'lat' => 33.9300, 'lng' => 131.2786, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'TKS', 'name' => 'Tokushima', 'city' => 'Tokushima', 'country' => 'Japan', 'lat' => 34.1328, 'lng' => 134.6067, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'MMB', 'name' => 'Memanbetsu', 'city' => 'Ozora', 'country' => 'Japan', 'lat' => 43.8806, 'lng' => 144.1642, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'OBO', 'name' => 'Obihiro', 'city' => 'Obihiro', 'country' => 'Japan', 'lat' => 42.7333, 'lng' => 143.2172, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'HKD', 'name' => 'Hakodate', 'city' => 'Hakodate', 'country' => 'Japan', 'lat' => 41.7700, 'lng' => 140.8222, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'AXT', 'name' => 'Akita', 'city' => 'Akita', 'country' => 'Japan', 'lat' => 39.6156, 'lng' => 140.2186, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'NKM', 'name' => 'Nagoya Komaki', 'city' => 'Nagoya', 'country' => 'Japan', 'lat' => 35.2550, 'lng' => 136.9239, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'KKJ', 'name' => 'Kitakyushu', 'city' => 'Kitakyushu', 'country' => 'Japan', 'lat' => 33.8459, 'lng' => 131.0347, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'SHM', 'name' => 'Nanki-Shirahama', 'city' => 'Shirahama', 'country' => 'Japan', 'lat' => 33.6622, 'lng' => 135.3644, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'IZO', 'name' => 'Izumo', 'city' => 'Izumo', 'country' => 'Japan', 'lat' => 35.4136, 'lng' => 132.8900, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'KUH', 'name' => 'Kushiro', 'city' => 'Kushiro', 'country' => 'Japan', 'lat' => 43.0411, 'lng' => 144.1931, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'WKJ', 'name' => 'Wakkanai', 'city' => 'Wakkanai', 'country' => 'Japan', 'lat' => 45.4042, 'lng' => 141.8008, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'MYE', 'name' => 'Miyakejima', 'city' => 'Miyakejima', 'country' => 'Japan', 'lat' => 34.0736, 'lng' => 139.5603, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'MMY', 'name' => 'Miyako', 'city' => 'Miyako', 'country' => 'Japan', 'lat' => 24.7828, 'lng' => 125.2950, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'ASJ', 'name' => 'Amami', 'city' => 'Amami', 'country' => 'Japan', 'lat' => 28.4306, 'lng' => 129.7125, 'tz' => 'Asia/Tokyo'],
+            // Additional Japan
+            ['iata' => 'KMJ', 'name' => 'Kumamoto', 'city' => 'Kumamoto', 'country' => 'Japan', 'lat' => 32.8373, 'lng' => 130.8551, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'OKJ', 'name' => 'Okayama', 'city' => 'Okayama', 'country' => 'Japan', 'lat' => 34.7569, 'lng' => 133.8553, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'SHI', 'name' => 'Shimojishima', 'city' => 'Miyako', 'country' => 'Japan', 'lat' => 24.8267, 'lng' => 125.1447, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'TNE', 'name' => 'Tanegashima', 'city' => 'Tanegashima', 'country' => 'Japan', 'lat' => 30.6051, 'lng' => 130.9914, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'TKN', 'name' => 'Tokunoshima', 'city' => 'Tokunoshima', 'country' => 'Japan', 'lat' => 27.8364, 'lng' => 128.8811, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'OKE', 'name' => 'Okinoerabu', 'city' => 'Okinoerabu', 'country' => 'Japan', 'lat' => 27.4256, 'lng' => 128.7011, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'KKX', 'name' => 'Kikai', 'city' => 'Kikai', 'country' => 'Japan', 'lat' => 28.3213, 'lng' => 129.9278, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'YON', 'name' => 'Yonaguni', 'city' => 'Yonaguni', 'country' => 'Japan', 'lat' => 24.4669, 'lng' => 122.9789, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'SDS', 'name' => 'Sado', 'city' => 'Sado', 'country' => 'Japan', 'lat' => 38.0602, 'lng' => 138.4141, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'NTQ', 'name' => 'Noto', 'city' => 'Wajima', 'country' => 'Japan', 'lat' => 37.2931, 'lng' => 136.9619, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'SYO', 'name' => 'Shonai', 'city' => 'Shonai', 'country' => 'Japan', 'lat' => 38.8122, 'lng' => 139.7872, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'FSZ', 'name' => 'Mt Fuji Shizuoka', 'city' => 'Shizuoka', 'country' => 'Japan', 'lat' => 34.7961, 'lng' => 138.1894, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'IWJ', 'name' => 'Iwami', 'city' => 'Masuda', 'country' => 'Japan', 'lat' => 34.6764, 'lng' => 131.7903, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'TJH', 'name' => 'Tajima', 'city' => 'Toyooka', 'country' => 'Japan', 'lat' => 35.5128, 'lng' => 134.7872, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'ONJ', 'name' => 'Odate-Noshiro', 'city' => 'Odate', 'country' => 'Japan', 'lat' => 40.1919, 'lng' => 140.3714, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'MSJ', 'name' => 'Misawa', 'city' => 'Misawa', 'country' => 'Japan', 'lat' => 40.7033, 'lng' => 141.3683, 'tz' => 'Asia/Tokyo'],
+            ['iata' => 'SHB', 'name' => 'Nakashibetsu', 'city' => 'Nakashibetsu', 'country' => 'Japan', 'lat' => 43.5775, 'lng' => 144.9600, 'tz' => 'Asia/Tokyo'],
+
+            // =====================================================================
+            // South Korea (10)
+            // =====================================================================
+            ['iata' => 'ICN', 'name' => 'Incheon International', 'city' => 'Seoul', 'country' => 'South Korea', 'lat' => 37.4602, 'lng' => 126.4407, 'tz' => 'Asia/Seoul'],
+            ['iata' => 'GMP', 'name' => 'Gimpo International', 'city' => 'Seoul', 'country' => 'South Korea', 'lat' => 37.5587, 'lng' => 126.7906, 'tz' => 'Asia/Seoul'],
+            ['iata' => 'PUS', 'name' => 'Gimhae International', 'city' => 'Busan', 'country' => 'South Korea', 'lat' => 35.1796, 'lng' => 128.9382, 'tz' => 'Asia/Seoul'],
+            ['iata' => 'CJU', 'name' => 'Jeju International', 'city' => 'Jeju', 'country' => 'South Korea', 'lat' => 33.5113, 'lng' => 126.4929, 'tz' => 'Asia/Seoul'],
+            ['iata' => 'TAE', 'name' => 'Daegu International', 'city' => 'Daegu', 'country' => 'South Korea', 'lat' => 35.8941, 'lng' => 128.6589, 'tz' => 'Asia/Seoul'],
+            ['iata' => 'KWJ', 'name' => 'Gwangju', 'city' => 'Gwangju', 'country' => 'South Korea', 'lat' => 35.1264, 'lng' => 126.8089, 'tz' => 'Asia/Seoul'],
+            ['iata' => 'RSU', 'name' => 'Yeosu', 'city' => 'Yeosu', 'country' => 'South Korea', 'lat' => 34.8424, 'lng' => 127.6169, 'tz' => 'Asia/Seoul'],
+            ['iata' => 'USN', 'name' => 'Ulsan', 'city' => 'Ulsan', 'country' => 'South Korea', 'lat' => 35.5935, 'lng' => 129.3518, 'tz' => 'Asia/Seoul'],
+            ['iata' => 'CJJ', 'name' => 'Cheongju International', 'city' => 'Cheongju', 'country' => 'South Korea', 'lat' => 36.7166, 'lng' => 127.4991, 'tz' => 'Asia/Seoul'],
+            ['iata' => 'MWX', 'name' => 'Muan International', 'city' => 'Muan', 'country' => 'South Korea', 'lat' => 34.9914, 'lng' => 126.3828, 'tz' => 'Asia/Seoul'],
+
+            // =====================================================================
+            // China / Hong Kong / Macau (30)
+            // =====================================================================
+            ['iata' => 'HKG', 'name' => 'Hong Kong International', 'city' => 'Hong Kong', 'country' => 'Hong Kong', 'lat' => 22.3080, 'lng' => 113.9185, 'tz' => 'Asia/Hong_Kong'],
+            ['iata' => 'MFM', 'name' => 'Macau International', 'city' => 'Macau', 'country' => 'Macau', 'lat' => 22.1496, 'lng' => 113.5920, 'tz' => 'Asia/Macau'],
+            ['iata' => 'PEK', 'name' => 'Beijing Capital', 'city' => 'Beijing', 'country' => 'China', 'lat' => 40.0799, 'lng' => 116.6031, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'PKX', 'name' => 'Beijing Daxing', 'city' => 'Beijing', 'country' => 'China', 'lat' => 39.5098, 'lng' => 116.4105, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'PVG', 'name' => 'Pudong International', 'city' => 'Shanghai', 'country' => 'China', 'lat' => 31.1443, 'lng' => 121.8083, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'SHA', 'name' => 'Hongqiao International', 'city' => 'Shanghai', 'country' => 'China', 'lat' => 31.1979, 'lng' => 121.3363, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'CAN', 'name' => 'Baiyun International', 'city' => 'Guangzhou', 'country' => 'China', 'lat' => 23.3924, 'lng' => 113.2988, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'SZX', 'name' => 'Bao\'an International', 'city' => 'Shenzhen', 'country' => 'China', 'lat' => 22.6393, 'lng' => 113.8107, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'CTU', 'name' => 'Shuangliu International', 'city' => 'Chengdu', 'country' => 'China', 'lat' => 30.5785, 'lng' => 103.9471, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'TFU', 'name' => 'Tianfu International', 'city' => 'Chengdu', 'country' => 'China', 'lat' => 30.3195, 'lng' => 104.4412, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'CKG', 'name' => 'Jiangbei International', 'city' => 'Chongqing', 'country' => 'China', 'lat' => 29.7192, 'lng' => 106.6417, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'XIY', 'name' => 'Xianyang International', 'city' => 'Xi\'an', 'country' => 'China', 'lat' => 34.4471, 'lng' => 108.7516, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'KMG', 'name' => 'Changshui International', 'city' => 'Kunming', 'country' => 'China', 'lat' => 24.9924, 'lng' => 102.7432, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'WUH', 'name' => 'Tianhe International', 'city' => 'Wuhan', 'country' => 'China', 'lat' => 30.7838, 'lng' => 114.2081, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'HGH', 'name' => 'Xiaoshan International', 'city' => 'Hangzhou', 'country' => 'China', 'lat' => 30.2295, 'lng' => 120.4344, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'NKG', 'name' => 'Lukou International', 'city' => 'Nanjing', 'country' => 'China', 'lat' => 31.7420, 'lng' => 118.8620, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'XMN', 'name' => 'Gaoqi International', 'city' => 'Xiamen', 'country' => 'China', 'lat' => 24.5440, 'lng' => 118.1278, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'CSX', 'name' => 'Huanghua International', 'city' => 'Changsha', 'country' => 'China', 'lat' => 28.1892, 'lng' => 113.2200, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'CGO', 'name' => 'Xinzheng International', 'city' => 'Zhengzhou', 'country' => 'China', 'lat' => 34.5197, 'lng' => 113.8409, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'NNG', 'name' => 'Wuxu International', 'city' => 'Nanning', 'country' => 'China', 'lat' => 22.6083, 'lng' => 108.1722, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'DLC', 'name' => 'Zhoushuizi International', 'city' => 'Dalian', 'country' => 'China', 'lat' => 38.9657, 'lng' => 121.5386, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'HRB', 'name' => 'Taiping International', 'city' => 'Harbin', 'country' => 'China', 'lat' => 45.6234, 'lng' => 126.2505, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'TAO', 'name' => 'Jiaodong International', 'city' => 'Qingdao', 'country' => 'China', 'lat' => 36.3661, 'lng' => 120.0944, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'SYX', 'name' => 'Phoenix International', 'city' => 'Sanya', 'country' => 'China', 'lat' => 18.3029, 'lng' => 109.4122, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'HAK', 'name' => 'Meilan International', 'city' => 'Haikou', 'country' => 'China', 'lat' => 19.9349, 'lng' => 110.4590, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'FOC', 'name' => 'Changle International', 'city' => 'Fuzhou', 'country' => 'China', 'lat' => 25.9351, 'lng' => 119.6633, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'SHE', 'name' => 'Taoxian International', 'city' => 'Shenyang', 'country' => 'China', 'lat' => 41.6398, 'lng' => 123.4834, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'TSN', 'name' => 'Binhai International', 'city' => 'Tianjin', 'country' => 'China', 'lat' => 39.1244, 'lng' => 117.3462, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'KWE', 'name' => 'Longdongbao International', 'city' => 'Guiyang', 'country' => 'China', 'lat' => 26.5385, 'lng' => 106.8008, 'tz' => 'Asia/Shanghai'],
+            ['iata' => 'URC', 'name' => 'Diwopu International', 'city' => 'Urumqi', 'country' => 'China', 'lat' => 43.9071, 'lng' => 87.4742, 'tz' => 'Asia/Urumqi'],
+
+            // =====================================================================
+            // Southeast Asia (45)
+            // =====================================================================
+            // Singapore
+            ['iata' => 'SIN', 'name' => 'Changi', 'city' => 'Singapore', 'country' => 'Singapore', 'lat' => 1.3502, 'lng' => 103.9944, 'tz' => 'Asia/Singapore'],
+            // Thailand
+            ['iata' => 'BKK', 'name' => 'Suvarnabhumi', 'city' => 'Bangkok', 'country' => 'Thailand', 'lat' => 13.6900, 'lng' => 100.7501, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'DMK', 'name' => 'Don Mueang', 'city' => 'Bangkok', 'country' => 'Thailand', 'lat' => 13.9126, 'lng' => 100.6068, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'CNX', 'name' => 'Chiang Mai International', 'city' => 'Chiang Mai', 'country' => 'Thailand', 'lat' => 18.7668, 'lng' => 98.9626, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'HKT', 'name' => 'Phuket International', 'city' => 'Phuket', 'country' => 'Thailand', 'lat' => 8.1132, 'lng' => 98.3169, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'UBP', 'name' => 'Ubon Ratchathani', 'city' => 'Ubon Ratchathani', 'country' => 'Thailand', 'lat' => 15.2513, 'lng' => 104.8701, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'CEI', 'name' => 'Chiang Rai', 'city' => 'Chiang Rai', 'country' => 'Thailand', 'lat' => 19.9523, 'lng' => 99.8828, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'KBV', 'name' => 'Krabi', 'city' => 'Krabi', 'country' => 'Thailand', 'lat' => 8.0955, 'lng' => 98.9862, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'USM', 'name' => 'Koh Samui', 'city' => 'Koh Samui', 'country' => 'Thailand', 'lat' => 9.5478, 'lng' => 100.0623, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'HDY', 'name' => 'Hat Yai International', 'city' => 'Hat Yai', 'country' => 'Thailand', 'lat' => 6.9332, 'lng' => 100.3928, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'UTP', 'name' => 'U-Tapao', 'city' => 'Pattaya', 'country' => 'Thailand', 'lat' => 12.6799, 'lng' => 101.0050, 'tz' => 'Asia/Bangkok'],
+            // Malaysia
+            ['iata' => 'KUL', 'name' => 'Kuala Lumpur International', 'city' => 'Kuala Lumpur', 'country' => 'Malaysia', 'lat' => 2.7456, 'lng' => 101.7099, 'tz' => 'Asia/Kuala_Lumpur'],
+            ['iata' => 'PEN', 'name' => 'Penang International', 'city' => 'Penang', 'country' => 'Malaysia', 'lat' => 5.2972, 'lng' => 100.2768, 'tz' => 'Asia/Kuala_Lumpur'],
+            ['iata' => 'BKI', 'name' => 'Kota Kinabalu International', 'city' => 'Kota Kinabalu', 'country' => 'Malaysia', 'lat' => 5.9372, 'lng' => 116.0514, 'tz' => 'Asia/Kuala_Lumpur'],
+            ['iata' => 'KCH', 'name' => 'Kuching International', 'city' => 'Kuching', 'country' => 'Malaysia', 'lat' => 1.4847, 'lng' => 110.3472, 'tz' => 'Asia/Kuala_Lumpur'],
+            ['iata' => 'LGK', 'name' => 'Langkawi International', 'city' => 'Langkawi', 'country' => 'Malaysia', 'lat' => 6.3297, 'lng' => 99.7286, 'tz' => 'Asia/Kuala_Lumpur'],
+            // Philippines
+            ['iata' => 'MNL', 'name' => 'Ninoy Aquino International', 'city' => 'Manila', 'country' => 'Philippines', 'lat' => 14.5086, 'lng' => 121.0197, 'tz' => 'Asia/Manila'],
+            ['iata' => 'CEB', 'name' => 'Mactan-Cebu International', 'city' => 'Cebu', 'country' => 'Philippines', 'lat' => 10.3076, 'lng' => 123.9793, 'tz' => 'Asia/Manila'],
+            ['iata' => 'CRK', 'name' => 'Clark International', 'city' => 'Clark', 'country' => 'Philippines', 'lat' => 15.1860, 'lng' => 120.5603, 'tz' => 'Asia/Manila'],
+            ['iata' => 'DVO', 'name' => 'Francisco Bangoy International', 'city' => 'Davao', 'country' => 'Philippines', 'lat' => 7.1255, 'lng' => 125.6456, 'tz' => 'Asia/Manila'],
+            ['iata' => 'ILO', 'name' => 'Iloilo International', 'city' => 'Iloilo', 'country' => 'Philippines', 'lat' => 10.7133, 'lng' => 122.5455, 'tz' => 'Asia/Manila'],
+            ['iata' => 'KLO', 'name' => 'Kalibo International', 'city' => 'Kalibo', 'country' => 'Philippines', 'lat' => 11.6794, 'lng' => 122.3762, 'tz' => 'Asia/Manila'],
+            ['iata' => 'PPS', 'name' => 'Puerto Princesa', 'city' => 'Puerto Princesa', 'country' => 'Philippines', 'lat' => 9.7421, 'lng' => 118.7587, 'tz' => 'Asia/Manila'],
+            // Indonesia
+            ['iata' => 'CGK', 'name' => 'Soekarno-Hatta', 'city' => 'Jakarta', 'country' => 'Indonesia', 'lat' => -6.1256, 'lng' => 106.6559, 'tz' => 'Asia/Jakarta'],
+            ['iata' => 'DPS', 'name' => 'Ngurah Rai', 'city' => 'Bali', 'country' => 'Indonesia', 'lat' => -8.7482, 'lng' => 115.1672, 'tz' => 'Asia/Makassar'],
+            ['iata' => 'SUB', 'name' => 'Juanda International', 'city' => 'Surabaya', 'country' => 'Indonesia', 'lat' => -7.3798, 'lng' => 112.7868, 'tz' => 'Asia/Jakarta'],
+            ['iata' => 'UPG', 'name' => 'Sultan Hasanuddin', 'city' => 'Makassar', 'country' => 'Indonesia', 'lat' => -5.0613, 'lng' => 119.5540, 'tz' => 'Asia/Makassar'],
+            ['iata' => 'JOG', 'name' => 'Adisucipto International', 'city' => 'Yogyakarta', 'country' => 'Indonesia', 'lat' => -7.7882, 'lng' => 110.4317, 'tz' => 'Asia/Jakarta'],
+            ['iata' => 'KNO', 'name' => 'Kualanamu International', 'city' => 'Medan', 'country' => 'Indonesia', 'lat' => 3.6422, 'lng' => 98.8853, 'tz' => 'Asia/Jakarta'],
+            ['iata' => 'BPN', 'name' => 'Sultan Aji Muhammad Sulaiman', 'city' => 'Balikpapan', 'country' => 'Indonesia', 'lat' => -1.2683, 'lng' => 116.8946, 'tz' => 'Asia/Makassar'],
+            // Vietnam
+            ['iata' => 'SGN', 'name' => 'Tan Son Nhat', 'city' => 'Ho Chi Minh City', 'country' => 'Vietnam', 'lat' => 10.8188, 'lng' => 106.6520, 'tz' => 'Asia/Ho_Chi_Minh'],
+            ['iata' => 'HAN', 'name' => 'Noi Bai International', 'city' => 'Hanoi', 'country' => 'Vietnam', 'lat' => 21.2212, 'lng' => 105.8070, 'tz' => 'Asia/Ho_Chi_Minh'],
+            ['iata' => 'DAD', 'name' => 'Da Nang International', 'city' => 'Da Nang', 'country' => 'Vietnam', 'lat' => 16.0439, 'lng' => 108.1992, 'tz' => 'Asia/Ho_Chi_Minh'],
+            ['iata' => 'CXR', 'name' => 'Cam Ranh International', 'city' => 'Nha Trang', 'country' => 'Vietnam', 'lat' => 11.9982, 'lng' => 109.2194, 'tz' => 'Asia/Ho_Chi_Minh'],
+            ['iata' => 'PQC', 'name' => 'Phu Quoc International', 'city' => 'Phu Quoc', 'country' => 'Vietnam', 'lat' => 10.1698, 'lng' => 103.9931, 'tz' => 'Asia/Ho_Chi_Minh'],
+            ['iata' => 'HUI', 'name' => 'Phu Bai International', 'city' => 'Hue', 'country' => 'Vietnam', 'lat' => 16.4015, 'lng' => 107.7028, 'tz' => 'Asia/Ho_Chi_Minh'],
+            // Cambodia
+            ['iata' => 'PNH', 'name' => 'Phnom Penh International', 'city' => 'Phnom Penh', 'country' => 'Cambodia', 'lat' => 11.5466, 'lng' => 104.8441, 'tz' => 'Asia/Phnom_Penh'],
+            ['iata' => 'REP', 'name' => 'Siem Reap International', 'city' => 'Siem Reap', 'country' => 'Cambodia', 'lat' => 13.4107, 'lng' => 103.8130, 'tz' => 'Asia/Phnom_Penh'],
+            // Myanmar
+            ['iata' => 'RGN', 'name' => 'Yangon International', 'city' => 'Yangon', 'country' => 'Myanmar', 'lat' => 16.9073, 'lng' => 96.1332, 'tz' => 'Asia/Yangon'],
+            ['iata' => 'MDL', 'name' => 'Mandalay International', 'city' => 'Mandalay', 'country' => 'Myanmar', 'lat' => 21.7022, 'lng' => 95.9779, 'tz' => 'Asia/Yangon'],
+            // Laos
+            ['iata' => 'VTE', 'name' => 'Wattay International', 'city' => 'Vientiane', 'country' => 'Laos', 'lat' => 17.9883, 'lng' => 102.5633, 'tz' => 'Asia/Vientiane'],
+            ['iata' => 'LPQ', 'name' => 'Luang Prabang International', 'city' => 'Luang Prabang', 'country' => 'Laos', 'lat' => 19.8973, 'lng' => 102.1611, 'tz' => 'Asia/Vientiane'],
+            // Brunei
+            ['iata' => 'BWN', 'name' => 'Brunei International', 'city' => 'Bandar Seri Begawan', 'country' => 'Brunei', 'lat' => 4.9442, 'lng' => 114.9283, 'tz' => 'Asia/Brunei'],
+            // Timor-Leste
+            ['iata' => 'DIL', 'name' => 'Presidente Nicolau Lobato', 'city' => 'Dili', 'country' => 'Timor-Leste', 'lat' => -8.5464, 'lng' => 125.5247, 'tz' => 'Asia/Dili'],
+
+            // =====================================================================
+            // South Asia (20)
+            // =====================================================================
+            // India
+            ['iata' => 'DEL', 'name' => 'Indira Gandhi International', 'city' => 'New Delhi', 'country' => 'India', 'lat' => 28.5562, 'lng' => 77.1000, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'BOM', 'name' => 'Chhatrapati Shivaji', 'city' => 'Mumbai', 'country' => 'India', 'lat' => 19.0896, 'lng' => 72.8656, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'BLR', 'name' => 'Kempegowda International', 'city' => 'Bangalore', 'country' => 'India', 'lat' => 13.1986, 'lng' => 77.7066, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'MAA', 'name' => 'Chennai International', 'city' => 'Chennai', 'country' => 'India', 'lat' => 12.9941, 'lng' => 80.1709, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'CCU', 'name' => 'Netaji Subhash Chandra Bose', 'city' => 'Kolkata', 'country' => 'India', 'lat' => 22.6547, 'lng' => 88.4467, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'HYD', 'name' => 'Rajiv Gandhi International', 'city' => 'Hyderabad', 'country' => 'India', 'lat' => 17.2403, 'lng' => 78.4294, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'COK', 'name' => 'Cochin International', 'city' => 'Kochi', 'country' => 'India', 'lat' => 10.1520, 'lng' => 76.4019, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'GOI', 'name' => 'Goa International', 'city' => 'Goa', 'country' => 'India', 'lat' => 15.3808, 'lng' => 73.8314, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'AMD', 'name' => 'Sardar Vallabhbhai Patel', 'city' => 'Ahmedabad', 'country' => 'India', 'lat' => 23.0772, 'lng' => 72.6347, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'JAI', 'name' => 'Jaipur International', 'city' => 'Jaipur', 'country' => 'India', 'lat' => 26.8242, 'lng' => 75.8122, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'TRV', 'name' => 'Trivandrum International', 'city' => 'Thiruvananthapuram', 'country' => 'India', 'lat' => 8.4821, 'lng' => 76.9201, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'PNQ', 'name' => 'Pune Airport', 'city' => 'Pune', 'country' => 'India', 'lat' => 18.5822, 'lng' => 73.9197, 'tz' => 'Asia/Kolkata'],
+            // Sri Lanka
+            ['iata' => 'CMB', 'name' => 'Bandaranaike International', 'city' => 'Colombo', 'country' => 'Sri Lanka', 'lat' => 7.1808, 'lng' => 79.8841, 'tz' => 'Asia/Colombo'],
+            // Nepal
+            ['iata' => 'KTM', 'name' => 'Tribhuvan International', 'city' => 'Kathmandu', 'country' => 'Nepal', 'lat' => 27.6966, 'lng' => 85.3591, 'tz' => 'Asia/Kathmandu'],
+            // Bangladesh
+            ['iata' => 'DAC', 'name' => 'Hazrat Shahjalal International', 'city' => 'Dhaka', 'country' => 'Bangladesh', 'lat' => 23.8432, 'lng' => 90.3978, 'tz' => 'Asia/Dhaka'],
+            ['iata' => 'CGP', 'name' => 'Shah Amanat International', 'city' => 'Chittagong', 'country' => 'Bangladesh', 'lat' => 22.2496, 'lng' => 91.8133, 'tz' => 'Asia/Dhaka'],
+            // Pakistan
+            ['iata' => 'ISB', 'name' => 'Islamabad International', 'city' => 'Islamabad', 'country' => 'Pakistan', 'lat' => 33.5605, 'lng' => 72.8526, 'tz' => 'Asia/Karachi'],
+            ['iata' => 'KHI', 'name' => 'Jinnah International', 'city' => 'Karachi', 'country' => 'Pakistan', 'lat' => 24.9065, 'lng' => 67.1610, 'tz' => 'Asia/Karachi'],
+            ['iata' => 'LHE', 'name' => 'Allama Iqbal International', 'city' => 'Lahore', 'country' => 'Pakistan', 'lat' => 31.5216, 'lng' => 74.4036, 'tz' => 'Asia/Karachi'],
+            // Maldives
+            ['iata' => 'MLE', 'name' => 'Velana International', 'city' => 'Malé', 'country' => 'Maldives', 'lat' => 4.1918, 'lng' => 73.5290, 'tz' => 'Indian/Maldives'],
+
+            // =====================================================================
+            // Central Asia / East Asia (other) (8)
+            // =====================================================================
+            ['iata' => 'ULN', 'name' => 'Chinggis Khaan International', 'city' => 'Ulaanbaatar', 'country' => 'Mongolia', 'lat' => 47.8432, 'lng' => 106.7665, 'tz' => 'Asia/Ulaanbaatar'],
+            ['iata' => 'TAS', 'name' => 'Islam Karimov Tashkent', 'city' => 'Tashkent', 'country' => 'Uzbekistan', 'lat' => 41.2581, 'lng' => 69.2813, 'tz' => 'Asia/Tashkent'],
+            ['iata' => 'FNJ', 'name' => 'Sunan International', 'city' => 'Pyongyang', 'country' => 'North Korea', 'lat' => 39.2241, 'lng' => 125.6700, 'tz' => 'Asia/Pyongyang'],
+            ['iata' => 'ALA', 'name' => 'Almaty International', 'city' => 'Almaty', 'country' => 'Kazakhstan', 'lat' => 43.3521, 'lng' => 77.0405, 'tz' => 'Asia/Almaty'],
+            ['iata' => 'NQZ', 'name' => 'Nursultan Nazarbayev', 'city' => 'Astana', 'country' => 'Kazakhstan', 'lat' => 51.0222, 'lng' => 71.4669, 'tz' => 'Asia/Almaty'],
+            ['iata' => 'GYD', 'name' => 'Heydar Aliyev International', 'city' => 'Baku', 'country' => 'Azerbaijan', 'lat' => 40.4675, 'lng' => 50.0467, 'tz' => 'Asia/Baku'],
+            ['iata' => 'TBS', 'name' => 'Tbilisi International', 'city' => 'Tbilisi', 'country' => 'Georgia', 'lat' => 41.6692, 'lng' => 44.9547, 'tz' => 'Asia/Tbilisi'],
+            ['iata' => 'EVN', 'name' => 'Zvartnots International', 'city' => 'Yerevan', 'country' => 'Armenia', 'lat' => 40.1473, 'lng' => 44.3959, 'tz' => 'Asia/Yerevan'],
+
+            // =====================================================================
+            // Middle East (20)
+            // =====================================================================
+            ['iata' => 'DXB', 'name' => 'Dubai International', 'city' => 'Dubai', 'country' => 'UAE', 'lat' => 25.2532, 'lng' => 55.3657, 'tz' => 'Asia/Dubai'],
+            ['iata' => 'AUH', 'name' => 'Abu Dhabi International', 'city' => 'Abu Dhabi', 'country' => 'UAE', 'lat' => 24.4330, 'lng' => 54.6511, 'tz' => 'Asia/Dubai'],
+            ['iata' => 'SHJ', 'name' => 'Sharjah International', 'city' => 'Sharjah', 'country' => 'UAE', 'lat' => 25.3286, 'lng' => 55.5172, 'tz' => 'Asia/Dubai'],
+            ['iata' => 'DWC', 'name' => 'Al Maktoum International', 'city' => 'Dubai', 'country' => 'UAE', 'lat' => 24.8964, 'lng' => 55.1614, 'tz' => 'Asia/Dubai'],
+            ['iata' => 'DOH', 'name' => 'Hamad International', 'city' => 'Doha', 'country' => 'Qatar', 'lat' => 25.2731, 'lng' => 51.6081, 'tz' => 'Asia/Qatar'],
+            ['iata' => 'RUH', 'name' => 'King Khalid International', 'city' => 'Riyadh', 'country' => 'Saudi Arabia', 'lat' => 24.9576, 'lng' => 46.6988, 'tz' => 'Asia/Riyadh'],
+            ['iata' => 'JED', 'name' => 'King Abdulaziz International', 'city' => 'Jeddah', 'country' => 'Saudi Arabia', 'lat' => 21.6796, 'lng' => 39.1565, 'tz' => 'Asia/Riyadh'],
+            ['iata' => 'DMM', 'name' => 'King Fahd International', 'city' => 'Dammam', 'country' => 'Saudi Arabia', 'lat' => 26.4712, 'lng' => 49.7979, 'tz' => 'Asia/Riyadh'],
+            ['iata' => 'MED', 'name' => 'Prince Mohammad bin Abdulaziz', 'city' => 'Medina', 'country' => 'Saudi Arabia', 'lat' => 24.5534, 'lng' => 39.7051, 'tz' => 'Asia/Riyadh'],
+            ['iata' => 'BAH', 'name' => 'Bahrain International', 'city' => 'Manama', 'country' => 'Bahrain', 'lat' => 26.2708, 'lng' => 50.6336, 'tz' => 'Asia/Bahrain'],
+            ['iata' => 'KWI', 'name' => 'Kuwait International', 'city' => 'Kuwait City', 'country' => 'Kuwait', 'lat' => 29.2266, 'lng' => 47.9689, 'tz' => 'Asia/Kuwait'],
+            ['iata' => 'MCT', 'name' => 'Muscat International', 'city' => 'Muscat', 'country' => 'Oman', 'lat' => 23.5933, 'lng' => 58.2844, 'tz' => 'Asia/Muscat'],
+            ['iata' => 'AMM', 'name' => 'Queen Alia International', 'city' => 'Amman', 'country' => 'Jordan', 'lat' => 31.7226, 'lng' => 35.9932, 'tz' => 'Asia/Amman'],
+            ['iata' => 'BEY', 'name' => 'Rafic Hariri International', 'city' => 'Beirut', 'country' => 'Lebanon', 'lat' => 33.8209, 'lng' => 35.4884, 'tz' => 'Asia/Beirut'],
+            ['iata' => 'TLV', 'name' => 'Ben Gurion', 'city' => 'Tel Aviv', 'country' => 'Israel', 'lat' => 32.0114, 'lng' => 34.8867, 'tz' => 'Asia/Jerusalem'],
+            ['iata' => 'BGW', 'name' => 'Baghdad International', 'city' => 'Baghdad', 'country' => 'Iraq', 'lat' => 33.2625, 'lng' => 44.2346, 'tz' => 'Asia/Baghdad'],
+            ['iata' => 'EBL', 'name' => 'Erbil International', 'city' => 'Erbil', 'country' => 'Iraq', 'lat' => 36.2376, 'lng' => 43.9632, 'tz' => 'Asia/Baghdad'],
+            ['iata' => 'IKA', 'name' => 'Imam Khomeini International', 'city' => 'Tehran', 'country' => 'Iran', 'lat' => 35.4161, 'lng' => 51.1522, 'tz' => 'Asia/Tehran'],
+            ['iata' => 'THR', 'name' => 'Mehrabad International', 'city' => 'Tehran', 'country' => 'Iran', 'lat' => 35.6892, 'lng' => 51.3134, 'tz' => 'Asia/Tehran'],
+            ['iata' => 'ADE', 'name' => 'Aden International', 'city' => 'Aden', 'country' => 'Yemen', 'lat' => 12.8295, 'lng' => 45.0288, 'tz' => 'Asia/Aden'],
+
+            // =====================================================================
+            // Europe (100)
+            // =====================================================================
+            // United Kingdom & Ireland
+            ['iata' => 'LHR', 'name' => 'Heathrow', 'city' => 'London', 'country' => 'United Kingdom', 'lat' => 51.4700, 'lng' => -0.4543, 'tz' => 'Europe/London'],
+            ['iata' => 'LGW', 'name' => 'Gatwick', 'city' => 'London', 'country' => 'United Kingdom', 'lat' => 51.1537, 'lng' => -0.1821, 'tz' => 'Europe/London'],
+            ['iata' => 'STN', 'name' => 'Stansted', 'city' => 'London', 'country' => 'United Kingdom', 'lat' => 51.8860, 'lng' => 0.2389, 'tz' => 'Europe/London'],
+            ['iata' => 'LTN', 'name' => 'Luton', 'city' => 'London', 'country' => 'United Kingdom', 'lat' => 51.8747, 'lng' => -0.3683, 'tz' => 'Europe/London'],
+            ['iata' => 'LCY', 'name' => 'London City', 'city' => 'London', 'country' => 'United Kingdom', 'lat' => 51.5053, 'lng' => 0.0553, 'tz' => 'Europe/London'],
+            ['iata' => 'MAN', 'name' => 'Manchester', 'city' => 'Manchester', 'country' => 'United Kingdom', 'lat' => 53.3537, 'lng' => -2.2750, 'tz' => 'Europe/London'],
+            ['iata' => 'EDI', 'name' => 'Edinburgh', 'city' => 'Edinburgh', 'country' => 'United Kingdom', 'lat' => 55.9508, 'lng' => -3.3726, 'tz' => 'Europe/London'],
+            ['iata' => 'GLA', 'name' => 'Glasgow', 'city' => 'Glasgow', 'country' => 'United Kingdom', 'lat' => 55.8642, 'lng' => -4.4331, 'tz' => 'Europe/London'],
+            ['iata' => 'BHX', 'name' => 'Birmingham', 'city' => 'Birmingham', 'country' => 'United Kingdom', 'lat' => 52.4539, 'lng' => -1.7480, 'tz' => 'Europe/London'],
+            ['iata' => 'BFS', 'name' => 'Belfast International', 'city' => 'Belfast', 'country' => 'United Kingdom', 'lat' => 54.6575, 'lng' => -6.2158, 'tz' => 'Europe/London'],
+            ['iata' => 'BRS', 'name' => 'Bristol', 'city' => 'Bristol', 'country' => 'United Kingdom', 'lat' => 51.3827, 'lng' => -2.7191, 'tz' => 'Europe/London'],
+            ['iata' => 'NCL', 'name' => 'Newcastle', 'city' => 'Newcastle', 'country' => 'United Kingdom', 'lat' => 55.0374, 'lng' => -1.6917, 'tz' => 'Europe/London'],
+            ['iata' => 'DUB', 'name' => 'Dublin', 'city' => 'Dublin', 'country' => 'Ireland', 'lat' => 53.4264, 'lng' => -6.2499, 'tz' => 'Europe/Dublin'],
+            ['iata' => 'SNN', 'name' => 'Shannon', 'city' => 'Shannon', 'country' => 'Ireland', 'lat' => 52.7020, 'lng' => -8.9248, 'tz' => 'Europe/Dublin'],
+            ['iata' => 'ORK', 'name' => 'Cork', 'city' => 'Cork', 'country' => 'Ireland', 'lat' => 51.8413, 'lng' => -8.4912, 'tz' => 'Europe/Dublin'],
+            // France
+            ['iata' => 'CDG', 'name' => 'Charles de Gaulle', 'city' => 'Paris', 'country' => 'France', 'lat' => 49.0097, 'lng' => 2.5478, 'tz' => 'Europe/Paris'],
+            ['iata' => 'ORY', 'name' => 'Orly', 'city' => 'Paris', 'country' => 'France', 'lat' => 48.7233, 'lng' => 2.3794, 'tz' => 'Europe/Paris'],
+            ['iata' => 'NCE', 'name' => 'Nice Côte d\'Azur', 'city' => 'Nice', 'country' => 'France', 'lat' => 43.6584, 'lng' => 7.2159, 'tz' => 'Europe/Paris'],
+            ['iata' => 'LYS', 'name' => 'Lyon-Saint Exupéry', 'city' => 'Lyon', 'country' => 'France', 'lat' => 45.7256, 'lng' => 5.0811, 'tz' => 'Europe/Paris'],
+            ['iata' => 'MRS', 'name' => 'Marseille Provence', 'city' => 'Marseille', 'country' => 'France', 'lat' => 43.4393, 'lng' => 5.2214, 'tz' => 'Europe/Paris'],
+            ['iata' => 'TLS', 'name' => 'Toulouse-Blagnac', 'city' => 'Toulouse', 'country' => 'France', 'lat' => 43.6293, 'lng' => 1.3638, 'tz' => 'Europe/Paris'],
+            ['iata' => 'BOD', 'name' => 'Bordeaux-Mérignac', 'city' => 'Bordeaux', 'country' => 'France', 'lat' => 44.8283, 'lng' => -0.7156, 'tz' => 'Europe/Paris'],
+            // Germany
+            ['iata' => 'FRA', 'name' => 'Frankfurt', 'city' => 'Frankfurt', 'country' => 'Germany', 'lat' => 50.0379, 'lng' => 8.5622, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'MUC', 'name' => 'Munich', 'city' => 'Munich', 'country' => 'Germany', 'lat' => 48.3538, 'lng' => 11.7861, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'BER', 'name' => 'Berlin Brandenburg', 'city' => 'Berlin', 'country' => 'Germany', 'lat' => 52.3667, 'lng' => 13.5033, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'DUS', 'name' => 'Düsseldorf', 'city' => 'Düsseldorf', 'country' => 'Germany', 'lat' => 51.2895, 'lng' => 6.7668, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'HAM', 'name' => 'Hamburg', 'city' => 'Hamburg', 'country' => 'Germany', 'lat' => 53.6304, 'lng' => 9.9882, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'CGN', 'name' => 'Cologne Bonn', 'city' => 'Cologne', 'country' => 'Germany', 'lat' => 50.8659, 'lng' => 7.1427, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'STR', 'name' => 'Stuttgart', 'city' => 'Stuttgart', 'country' => 'Germany', 'lat' => 48.6899, 'lng' => 9.2220, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'HAJ', 'name' => 'Hannover', 'city' => 'Hannover', 'country' => 'Germany', 'lat' => 52.4611, 'lng' => 9.6850, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'NUE', 'name' => 'Nuremberg', 'city' => 'Nuremberg', 'country' => 'Germany', 'lat' => 49.4987, 'lng' => 11.0669, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'LEJ', 'name' => 'Leipzig/Halle', 'city' => 'Leipzig', 'country' => 'Germany', 'lat' => 51.4324, 'lng' => 12.2416, 'tz' => 'Europe/Berlin'],
+            // Netherlands / Belgium / Luxembourg
+            ['iata' => 'AMS', 'name' => 'Schiphol', 'city' => 'Amsterdam', 'country' => 'Netherlands', 'lat' => 52.3086, 'lng' => 4.7639, 'tz' => 'Europe/Amsterdam'],
+            ['iata' => 'EIN', 'name' => 'Eindhoven', 'city' => 'Eindhoven', 'country' => 'Netherlands', 'lat' => 51.4501, 'lng' => 5.3743, 'tz' => 'Europe/Amsterdam'],
+            ['iata' => 'BRU', 'name' => 'Brussels', 'city' => 'Brussels', 'country' => 'Belgium', 'lat' => 50.9014, 'lng' => 4.4844, 'tz' => 'Europe/Brussels'],
+            ['iata' => 'LUX', 'name' => 'Luxembourg', 'city' => 'Luxembourg', 'country' => 'Luxembourg', 'lat' => 49.6233, 'lng' => 6.2044, 'tz' => 'Europe/Luxembourg'],
+            // Spain & Portugal
+            ['iata' => 'MAD', 'name' => 'Adolfo Suárez Madrid-Barajas', 'city' => 'Madrid', 'country' => 'Spain', 'lat' => 40.4983, 'lng' => -3.5676, 'tz' => 'Europe/Madrid'],
+            ['iata' => 'BCN', 'name' => 'Josep Tarradellas', 'city' => 'Barcelona', 'country' => 'Spain', 'lat' => 41.2971, 'lng' => 2.0785, 'tz' => 'Europe/Madrid'],
+            ['iata' => 'PMI', 'name' => 'Palma de Mallorca', 'city' => 'Palma', 'country' => 'Spain', 'lat' => 39.5517, 'lng' => 2.7388, 'tz' => 'Europe/Madrid'],
+            ['iata' => 'AGP', 'name' => 'Málaga-Costa del Sol', 'city' => 'Málaga', 'country' => 'Spain', 'lat' => 36.6749, 'lng' => -4.4991, 'tz' => 'Europe/Madrid'],
+            ['iata' => 'ALC', 'name' => 'Alicante-Elche', 'city' => 'Alicante', 'country' => 'Spain', 'lat' => 38.2822, 'lng' => -0.5582, 'tz' => 'Europe/Madrid'],
+            ['iata' => 'TFS', 'name' => 'Tenerife South', 'city' => 'Tenerife', 'country' => 'Spain', 'lat' => 28.0445, 'lng' => -16.5725, 'tz' => 'Atlantic/Canary'],
+            ['iata' => 'LPA', 'name' => 'Gran Canaria', 'city' => 'Las Palmas', 'country' => 'Spain', 'lat' => 27.9319, 'lng' => -15.3866, 'tz' => 'Atlantic/Canary'],
+            ['iata' => 'IBZ', 'name' => 'Ibiza', 'city' => 'Ibiza', 'country' => 'Spain', 'lat' => 38.8729, 'lng' => 1.3731, 'tz' => 'Europe/Madrid'],
+            ['iata' => 'SVQ', 'name' => 'Sevilla', 'city' => 'Seville', 'country' => 'Spain', 'lat' => 37.4180, 'lng' => -5.8931, 'tz' => 'Europe/Madrid'],
+            ['iata' => 'VLC', 'name' => 'Valencia', 'city' => 'Valencia', 'country' => 'Spain', 'lat' => 39.4893, 'lng' => -0.4816, 'tz' => 'Europe/Madrid'],
+            ['iata' => 'BIO', 'name' => 'Bilbao', 'city' => 'Bilbao', 'country' => 'Spain', 'lat' => 43.3011, 'lng' => -2.9106, 'tz' => 'Europe/Madrid'],
+            ['iata' => 'LIS', 'name' => 'Humberto Delgado', 'city' => 'Lisbon', 'country' => 'Portugal', 'lat' => 38.7813, 'lng' => -9.1359, 'tz' => 'Europe/Lisbon'],
+            ['iata' => 'OPO', 'name' => 'Francisco Sá Carneiro', 'city' => 'Porto', 'country' => 'Portugal', 'lat' => 41.2481, 'lng' => -8.6814, 'tz' => 'Europe/Lisbon'],
+            ['iata' => 'FAO', 'name' => 'Faro', 'city' => 'Faro', 'country' => 'Portugal', 'lat' => 37.0144, 'lng' => -7.9659, 'tz' => 'Europe/Lisbon'],
+            ['iata' => 'FNC', 'name' => 'Madeira', 'city' => 'Funchal', 'country' => 'Portugal', 'lat' => 32.6948, 'lng' => -16.7745, 'tz' => 'Atlantic/Madeira'],
+            // Italy
+            ['iata' => 'FCO', 'name' => 'Leonardo da Vinci-Fiumicino', 'city' => 'Rome', 'country' => 'Italy', 'lat' => 41.8003, 'lng' => 12.2389, 'tz' => 'Europe/Rome'],
+            ['iata' => 'MXP', 'name' => 'Malpensa', 'city' => 'Milan', 'country' => 'Italy', 'lat' => 45.6306, 'lng' => 8.7281, 'tz' => 'Europe/Rome'],
+            ['iata' => 'LIN', 'name' => 'Linate', 'city' => 'Milan', 'country' => 'Italy', 'lat' => 45.4454, 'lng' => 9.2778, 'tz' => 'Europe/Rome'],
+            ['iata' => 'VCE', 'name' => 'Marco Polo', 'city' => 'Venice', 'country' => 'Italy', 'lat' => 45.5053, 'lng' => 12.3519, 'tz' => 'Europe/Rome'],
+            ['iata' => 'NAP', 'name' => 'Capodichino', 'city' => 'Naples', 'country' => 'Italy', 'lat' => 40.8860, 'lng' => 14.2908, 'tz' => 'Europe/Rome'],
+            ['iata' => 'FLR', 'name' => 'Peretola', 'city' => 'Florence', 'country' => 'Italy', 'lat' => 43.8100, 'lng' => 11.2051, 'tz' => 'Europe/Rome'],
+            ['iata' => 'BGY', 'name' => 'Orio al Serio', 'city' => 'Bergamo', 'country' => 'Italy', 'lat' => 45.6739, 'lng' => 9.7041, 'tz' => 'Europe/Rome'],
+            ['iata' => 'BLQ', 'name' => 'Guglielmo Marconi', 'city' => 'Bologna', 'country' => 'Italy', 'lat' => 44.5354, 'lng' => 11.2887, 'tz' => 'Europe/Rome'],
+            ['iata' => 'CTA', 'name' => 'Fontanarossa', 'city' => 'Catania', 'country' => 'Italy', 'lat' => 37.4668, 'lng' => 15.0664, 'tz' => 'Europe/Rome'],
+            ['iata' => 'PMO', 'name' => 'Falcone-Borsellino', 'city' => 'Palermo', 'country' => 'Italy', 'lat' => 38.1760, 'lng' => 13.0910, 'tz' => 'Europe/Rome'],
+            // Switzerland & Austria
+            ['iata' => 'ZRH', 'name' => 'Zurich', 'city' => 'Zurich', 'country' => 'Switzerland', 'lat' => 47.4647, 'lng' => 8.5492, 'tz' => 'Europe/Zurich'],
+            ['iata' => 'GVA', 'name' => 'Geneva', 'city' => 'Geneva', 'country' => 'Switzerland', 'lat' => 46.2381, 'lng' => 6.1089, 'tz' => 'Europe/Zurich'],
+            ['iata' => 'BSL', 'name' => 'Basel-Mulhouse-Freiburg', 'city' => 'Basel', 'country' => 'Switzerland', 'lat' => 47.5990, 'lng' => 7.5299, 'tz' => 'Europe/Zurich'],
+            ['iata' => 'VIE', 'name' => 'Vienna International', 'city' => 'Vienna', 'country' => 'Austria', 'lat' => 48.1103, 'lng' => 16.5697, 'tz' => 'Europe/Vienna'],
+            ['iata' => 'INN', 'name' => 'Innsbruck', 'city' => 'Innsbruck', 'country' => 'Austria', 'lat' => 47.2602, 'lng' => 11.3440, 'tz' => 'Europe/Vienna'],
+            ['iata' => 'SZG', 'name' => 'Salzburg', 'city' => 'Salzburg', 'country' => 'Austria', 'lat' => 47.7933, 'lng' => 13.0043, 'tz' => 'Europe/Vienna'],
+            // Scandinavia
+            ['iata' => 'CPH', 'name' => 'Copenhagen', 'city' => 'Copenhagen', 'country' => 'Denmark', 'lat' => 55.6180, 'lng' => 12.6508, 'tz' => 'Europe/Copenhagen'],
+            ['iata' => 'ARN', 'name' => 'Stockholm Arlanda', 'city' => 'Stockholm', 'country' => 'Sweden', 'lat' => 59.6519, 'lng' => 17.9186, 'tz' => 'Europe/Stockholm'],
+            ['iata' => 'GOT', 'name' => 'Göteborg Landvetter', 'city' => 'Gothenburg', 'country' => 'Sweden', 'lat' => 57.6628, 'lng' => 12.2798, 'tz' => 'Europe/Stockholm'],
+            ['iata' => 'OSL', 'name' => 'Gardermoen', 'city' => 'Oslo', 'country' => 'Norway', 'lat' => 60.1939, 'lng' => 11.1004, 'tz' => 'Europe/Oslo'],
+            ['iata' => 'BGO', 'name' => 'Bergen Flesland', 'city' => 'Bergen', 'country' => 'Norway', 'lat' => 60.2934, 'lng' => 5.2181, 'tz' => 'Europe/Oslo'],
+            ['iata' => 'TRD', 'name' => 'Trondheim Værnes', 'city' => 'Trondheim', 'country' => 'Norway', 'lat' => 63.4578, 'lng' => 10.9240, 'tz' => 'Europe/Oslo'],
+            ['iata' => 'HEL', 'name' => 'Helsinki-Vantaa', 'city' => 'Helsinki', 'country' => 'Finland', 'lat' => 60.3172, 'lng' => 24.9633, 'tz' => 'Europe/Helsinki'],
+            ['iata' => 'KEF', 'name' => 'Keflavík International', 'city' => 'Reykjavik', 'country' => 'Iceland', 'lat' => 63.9850, 'lng' => -22.6056, 'tz' => 'Atlantic/Reykjavik'],
+            // Eastern Europe
+            ['iata' => 'PRG', 'name' => 'Václav Havel', 'city' => 'Prague', 'country' => 'Czech Republic', 'lat' => 50.1008, 'lng' => 14.2600, 'tz' => 'Europe/Prague'],
+            ['iata' => 'WAW', 'name' => 'Chopin', 'city' => 'Warsaw', 'country' => 'Poland', 'lat' => 52.1657, 'lng' => 20.9671, 'tz' => 'Europe/Warsaw'],
+            ['iata' => 'KRK', 'name' => 'John Paul II', 'city' => 'Krakow', 'country' => 'Poland', 'lat' => 50.0777, 'lng' => 19.7848, 'tz' => 'Europe/Warsaw'],
+            ['iata' => 'GDN', 'name' => 'Gdańsk Lech Wałęsa', 'city' => 'Gdansk', 'country' => 'Poland', 'lat' => 54.3776, 'lng' => 18.4662, 'tz' => 'Europe/Warsaw'],
+            ['iata' => 'BUD', 'name' => 'Budapest Ferenc Liszt', 'city' => 'Budapest', 'country' => 'Hungary', 'lat' => 47.4369, 'lng' => 19.2556, 'tz' => 'Europe/Budapest'],
+            ['iata' => 'OTP', 'name' => 'Henri Coandă', 'city' => 'Bucharest', 'country' => 'Romania', 'lat' => 44.5722, 'lng' => 26.1022, 'tz' => 'Europe/Bucharest'],
+            ['iata' => 'SOF', 'name' => 'Sofia', 'city' => 'Sofia', 'country' => 'Bulgaria', 'lat' => 42.6952, 'lng' => 23.4062, 'tz' => 'Europe/Sofia'],
+            ['iata' => 'BTS', 'name' => 'Bratislava', 'city' => 'Bratislava', 'country' => 'Slovakia', 'lat' => 48.1702, 'lng' => 17.2127, 'tz' => 'Europe/Bratislava'],
+            ['iata' => 'LJU', 'name' => 'Jože Pučnik', 'city' => 'Ljubljana', 'country' => 'Slovenia', 'lat' => 46.2237, 'lng' => 14.4576, 'tz' => 'Europe/Ljubljana'],
+            ['iata' => 'ZAG', 'name' => 'Franjo Tuđman', 'city' => 'Zagreb', 'country' => 'Croatia', 'lat' => 45.7430, 'lng' => 16.0688, 'tz' => 'Europe/Zagreb'],
+            ['iata' => 'DBV', 'name' => 'Dubrovnik', 'city' => 'Dubrovnik', 'country' => 'Croatia', 'lat' => 42.5614, 'lng' => 18.2682, 'tz' => 'Europe/Zagreb'],
+            ['iata' => 'SPU', 'name' => 'Split', 'city' => 'Split', 'country' => 'Croatia', 'lat' => 43.5389, 'lng' => 16.2980, 'tz' => 'Europe/Zagreb'],
+            ['iata' => 'BEG', 'name' => 'Nikola Tesla', 'city' => 'Belgrade', 'country' => 'Serbia', 'lat' => 44.8184, 'lng' => 20.3091, 'tz' => 'Europe/Belgrade'],
+            // Greece & Turkey & Cyprus
+            ['iata' => 'ATH', 'name' => 'Eleftherios Venizelos', 'city' => 'Athens', 'country' => 'Greece', 'lat' => 37.9364, 'lng' => 23.9445, 'tz' => 'Europe/Athens'],
+            ['iata' => 'SKG', 'name' => 'Thessaloniki', 'city' => 'Thessaloniki', 'country' => 'Greece', 'lat' => 40.5197, 'lng' => 22.9709, 'tz' => 'Europe/Athens'],
+            ['iata' => 'HER', 'name' => 'Heraklion', 'city' => 'Heraklion', 'country' => 'Greece', 'lat' => 35.3396, 'lng' => 25.1803, 'tz' => 'Europe/Athens'],
+            ['iata' => 'JTR', 'name' => 'Santorini', 'city' => 'Santorini', 'country' => 'Greece', 'lat' => 36.3992, 'lng' => 25.4793, 'tz' => 'Europe/Athens'],
+            ['iata' => 'JMK', 'name' => 'Mykonos', 'city' => 'Mykonos', 'country' => 'Greece', 'lat' => 37.4351, 'lng' => 25.3481, 'tz' => 'Europe/Athens'],
+            ['iata' => 'CFU', 'name' => 'Corfu', 'city' => 'Corfu', 'country' => 'Greece', 'lat' => 39.6019, 'lng' => 19.9117, 'tz' => 'Europe/Athens'],
+            ['iata' => 'RHO', 'name' => 'Rhodes Diagoras', 'city' => 'Rhodes', 'country' => 'Greece', 'lat' => 36.4054, 'lng' => 28.0862, 'tz' => 'Europe/Athens'],
+            ['iata' => 'IST', 'name' => 'Istanbul', 'city' => 'Istanbul', 'country' => 'Turkey', 'lat' => 41.2753, 'lng' => 28.7519, 'tz' => 'Europe/Istanbul'],
+            ['iata' => 'SAW', 'name' => 'Sabiha Gökçen', 'city' => 'Istanbul', 'country' => 'Turkey', 'lat' => 40.8986, 'lng' => 29.3092, 'tz' => 'Europe/Istanbul'],
+            ['iata' => 'AYT', 'name' => 'Antalya', 'city' => 'Antalya', 'country' => 'Turkey', 'lat' => 36.8987, 'lng' => 30.8005, 'tz' => 'Europe/Istanbul'],
+            ['iata' => 'ADB', 'name' => 'Adnan Menderes', 'city' => 'Izmir', 'country' => 'Turkey', 'lat' => 38.2924, 'lng' => 27.1570, 'tz' => 'Europe/Istanbul'],
+            ['iata' => 'ESB', 'name' => 'Esenboğa', 'city' => 'Ankara', 'country' => 'Turkey', 'lat' => 40.1281, 'lng' => 32.9951, 'tz' => 'Europe/Istanbul'],
+            ['iata' => 'DLM', 'name' => 'Dalaman', 'city' => 'Dalaman', 'country' => 'Turkey', 'lat' => 36.7131, 'lng' => 28.7925, 'tz' => 'Europe/Istanbul'],
+            ['iata' => 'BJV', 'name' => 'Milas-Bodrum', 'city' => 'Bodrum', 'country' => 'Turkey', 'lat' => 37.2506, 'lng' => 27.6643, 'tz' => 'Europe/Istanbul'],
+            ['iata' => 'LCA', 'name' => 'Larnaca International', 'city' => 'Larnaca', 'country' => 'Cyprus', 'lat' => 34.8754, 'lng' => 33.6249, 'tz' => 'Asia/Nicosia'],
+            ['iata' => 'PFO', 'name' => 'Paphos International', 'city' => 'Paphos', 'country' => 'Cyprus', 'lat' => 34.7180, 'lng' => 32.4857, 'tz' => 'Asia/Nicosia'],
+            // Russia & Baltic & Ukraine
+            ['iata' => 'SVO', 'name' => 'Sheremetyevo', 'city' => 'Moscow', 'country' => 'Russia', 'lat' => 55.9726, 'lng' => 37.4146, 'tz' => 'Europe/Moscow'],
+            ['iata' => 'DME', 'name' => 'Domodedovo', 'city' => 'Moscow', 'country' => 'Russia', 'lat' => 55.4088, 'lng' => 37.9063, 'tz' => 'Europe/Moscow'],
+            ['iata' => 'LED', 'name' => 'Pulkovo', 'city' => 'Saint Petersburg', 'country' => 'Russia', 'lat' => 59.8003, 'lng' => 30.2625, 'tz' => 'Europe/Moscow'],
+            ['iata' => 'RIX', 'name' => 'Riga International', 'city' => 'Riga', 'country' => 'Latvia', 'lat' => 56.9236, 'lng' => 23.9711, 'tz' => 'Europe/Riga'],
+            ['iata' => 'TLL', 'name' => 'Tallinn Lennart Meri', 'city' => 'Tallinn', 'country' => 'Estonia', 'lat' => 59.4133, 'lng' => 24.8328, 'tz' => 'Europe/Tallinn'],
+            ['iata' => 'VNO', 'name' => 'Vilnius', 'city' => 'Vilnius', 'country' => 'Lithuania', 'lat' => 54.6341, 'lng' => 25.2858, 'tz' => 'Europe/Vilnius'],
+            // Malta
+            ['iata' => 'MLA', 'name' => 'Malta International', 'city' => 'Valletta', 'country' => 'Malta', 'lat' => 35.8575, 'lng' => 14.4775, 'tz' => 'Europe/Malta'],
+
+            // =====================================================================
+            // North America — United States (55)
+            // =====================================================================
+            ['iata' => 'LAX', 'name' => 'Los Angeles International', 'city' => 'Los Angeles', 'country' => 'United States', 'lat' => 33.9425, 'lng' => -118.4081, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'SFO', 'name' => 'San Francisco International', 'city' => 'San Francisco', 'country' => 'United States', 'lat' => 37.6213, 'lng' => -122.3790, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'JFK', 'name' => 'John F Kennedy International', 'city' => 'New York', 'country' => 'United States', 'lat' => 40.6413, 'lng' => -73.7781, 'tz' => 'America/New_York'],
+            ['iata' => 'EWR', 'name' => 'Newark Liberty International', 'city' => 'Newark', 'country' => 'United States', 'lat' => 40.6895, 'lng' => -74.1745, 'tz' => 'America/New_York'],
+            ['iata' => 'LGA', 'name' => 'LaGuardia', 'city' => 'New York', 'country' => 'United States', 'lat' => 40.7772, 'lng' => -73.8726, 'tz' => 'America/New_York'],
+            ['iata' => 'ORD', 'name' => 'O\'Hare International', 'city' => 'Chicago', 'country' => 'United States', 'lat' => 41.9742, 'lng' => -87.9073, 'tz' => 'America/Chicago'],
+            ['iata' => 'MDW', 'name' => 'Midway International', 'city' => 'Chicago', 'country' => 'United States', 'lat' => 41.7868, 'lng' => -87.7416, 'tz' => 'America/Chicago'],
+            ['iata' => 'ATL', 'name' => 'Hartsfield-Jackson', 'city' => 'Atlanta', 'country' => 'United States', 'lat' => 33.6407, 'lng' => -84.4277, 'tz' => 'America/New_York'],
+            ['iata' => 'DFW', 'name' => 'Dallas/Fort Worth', 'city' => 'Dallas', 'country' => 'United States', 'lat' => 32.8998, 'lng' => -97.0403, 'tz' => 'America/Chicago'],
+            ['iata' => 'DEN', 'name' => 'Denver International', 'city' => 'Denver', 'country' => 'United States', 'lat' => 39.8561, 'lng' => -104.6737, 'tz' => 'America/Denver'],
+            ['iata' => 'SEA', 'name' => 'Seattle-Tacoma', 'city' => 'Seattle', 'country' => 'United States', 'lat' => 47.4502, 'lng' => -122.3088, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'MIA', 'name' => 'Miami International', 'city' => 'Miami', 'country' => 'United States', 'lat' => 25.7959, 'lng' => -80.2870, 'tz' => 'America/New_York'],
+            ['iata' => 'FLL', 'name' => 'Fort Lauderdale-Hollywood', 'city' => 'Fort Lauderdale', 'country' => 'United States', 'lat' => 26.0726, 'lng' => -80.1527, 'tz' => 'America/New_York'],
+            ['iata' => 'BOS', 'name' => 'Logan International', 'city' => 'Boston', 'country' => 'United States', 'lat' => 42.3656, 'lng' => -71.0096, 'tz' => 'America/New_York'],
+            ['iata' => 'IAD', 'name' => 'Washington Dulles', 'city' => 'Washington DC', 'country' => 'United States', 'lat' => 38.9531, 'lng' => -77.4565, 'tz' => 'America/New_York'],
+            ['iata' => 'DCA', 'name' => 'Ronald Reagan Washington', 'city' => 'Washington DC', 'country' => 'United States', 'lat' => 38.8512, 'lng' => -77.0402, 'tz' => 'America/New_York'],
+            ['iata' => 'IAH', 'name' => 'George Bush Intercontinental', 'city' => 'Houston', 'country' => 'United States', 'lat' => 29.9844, 'lng' => -95.3414, 'tz' => 'America/Chicago'],
+            ['iata' => 'HOU', 'name' => 'William P Hobby', 'city' => 'Houston', 'country' => 'United States', 'lat' => 29.6454, 'lng' => -95.2789, 'tz' => 'America/Chicago'],
+            ['iata' => 'MSP', 'name' => 'Minneapolis-Saint Paul', 'city' => 'Minneapolis', 'country' => 'United States', 'lat' => 44.8820, 'lng' => -93.2218, 'tz' => 'America/Chicago'],
+            ['iata' => 'DTW', 'name' => 'Detroit Metropolitan', 'city' => 'Detroit', 'country' => 'United States', 'lat' => 42.2124, 'lng' => -83.3534, 'tz' => 'America/Detroit'],
+            ['iata' => 'PHL', 'name' => 'Philadelphia International', 'city' => 'Philadelphia', 'country' => 'United States', 'lat' => 39.8721, 'lng' => -75.2411, 'tz' => 'America/New_York'],
+            ['iata' => 'LAS', 'name' => 'Harry Reid International', 'city' => 'Las Vegas', 'country' => 'United States', 'lat' => 36.0840, 'lng' => -115.1537, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'MCO', 'name' => 'Orlando International', 'city' => 'Orlando', 'country' => 'United States', 'lat' => 28.4312, 'lng' => -81.3081, 'tz' => 'America/New_York'],
+            ['iata' => 'TPA', 'name' => 'Tampa International', 'city' => 'Tampa', 'country' => 'United States', 'lat' => 27.9755, 'lng' => -82.5332, 'tz' => 'America/New_York'],
+            ['iata' => 'HNL', 'name' => 'Daniel K Inouye', 'city' => 'Honolulu', 'country' => 'United States', 'lat' => 21.3187, 'lng' => -157.9225, 'tz' => 'Pacific/Honolulu'],
+            ['iata' => 'OGG', 'name' => 'Kahului', 'city' => 'Maui', 'country' => 'United States', 'lat' => 20.8986, 'lng' => -156.4305, 'tz' => 'Pacific/Honolulu'],
+            ['iata' => 'KOA', 'name' => 'Ellison Onizuka Kona', 'city' => 'Kona', 'country' => 'United States', 'lat' => 19.7389, 'lng' => -156.0456, 'tz' => 'Pacific/Honolulu'],
+            ['iata' => 'LIH', 'name' => 'Lihue', 'city' => 'Kauai', 'country' => 'United States', 'lat' => 21.9760, 'lng' => -159.3390, 'tz' => 'Pacific/Honolulu'],
+            ['iata' => 'ANC', 'name' => 'Ted Stevens Anchorage', 'city' => 'Anchorage', 'country' => 'United States', 'lat' => 61.1743, 'lng' => -149.9962, 'tz' => 'America/Anchorage'],
+            ['iata' => 'SAN', 'name' => 'San Diego International', 'city' => 'San Diego', 'country' => 'United States', 'lat' => 32.7336, 'lng' => -117.1897, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'PDX', 'name' => 'Portland International', 'city' => 'Portland', 'country' => 'United States', 'lat' => 45.5898, 'lng' => -122.5951, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'SJC', 'name' => 'San José Mineta', 'city' => 'San Jose', 'country' => 'United States', 'lat' => 37.3626, 'lng' => -121.9291, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'OAK', 'name' => 'Oakland International', 'city' => 'Oakland', 'country' => 'United States', 'lat' => 37.7213, 'lng' => -122.2208, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'CLT', 'name' => 'Charlotte Douglas', 'city' => 'Charlotte', 'country' => 'United States', 'lat' => 35.2141, 'lng' => -80.9431, 'tz' => 'America/New_York'],
+            ['iata' => 'PHX', 'name' => 'Phoenix Sky Harbor', 'city' => 'Phoenix', 'country' => 'United States', 'lat' => 33.4373, 'lng' => -112.0078, 'tz' => 'America/Phoenix'],
+            ['iata' => 'SLC', 'name' => 'Salt Lake City International', 'city' => 'Salt Lake City', 'country' => 'United States', 'lat' => 40.7884, 'lng' => -111.9778, 'tz' => 'America/Denver'],
+            ['iata' => 'RDU', 'name' => 'Raleigh-Durham', 'city' => 'Raleigh', 'country' => 'United States', 'lat' => 35.8776, 'lng' => -78.7875, 'tz' => 'America/New_York'],
+            ['iata' => 'BNA', 'name' => 'Nashville International', 'city' => 'Nashville', 'country' => 'United States', 'lat' => 36.1263, 'lng' => -86.6774, 'tz' => 'America/Chicago'],
+            ['iata' => 'AUS', 'name' => 'Austin-Bergstrom', 'city' => 'Austin', 'country' => 'United States', 'lat' => 30.1975, 'lng' => -97.6664, 'tz' => 'America/Chicago'],
+            ['iata' => 'SAT', 'name' => 'San Antonio International', 'city' => 'San Antonio', 'country' => 'United States', 'lat' => 29.5337, 'lng' => -98.4698, 'tz' => 'America/Chicago'],
+            ['iata' => 'MCI', 'name' => 'Kansas City International', 'city' => 'Kansas City', 'country' => 'United States', 'lat' => 39.2976, 'lng' => -94.7139, 'tz' => 'America/Chicago'],
+            ['iata' => 'STL', 'name' => 'St Louis Lambert', 'city' => 'St Louis', 'country' => 'United States', 'lat' => 38.7487, 'lng' => -90.3700, 'tz' => 'America/Chicago'],
+            ['iata' => 'PIT', 'name' => 'Pittsburgh International', 'city' => 'Pittsburgh', 'country' => 'United States', 'lat' => 40.4915, 'lng' => -80.2329, 'tz' => 'America/New_York'],
+            ['iata' => 'CLE', 'name' => 'Cleveland Hopkins', 'city' => 'Cleveland', 'country' => 'United States', 'lat' => 41.4117, 'lng' => -81.8498, 'tz' => 'America/New_York'],
+            ['iata' => 'CMH', 'name' => 'John Glenn Columbus', 'city' => 'Columbus', 'country' => 'United States', 'lat' => 39.9980, 'lng' => -82.8919, 'tz' => 'America/New_York'],
+            ['iata' => 'IND', 'name' => 'Indianapolis International', 'city' => 'Indianapolis', 'country' => 'United States', 'lat' => 39.7173, 'lng' => -86.2944, 'tz' => 'America/Indiana/Indianapolis'],
+            ['iata' => 'CVG', 'name' => 'Cincinnati/Northern Kentucky', 'city' => 'Cincinnati', 'country' => 'United States', 'lat' => 39.0488, 'lng' => -84.6678, 'tz' => 'America/New_York'],
+            ['iata' => 'MKE', 'name' => 'General Mitchell', 'city' => 'Milwaukee', 'country' => 'United States', 'lat' => 42.9472, 'lng' => -87.8966, 'tz' => 'America/Chicago'],
+            ['iata' => 'MSY', 'name' => 'Louis Armstrong New Orleans', 'city' => 'New Orleans', 'country' => 'United States', 'lat' => 29.9934, 'lng' => -90.2580, 'tz' => 'America/Chicago'],
+            ['iata' => 'JAX', 'name' => 'Jacksonville International', 'city' => 'Jacksonville', 'country' => 'United States', 'lat' => 30.4941, 'lng' => -81.6879, 'tz' => 'America/New_York'],
+            ['iata' => 'SDF', 'name' => 'Louisville Muhammad Ali', 'city' => 'Louisville', 'country' => 'United States', 'lat' => 38.1744, 'lng' => -85.7360, 'tz' => 'America/Kentucky/Louisville'],
+            ['iata' => 'BWI', 'name' => 'Baltimore/Washington', 'city' => 'Baltimore', 'country' => 'United States', 'lat' => 39.1754, 'lng' => -76.6684, 'tz' => 'America/New_York'],
+            ['iata' => 'RSW', 'name' => 'Southwest Florida', 'city' => 'Fort Myers', 'country' => 'United States', 'lat' => 26.5362, 'lng' => -81.7552, 'tz' => 'America/New_York'],
+            ['iata' => 'SMF', 'name' => 'Sacramento International', 'city' => 'Sacramento', 'country' => 'United States', 'lat' => 38.6954, 'lng' => -121.5908, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'BUF', 'name' => 'Buffalo Niagara', 'city' => 'Buffalo', 'country' => 'United States', 'lat' => 42.9405, 'lng' => -78.7322, 'tz' => 'America/New_York'],
+
+            // =====================================================================
+            // North America — Canada (15)
+            // =====================================================================
+            ['iata' => 'YVR', 'name' => 'Vancouver International', 'city' => 'Vancouver', 'country' => 'Canada', 'lat' => 49.1947, 'lng' => -123.1790, 'tz' => 'America/Vancouver'],
+            ['iata' => 'YYZ', 'name' => 'Toronto Pearson', 'city' => 'Toronto', 'country' => 'Canada', 'lat' => 43.6777, 'lng' => -79.6248, 'tz' => 'America/Toronto'],
+            ['iata' => 'YUL', 'name' => 'Montréal-Trudeau', 'city' => 'Montreal', 'country' => 'Canada', 'lat' => 45.4706, 'lng' => -73.7408, 'tz' => 'America/Toronto'],
+            ['iata' => 'YYC', 'name' => 'Calgary International', 'city' => 'Calgary', 'country' => 'Canada', 'lat' => 51.1215, 'lng' => -114.0076, 'tz' => 'America/Edmonton'],
+            ['iata' => 'YEG', 'name' => 'Edmonton International', 'city' => 'Edmonton', 'country' => 'Canada', 'lat' => 53.3097, 'lng' => -113.5797, 'tz' => 'America/Edmonton'],
+            ['iata' => 'YOW', 'name' => 'Ottawa Macdonald-Cartier', 'city' => 'Ottawa', 'country' => 'Canada', 'lat' => 45.3225, 'lng' => -75.6692, 'tz' => 'America/Toronto'],
+            ['iata' => 'YWG', 'name' => 'Winnipeg James Armstrong', 'city' => 'Winnipeg', 'country' => 'Canada', 'lat' => 49.9100, 'lng' => -97.2399, 'tz' => 'America/Winnipeg'],
+            ['iata' => 'YHZ', 'name' => 'Halifax Stanfield', 'city' => 'Halifax', 'country' => 'Canada', 'lat' => 44.8808, 'lng' => -63.5086, 'tz' => 'America/Halifax'],
+            ['iata' => 'YQB', 'name' => 'Québec City Jean Lesage', 'city' => 'Quebec City', 'country' => 'Canada', 'lat' => 46.7911, 'lng' => -71.3934, 'tz' => 'America/Toronto'],
+            ['iata' => 'YYJ', 'name' => 'Victoria International', 'city' => 'Victoria', 'country' => 'Canada', 'lat' => 48.6469, 'lng' => -123.4258, 'tz' => 'America/Vancouver'],
+            ['iata' => 'YXE', 'name' => 'Saskatoon John G Diefenbaker', 'city' => 'Saskatoon', 'country' => 'Canada', 'lat' => 52.1708, 'lng' => -106.6997, 'tz' => 'America/Regina'],
+            ['iata' => 'YQR', 'name' => 'Regina International', 'city' => 'Regina', 'country' => 'Canada', 'lat' => 50.4319, 'lng' => -104.6656, 'tz' => 'America/Regina'],
+            ['iata' => 'YKA', 'name' => 'Kamloops', 'city' => 'Kamloops', 'country' => 'Canada', 'lat' => 50.7022, 'lng' => -120.4444, 'tz' => 'America/Vancouver'],
+            ['iata' => 'YLW', 'name' => 'Kelowna International', 'city' => 'Kelowna', 'country' => 'Canada', 'lat' => 49.9561, 'lng' => -119.3778, 'tz' => 'America/Vancouver'],
+            ['iata' => 'YSJ', 'name' => 'Saint John', 'city' => 'Saint John', 'country' => 'Canada', 'lat' => 45.3161, 'lng' => -65.8903, 'tz' => 'America/Moncton'],
+
+            // =====================================================================
+            // Mexico (12)
+            // =====================================================================
+            ['iata' => 'MEX', 'name' => 'Benito Juárez International', 'city' => 'Mexico City', 'country' => 'Mexico', 'lat' => 19.4363, 'lng' => -99.0721, 'tz' => 'America/Mexico_City'],
+            ['iata' => 'CUN', 'name' => 'Cancún International', 'city' => 'Cancún', 'country' => 'Mexico', 'lat' => 21.0365, 'lng' => -86.8771, 'tz' => 'America/Cancun'],
+            ['iata' => 'GDL', 'name' => 'Miguel Hidalgo y Costilla', 'city' => 'Guadalajara', 'country' => 'Mexico', 'lat' => 20.5218, 'lng' => -103.3113, 'tz' => 'America/Mexico_City'],
+            ['iata' => 'MTY', 'name' => 'Mariano Escobedo', 'city' => 'Monterrey', 'country' => 'Mexico', 'lat' => 25.7785, 'lng' => -100.1069, 'tz' => 'America/Monterrey'],
+            ['iata' => 'TIJ', 'name' => 'Tijuana International', 'city' => 'Tijuana', 'country' => 'Mexico', 'lat' => 32.5411, 'lng' => -116.9700, 'tz' => 'America/Tijuana'],
+            ['iata' => 'SJD', 'name' => 'Los Cabos International', 'city' => 'San José del Cabo', 'country' => 'Mexico', 'lat' => 23.1518, 'lng' => -109.7215, 'tz' => 'America/Mazatlan'],
+            ['iata' => 'PVR', 'name' => 'Licenciado Gustavo Díaz Ordaz', 'city' => 'Puerto Vallarta', 'country' => 'Mexico', 'lat' => 20.6801, 'lng' => -105.2544, 'tz' => 'America/Mexico_City'],
+            ['iata' => 'MID', 'name' => 'Manuel Crescencio Rejón', 'city' => 'Mérida', 'country' => 'Mexico', 'lat' => 20.9370, 'lng' => -89.6577, 'tz' => 'America/Merida'],
+            ['iata' => 'CJS', 'name' => 'Abraham González', 'city' => 'Ciudad Juárez', 'country' => 'Mexico', 'lat' => 31.6361, 'lng' => -106.4286, 'tz' => 'America/Ojinaga'],
+            ['iata' => 'HMO', 'name' => 'General Ignacio Pesqueira García', 'city' => 'Hermosillo', 'country' => 'Mexico', 'lat' => 29.0959, 'lng' => -111.0478, 'tz' => 'America/Hermosillo'],
+            ['iata' => 'ACA', 'name' => 'General Juan N Álvarez', 'city' => 'Acapulco', 'country' => 'Mexico', 'lat' => 16.7571, 'lng' => -99.7537, 'tz' => 'America/Mexico_City'],
+            ['iata' => 'OAX', 'name' => 'Xoxocotlán International', 'city' => 'Oaxaca', 'country' => 'Mexico', 'lat' => 16.9999, 'lng' => -96.7266, 'tz' => 'America/Mexico_City'],
+
+            // =====================================================================
+            // Central America & Caribbean (15)
+            // =====================================================================
+            ['iata' => 'PTY', 'name' => 'Tocumen International', 'city' => 'Panama City', 'country' => 'Panama', 'lat' => 9.0714, 'lng' => -79.3835, 'tz' => 'America/Panama'],
+            ['iata' => 'SJO', 'name' => 'Juan Santamaría', 'city' => 'San José', 'country' => 'Costa Rica', 'lat' => 9.9939, 'lng' => -84.2088, 'tz' => 'America/Costa_Rica'],
+            ['iata' => 'SAL', 'name' => 'Monseñor Óscar Arnulfo Romero', 'city' => 'San Salvador', 'country' => 'El Salvador', 'lat' => 13.4409, 'lng' => -89.0557, 'tz' => 'America/El_Salvador'],
+            ['iata' => 'GUA', 'name' => 'La Aurora International', 'city' => 'Guatemala City', 'country' => 'Guatemala', 'lat' => 14.5833, 'lng' => -90.5275, 'tz' => 'America/Guatemala'],
+            ['iata' => 'TGU', 'name' => 'Toncontín International', 'city' => 'Tegucigalpa', 'country' => 'Honduras', 'lat' => 14.0609, 'lng' => -87.2172, 'tz' => 'America/Tegucigalpa'],
+            ['iata' => 'MGA', 'name' => 'Augusto C Sandino', 'city' => 'Managua', 'country' => 'Nicaragua', 'lat' => 12.1415, 'lng' => -86.1682, 'tz' => 'America/Managua'],
+            ['iata' => 'BZE', 'name' => 'Philip S W Goldson', 'city' => 'Belize City', 'country' => 'Belize', 'lat' => 17.5391, 'lng' => -88.3082, 'tz' => 'America/Belize'],
+            ['iata' => 'HAV', 'name' => 'José Martí International', 'city' => 'Havana', 'country' => 'Cuba', 'lat' => 22.9892, 'lng' => -82.4091, 'tz' => 'America/Havana'],
+            ['iata' => 'MBJ', 'name' => 'Sangster International', 'city' => 'Montego Bay', 'country' => 'Jamaica', 'lat' => 18.5037, 'lng' => -77.9134, 'tz' => 'America/Jamaica'],
+            ['iata' => 'KIN', 'name' => 'Norman Manley International', 'city' => 'Kingston', 'country' => 'Jamaica', 'lat' => 17.9357, 'lng' => -76.7875, 'tz' => 'America/Jamaica'],
+            ['iata' => 'POS', 'name' => 'Piarco International', 'city' => 'Port of Spain', 'country' => 'Trinidad and Tobago', 'lat' => 10.5954, 'lng' => -61.3372, 'tz' => 'America/Port_of_Spain'],
+            ['iata' => 'SDQ', 'name' => 'Las Américas', 'city' => 'Santo Domingo', 'country' => 'Dominican Republic', 'lat' => 18.4297, 'lng' => -69.6689, 'tz' => 'America/Santo_Domingo'],
+            ['iata' => 'PUJ', 'name' => 'Punta Cana International', 'city' => 'Punta Cana', 'country' => 'Dominican Republic', 'lat' => 18.5674, 'lng' => -68.3634, 'tz' => 'America/Santo_Domingo'],
+            ['iata' => 'SXM', 'name' => 'Princess Juliana', 'city' => 'Philipsburg', 'country' => 'Sint Maarten', 'lat' => 18.0410, 'lng' => -63.1089, 'tz' => 'America/Lower_Princes'],
+            ['iata' => 'NAS', 'name' => 'Lynden Pindling International', 'city' => 'Nassau', 'country' => 'Bahamas', 'lat' => 25.0390, 'lng' => -77.4662, 'tz' => 'America/Nassau'],
+
+            // =====================================================================
+            // South America (25)
+            // =====================================================================
+            ['iata' => 'GRU', 'name' => 'Guarulhos International', 'city' => 'São Paulo', 'country' => 'Brazil', 'lat' => -23.4356, 'lng' => -46.4731, 'tz' => 'America/Sao_Paulo'],
+            ['iata' => 'GIG', 'name' => 'Galeão International', 'city' => 'Rio de Janeiro', 'country' => 'Brazil', 'lat' => -22.8100, 'lng' => -43.2505, 'tz' => 'America/Sao_Paulo'],
+            ['iata' => 'BSB', 'name' => 'Brasília International', 'city' => 'Brasília', 'country' => 'Brazil', 'lat' => -15.8711, 'lng' => -47.9186, 'tz' => 'America/Sao_Paulo'],
+            ['iata' => 'CNF', 'name' => 'Tancredo Neves International', 'city' => 'Belo Horizonte', 'country' => 'Brazil', 'lat' => -19.6244, 'lng' => -43.9719, 'tz' => 'America/Sao_Paulo'],
+            ['iata' => 'SSA', 'name' => 'Deputado Luís Eduardo Magalhães', 'city' => 'Salvador', 'country' => 'Brazil', 'lat' => -12.9086, 'lng' => -38.3225, 'tz' => 'America/Bahia'],
+            ['iata' => 'REC', 'name' => 'Guararapes International', 'city' => 'Recife', 'country' => 'Brazil', 'lat' => -8.1264, 'lng' => -34.9236, 'tz' => 'America/Recife'],
+            ['iata' => 'FOR', 'name' => 'Pinto Martins International', 'city' => 'Fortaleza', 'country' => 'Brazil', 'lat' => -3.7763, 'lng' => -38.5326, 'tz' => 'America/Fortaleza'],
+            ['iata' => 'POA', 'name' => 'Salgado Filho International', 'city' => 'Porto Alegre', 'country' => 'Brazil', 'lat' => -29.9944, 'lng' => -51.1714, 'tz' => 'America/Sao_Paulo'],
+            ['iata' => 'CWB', 'name' => 'Afonso Pena International', 'city' => 'Curitiba', 'country' => 'Brazil', 'lat' => -25.5285, 'lng' => -49.1758, 'tz' => 'America/Sao_Paulo'],
+            ['iata' => 'MAO', 'name' => 'Eduardo Gomes International', 'city' => 'Manaus', 'country' => 'Brazil', 'lat' => -3.0386, 'lng' => -60.0497, 'tz' => 'America/Manaus'],
+            ['iata' => 'EZE', 'name' => 'Ministro Pistarini', 'city' => 'Buenos Aires', 'country' => 'Argentina', 'lat' => -34.8222, 'lng' => -58.5358, 'tz' => 'America/Argentina/Buenos_Aires'],
+            ['iata' => 'AEP', 'name' => 'Aeroparque Jorge Newbery', 'city' => 'Buenos Aires', 'country' => 'Argentina', 'lat' => -34.5592, 'lng' => -58.4156, 'tz' => 'America/Argentina/Buenos_Aires'],
+            ['iata' => 'COR', 'name' => 'Ingeniero Ambrosio Taravella', 'city' => 'Córdoba', 'country' => 'Argentina', 'lat' => -31.3236, 'lng' => -64.2081, 'tz' => 'America/Argentina/Cordoba'],
+            ['iata' => 'SCL', 'name' => 'Arturo Merino Benítez', 'city' => 'Santiago', 'country' => 'Chile', 'lat' => -33.3930, 'lng' => -70.7858, 'tz' => 'America/Santiago'],
+            ['iata' => 'LIM', 'name' => 'Jorge Chávez International', 'city' => 'Lima', 'country' => 'Peru', 'lat' => -12.0219, 'lng' => -77.1143, 'tz' => 'America/Lima'],
+            ['iata' => 'CUZ', 'name' => 'Alejandro Velasco Astete', 'city' => 'Cusco', 'country' => 'Peru', 'lat' => -13.5357, 'lng' => -71.9388, 'tz' => 'America/Lima'],
+            ['iata' => 'BOG', 'name' => 'El Dorado International', 'city' => 'Bogotá', 'country' => 'Colombia', 'lat' => 4.7016, 'lng' => -74.1469, 'tz' => 'America/Bogota'],
+            ['iata' => 'MDE', 'name' => 'José María Córdova', 'city' => 'Medellín', 'country' => 'Colombia', 'lat' => 6.1645, 'lng' => -75.4231, 'tz' => 'America/Bogota'],
+            ['iata' => 'CTG', 'name' => 'Rafael Núñez International', 'city' => 'Cartagena', 'country' => 'Colombia', 'lat' => 10.4424, 'lng' => -75.5130, 'tz' => 'America/Bogota'],
+            ['iata' => 'UIO', 'name' => 'Mariscal Sucre International', 'city' => 'Quito', 'country' => 'Ecuador', 'lat' => -0.1292, 'lng' => -78.3575, 'tz' => 'America/Guayaquil'],
+            ['iata' => 'GYE', 'name' => 'José Joaquín de Olmedo', 'city' => 'Guayaquil', 'country' => 'Ecuador', 'lat' => -2.1574, 'lng' => -79.8837, 'tz' => 'America/Guayaquil'],
+            ['iata' => 'CCS', 'name' => 'Simón Bolívar International', 'city' => 'Caracas', 'country' => 'Venezuela', 'lat' => 10.6012, 'lng' => -66.9912, 'tz' => 'America/Caracas'],
+            ['iata' => 'MVD', 'name' => 'Carrasco International', 'city' => 'Montevideo', 'country' => 'Uruguay', 'lat' => -34.8384, 'lng' => -56.0308, 'tz' => 'America/Montevideo'],
+            ['iata' => 'ASU', 'name' => 'Silvio Pettirossi International', 'city' => 'Asunción', 'country' => 'Paraguay', 'lat' => -25.2400, 'lng' => -57.5191, 'tz' => 'America/Asuncion'],
+            ['iata' => 'VVI', 'name' => 'Viru Viru International', 'city' => 'Santa Cruz', 'country' => 'Bolivia', 'lat' => -17.6448, 'lng' => -63.1354, 'tz' => 'America/La_Paz'],
+
+            // =====================================================================
+            // Africa (30)
+            // =====================================================================
+            ['iata' => 'CAI', 'name' => 'Cairo International', 'city' => 'Cairo', 'country' => 'Egypt', 'lat' => 30.1219, 'lng' => 31.4056, 'tz' => 'Africa/Cairo'],
+            ['iata' => 'HRG', 'name' => 'Hurghada International', 'city' => 'Hurghada', 'country' => 'Egypt', 'lat' => 27.1784, 'lng' => 33.7994, 'tz' => 'Africa/Cairo'],
+            ['iata' => 'SSH', 'name' => 'Sharm El Sheikh International', 'city' => 'Sharm El Sheikh', 'country' => 'Egypt', 'lat' => 27.9773, 'lng' => 34.3950, 'tz' => 'Africa/Cairo'],
+            ['iata' => 'JNB', 'name' => 'OR Tambo International', 'city' => 'Johannesburg', 'country' => 'South Africa', 'lat' => -26.1392, 'lng' => 28.2460, 'tz' => 'Africa/Johannesburg'],
+            ['iata' => 'CPT', 'name' => 'Cape Town International', 'city' => 'Cape Town', 'country' => 'South Africa', 'lat' => -33.9649, 'lng' => 18.6017, 'tz' => 'Africa/Johannesburg'],
+            ['iata' => 'DUR', 'name' => 'King Shaka International', 'city' => 'Durban', 'country' => 'South Africa', 'lat' => -29.6144, 'lng' => 31.1197, 'tz' => 'Africa/Johannesburg'],
+            ['iata' => 'NBO', 'name' => 'Jomo Kenyatta International', 'city' => 'Nairobi', 'country' => 'Kenya', 'lat' => -1.3192, 'lng' => 36.9278, 'tz' => 'Africa/Nairobi'],
+            ['iata' => 'MBA', 'name' => 'Moi International', 'city' => 'Mombasa', 'country' => 'Kenya', 'lat' => -4.0348, 'lng' => 39.5942, 'tz' => 'Africa/Nairobi'],
+            ['iata' => 'ADD', 'name' => 'Bole International', 'city' => 'Addis Ababa', 'country' => 'Ethiopia', 'lat' => 8.9779, 'lng' => 38.7993, 'tz' => 'Africa/Addis_Ababa'],
+            ['iata' => 'CMN', 'name' => 'Mohammed V International', 'city' => 'Casablanca', 'country' => 'Morocco', 'lat' => 33.3675, 'lng' => -7.5898, 'tz' => 'Africa/Casablanca'],
+            ['iata' => 'RAK', 'name' => 'Marrakech Menara', 'city' => 'Marrakech', 'country' => 'Morocco', 'lat' => 31.6069, 'lng' => -8.0363, 'tz' => 'Africa/Casablanca'],
+            ['iata' => 'LOS', 'name' => 'Murtala Muhammed', 'city' => 'Lagos', 'country' => 'Nigeria', 'lat' => 6.5774, 'lng' => 3.3213, 'tz' => 'Africa/Lagos'],
+            ['iata' => 'ABV', 'name' => 'Nnamdi Azikiwe International', 'city' => 'Abuja', 'country' => 'Nigeria', 'lat' => 9.0065, 'lng' => 7.2632, 'tz' => 'Africa/Lagos'],
+            ['iata' => 'DSS', 'name' => 'Blaise Diagne International', 'city' => 'Dakar', 'country' => 'Senegal', 'lat' => 14.6700, 'lng' => -17.0730, 'tz' => 'Africa/Dakar'],
+            ['iata' => 'MRU', 'name' => 'Sir Seewoosagur Ramgoolam', 'city' => 'Mauritius', 'country' => 'Mauritius', 'lat' => -20.4302, 'lng' => 57.6836, 'tz' => 'Indian/Mauritius'],
+            ['iata' => 'TUN', 'name' => 'Tunis-Carthage', 'city' => 'Tunis', 'country' => 'Tunisia', 'lat' => 36.8510, 'lng' => 10.2272, 'tz' => 'Africa/Tunis'],
+            ['iata' => 'ALG', 'name' => 'Houari Boumediene', 'city' => 'Algiers', 'country' => 'Algeria', 'lat' => 36.6910, 'lng' => 3.2154, 'tz' => 'Africa/Algiers'],
+            ['iata' => 'ACC', 'name' => 'Kotoka International', 'city' => 'Accra', 'country' => 'Ghana', 'lat' => 5.6052, 'lng' => -0.1668, 'tz' => 'Africa/Accra'],
+            ['iata' => 'DAR', 'name' => 'Julius Nyerere International', 'city' => 'Dar es Salaam', 'country' => 'Tanzania', 'lat' => -6.8781, 'lng' => 39.2026, 'tz' => 'Africa/Dar_es_Salaam'],
+            ['iata' => 'JRO', 'name' => 'Kilimanjaro International', 'city' => 'Kilimanjaro', 'country' => 'Tanzania', 'lat' => -3.4294, 'lng' => 37.0745, 'tz' => 'Africa/Dar_es_Salaam'],
+            ['iata' => 'EBB', 'name' => 'Entebbe International', 'city' => 'Entebbe', 'country' => 'Uganda', 'lat' => 0.0424, 'lng' => 32.4435, 'tz' => 'Africa/Kampala'],
+            ['iata' => 'KGL', 'name' => 'Kigali International', 'city' => 'Kigali', 'country' => 'Rwanda', 'lat' => -1.9686, 'lng' => 30.1395, 'tz' => 'Africa/Kigali'],
+            ['iata' => 'SEZ', 'name' => 'Seychelles International', 'city' => 'Mahé', 'country' => 'Seychelles', 'lat' => -4.6743, 'lng' => 55.5218, 'tz' => 'Indian/Mahe'],
+            ['iata' => 'WDH', 'name' => 'Hosea Kutako International', 'city' => 'Windhoek', 'country' => 'Namibia', 'lat' => -22.4799, 'lng' => 17.4709, 'tz' => 'Africa/Windhoek'],
+            ['iata' => 'MPM', 'name' => 'Maputo International', 'city' => 'Maputo', 'country' => 'Mozambique', 'lat' => -25.9208, 'lng' => 32.5726, 'tz' => 'Africa/Maputo'],
+            ['iata' => 'HRE', 'name' => 'Robert Gabriel Mugabe', 'city' => 'Harare', 'country' => 'Zimbabwe', 'lat' => -17.9318, 'lng' => 31.0928, 'tz' => 'Africa/Harare'],
+            ['iata' => 'LUN', 'name' => 'Kenneth Kaunda International', 'city' => 'Lusaka', 'country' => 'Zambia', 'lat' => -15.3308, 'lng' => 28.4526, 'tz' => 'Africa/Lusaka'],
+            ['iata' => 'ABJ', 'name' => 'Félix-Houphouët-Boigny', 'city' => 'Abidjan', 'country' => 'Ivory Coast', 'lat' => 5.2614, 'lng' => -3.9262, 'tz' => 'Africa/Abidjan'],
+            ['iata' => 'BKO', 'name' => 'Modibo Keïta International', 'city' => 'Bamako', 'country' => 'Mali', 'lat' => 12.5335, 'lng' => -7.9499, 'tz' => 'Africa/Bamako'],
+            ['iata' => 'TNR', 'name' => 'Ivato International', 'city' => 'Antananarivo', 'country' => 'Madagascar', 'lat' => -18.7969, 'lng' => 47.4789, 'tz' => 'Indian/Antananarivo'],
+
+            // =====================================================================
+            // Oceania (25)
+            // =====================================================================
+            // Australia
+            ['iata' => 'SYD', 'name' => 'Kingsford Smith', 'city' => 'Sydney', 'country' => 'Australia', 'lat' => -33.9461, 'lng' => 151.1772, 'tz' => 'Australia/Sydney'],
+            ['iata' => 'MEL', 'name' => 'Tullamarine', 'city' => 'Melbourne', 'country' => 'Australia', 'lat' => -37.6733, 'lng' => 144.8433, 'tz' => 'Australia/Melbourne'],
+            ['iata' => 'BNE', 'name' => 'Brisbane', 'city' => 'Brisbane', 'country' => 'Australia', 'lat' => -27.3842, 'lng' => 153.1175, 'tz' => 'Australia/Brisbane'],
+            ['iata' => 'PER', 'name' => 'Perth', 'city' => 'Perth', 'country' => 'Australia', 'lat' => -31.9403, 'lng' => 115.9672, 'tz' => 'Australia/Perth'],
+            ['iata' => 'ADL', 'name' => 'Adelaide', 'city' => 'Adelaide', 'country' => 'Australia', 'lat' => -34.9450, 'lng' => 138.5306, 'tz' => 'Australia/Adelaide'],
+            ['iata' => 'OOL', 'name' => 'Gold Coast', 'city' => 'Gold Coast', 'country' => 'Australia', 'lat' => -28.1644, 'lng' => 153.5047, 'tz' => 'Australia/Brisbane'],
+            ['iata' => 'CNS', 'name' => 'Cairns', 'city' => 'Cairns', 'country' => 'Australia', 'lat' => -16.8858, 'lng' => 145.7553, 'tz' => 'Australia/Brisbane'],
+            ['iata' => 'CBR', 'name' => 'Canberra', 'city' => 'Canberra', 'country' => 'Australia', 'lat' => -35.3069, 'lng' => 149.1951, 'tz' => 'Australia/Sydney'],
+            ['iata' => 'HBA', 'name' => 'Hobart International', 'city' => 'Hobart', 'country' => 'Australia', 'lat' => -42.8361, 'lng' => 147.5100, 'tz' => 'Australia/Hobart'],
+            ['iata' => 'DRW', 'name' => 'Darwin International', 'city' => 'Darwin', 'country' => 'Australia', 'lat' => -12.4147, 'lng' => 130.8769, 'tz' => 'Australia/Darwin'],
+            ['iata' => 'TSV', 'name' => 'Townsville', 'city' => 'Townsville', 'country' => 'Australia', 'lat' => -19.2525, 'lng' => 146.7653, 'tz' => 'Australia/Brisbane'],
+            // New Zealand
+            ['iata' => 'AKL', 'name' => 'Auckland', 'city' => 'Auckland', 'country' => 'New Zealand', 'lat' => -37.0082, 'lng' => 174.7850, 'tz' => 'Pacific/Auckland'],
+            ['iata' => 'CHC', 'name' => 'Christchurch', 'city' => 'Christchurch', 'country' => 'New Zealand', 'lat' => -43.4893, 'lng' => 172.5323, 'tz' => 'Pacific/Auckland'],
+            ['iata' => 'WLG', 'name' => 'Wellington', 'city' => 'Wellington', 'country' => 'New Zealand', 'lat' => -41.3272, 'lng' => 174.8053, 'tz' => 'Pacific/Auckland'],
+            ['iata' => 'ZQN', 'name' => 'Queenstown', 'city' => 'Queenstown', 'country' => 'New Zealand', 'lat' => -45.0211, 'lng' => 168.7392, 'tz' => 'Pacific/Auckland'],
+            ['iata' => 'DUD', 'name' => 'Dunedin', 'city' => 'Dunedin', 'country' => 'New Zealand', 'lat' => -45.9281, 'lng' => 170.1986, 'tz' => 'Pacific/Auckland'],
+            // Pacific Islands
+            ['iata' => 'NAN', 'name' => 'Nadi International', 'city' => 'Nadi', 'country' => 'Fiji', 'lat' => -17.7554, 'lng' => 177.4436, 'tz' => 'Pacific/Fiji'],
+            ['iata' => 'PPT', 'name' => 'Faa\'a International', 'city' => 'Papeete', 'country' => 'French Polynesia', 'lat' => -17.5537, 'lng' => -149.6073, 'tz' => 'Pacific/Tahiti'],
+            ['iata' => 'NOU', 'name' => 'La Tontouta', 'city' => 'Noumea', 'country' => 'New Caledonia', 'lat' => -22.0146, 'lng' => 166.2128, 'tz' => 'Pacific/Noumea'],
+            ['iata' => 'APW', 'name' => 'Faleolo International', 'city' => 'Apia', 'country' => 'Samoa', 'lat' => -13.8297, 'lng' => -172.0083, 'tz' => 'Pacific/Apia'],
+            ['iata' => 'GUM', 'name' => 'Antonio B Won Pat', 'city' => 'Hagåtña', 'country' => 'Guam', 'lat' => 13.4834, 'lng' => 144.7960, 'tz' => 'Pacific/Guam'],
+            ['iata' => 'SPN', 'name' => 'Francisco C Ada', 'city' => 'Saipan', 'country' => 'Northern Mariana Islands', 'lat' => 15.1190, 'lng' => 145.7294, 'tz' => 'Pacific/Guam'],
+            ['iata' => 'PNI', 'name' => 'Pohnpei International', 'city' => 'Pohnpei', 'country' => 'Micronesia', 'lat' => 6.9851, 'lng' => 158.2090, 'tz' => 'Pacific/Pohnpei'],
+            ['iata' => 'ROR', 'name' => 'Roman Tmetuchl International', 'city' => 'Koror', 'country' => 'Palau', 'lat' => 7.3674, 'lng' => 134.5443, 'tz' => 'Pacific/Palau'],
+            ['iata' => 'TRW', 'name' => 'Bonriki International', 'city' => 'Tarawa', 'country' => 'Kiribati', 'lat' => 1.3816, 'lng' => 173.1470, 'tz' => 'Pacific/Tarawa'],
+            ['iata' => 'HIR', 'name' => 'Honiara International', 'city' => 'Honiara', 'country' => 'Solomon Islands', 'lat' => -9.4280, 'lng' => 160.0549, 'tz' => 'Pacific/Guadalcanal'],
+            ['iata' => 'VLI', 'name' => 'Bauerfield International', 'city' => 'Port Vila', 'country' => 'Vanuatu', 'lat' => -17.6993, 'lng' => 168.3200, 'tz' => 'Pacific/Efate'],
+            ['iata' => 'TBU', 'name' => 'Fuaʻamotu International', 'city' => 'Nukuʻalofa', 'country' => 'Tonga', 'lat' => -21.2412, 'lng' => -175.1496, 'tz' => 'Pacific/Tongatapu'],
+            ['iata' => 'POM', 'name' => 'Jacksons International', 'city' => 'Port Moresby', 'country' => 'Papua New Guinea', 'lat' => -6.0081, 'lng' => 147.0072, 'tz' => 'Pacific/Port_Moresby'],
+
+            // =====================================================================
+            // Additional Europe (15)
+            // =====================================================================
+            ['iata' => 'TIA', 'name' => 'Tirana International', 'city' => 'Tirana', 'country' => 'Albania', 'lat' => 41.4147, 'lng' => 19.7206, 'tz' => 'Europe/Tirane'],
+            ['iata' => 'SKP', 'name' => 'Skopje International', 'city' => 'Skopje', 'country' => 'North Macedonia', 'lat' => 41.9616, 'lng' => 21.6214, 'tz' => 'Europe/Skopje'],
+            ['iata' => 'SJJ', 'name' => 'Sarajevo International', 'city' => 'Sarajevo', 'country' => 'Bosnia and Herzegovina', 'lat' => 43.8246, 'lng' => 18.3315, 'tz' => 'Europe/Sarajevo'],
+            ['iata' => 'TGD', 'name' => 'Podgorica', 'city' => 'Podgorica', 'country' => 'Montenegro', 'lat' => 42.3594, 'lng' => 19.2519, 'tz' => 'Europe/Podgorica'],
+            ['iata' => 'TIV', 'name' => 'Tivat', 'city' => 'Tivat', 'country' => 'Montenegro', 'lat' => 42.4047, 'lng' => 18.7233, 'tz' => 'Europe/Podgorica'],
+            ['iata' => 'KSC', 'name' => 'Košice International', 'city' => 'Košice', 'country' => 'Slovakia', 'lat' => 48.6631, 'lng' => 21.2411, 'tz' => 'Europe/Bratislava'],
+            ['iata' => 'CLJ', 'name' => 'Cluj-Napoca International', 'city' => 'Cluj-Napoca', 'country' => 'Romania', 'lat' => 46.7852, 'lng' => 23.6862, 'tz' => 'Europe/Bucharest'],
+            ['iata' => 'GRZ', 'name' => 'Graz', 'city' => 'Graz', 'country' => 'Austria', 'lat' => 46.9911, 'lng' => 15.4396, 'tz' => 'Europe/Vienna'],
+            ['iata' => 'PSA', 'name' => 'Pisa International', 'city' => 'Pisa', 'country' => 'Italy', 'lat' => 43.6839, 'lng' => 10.3927, 'tz' => 'Europe/Rome'],
+            ['iata' => 'BRI', 'name' => 'Karol Wojtyła', 'city' => 'Bari', 'country' => 'Italy', 'lat' => 41.1389, 'lng' => 16.7606, 'tz' => 'Europe/Rome'],
+            ['iata' => 'TRN', 'name' => 'Turin Caselle', 'city' => 'Turin', 'country' => 'Italy', 'lat' => 45.2008, 'lng' => 7.6497, 'tz' => 'Europe/Rome'],
+            ['iata' => 'NTE', 'name' => 'Nantes Atlantique', 'city' => 'Nantes', 'country' => 'France', 'lat' => 47.1532, 'lng' => -1.6108, 'tz' => 'Europe/Paris'],
+            ['iata' => 'BRE', 'name' => 'Bremen', 'city' => 'Bremen', 'country' => 'Germany', 'lat' => 53.0475, 'lng' => 8.7867, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'DTM', 'name' => 'Dortmund', 'city' => 'Dortmund', 'country' => 'Germany', 'lat' => 51.5183, 'lng' => 7.6122, 'tz' => 'Europe/Berlin'],
+            ['iata' => 'DRS', 'name' => 'Dresden', 'city' => 'Dresden', 'country' => 'Germany', 'lat' => 51.1328, 'lng' => 13.7672, 'tz' => 'Europe/Berlin'],
+
+            // =====================================================================
+            // Additional Southeast Asia / South Asia (12)
+            // =====================================================================
+            ['iata' => 'NST', 'name' => 'Nakhon Si Thammarat', 'city' => 'Nakhon Si Thammarat', 'country' => 'Thailand', 'lat' => 8.5396, 'lng' => 99.9447, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'UTH', 'name' => 'Udon Thani International', 'city' => 'Udon Thani', 'country' => 'Thailand', 'lat' => 17.3864, 'lng' => 102.7883, 'tz' => 'Asia/Bangkok'],
+            ['iata' => 'LOP', 'name' => 'Lombok International', 'city' => 'Lombok', 'country' => 'Indonesia', 'lat' => -8.7573, 'lng' => 116.2767, 'tz' => 'Asia/Makassar'],
+            ['iata' => 'SOC', 'name' => 'Adisumarmo International', 'city' => 'Solo', 'country' => 'Indonesia', 'lat' => -7.5161, 'lng' => 110.7569, 'tz' => 'Asia/Jakarta'],
+            ['iata' => 'SRG', 'name' => 'Ahmad Yani International', 'city' => 'Semarang', 'country' => 'Indonesia', 'lat' => -6.9714, 'lng' => 110.3742, 'tz' => 'Asia/Jakarta'],
+            ['iata' => 'TAG', 'name' => 'Panglao International', 'city' => 'Tagbilaran', 'country' => 'Philippines', 'lat' => 9.5584, 'lng' => 123.7742, 'tz' => 'Asia/Manila'],
+            ['iata' => 'BCD', 'name' => 'Bacolod-Silay', 'city' => 'Bacolod', 'country' => 'Philippines', 'lat' => 10.6424, 'lng' => 122.9294, 'tz' => 'Asia/Manila'],
+            ['iata' => 'VDO', 'name' => 'Van Don International', 'city' => 'Quang Ninh', 'country' => 'Vietnam', 'lat' => 21.1178, 'lng' => 107.4142, 'tz' => 'Asia/Ho_Chi_Minh'],
+            ['iata' => 'DLI', 'name' => 'Lien Khuong', 'city' => 'Da Lat', 'country' => 'Vietnam', 'lat' => 11.7500, 'lng' => 108.3672, 'tz' => 'Asia/Ho_Chi_Minh'],
+            ['iata' => 'GAU', 'name' => 'Lokpriya Gopinath Bordoloi', 'city' => 'Guwahati', 'country' => 'India', 'lat' => 26.1061, 'lng' => 91.5859, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'LKO', 'name' => 'Chaudhary Charan Singh', 'city' => 'Lucknow', 'country' => 'India', 'lat' => 26.7606, 'lng' => 80.8893, 'tz' => 'Asia/Kolkata'],
+            ['iata' => 'VNS', 'name' => 'Lal Bahadur Shastri', 'city' => 'Varanasi', 'country' => 'India', 'lat' => 25.4524, 'lng' => 82.8593, 'tz' => 'Asia/Kolkata'],
+
+            // =====================================================================
+            // Additional US / Canada (15)
+            // =====================================================================
+            ['iata' => 'ABQ', 'name' => 'Albuquerque International Sunport', 'city' => 'Albuquerque', 'country' => 'United States', 'lat' => 35.0402, 'lng' => -106.6092, 'tz' => 'America/Denver'],
+            ['iata' => 'BOI', 'name' => 'Boise Airport', 'city' => 'Boise', 'country' => 'United States', 'lat' => 43.5644, 'lng' => -116.2228, 'tz' => 'America/Boise'],
+            ['iata' => 'TUL', 'name' => 'Tulsa International', 'city' => 'Tulsa', 'country' => 'United States', 'lat' => 36.1984, 'lng' => -95.8881, 'tz' => 'America/Chicago'],
+            ['iata' => 'OMA', 'name' => 'Eppley Airfield', 'city' => 'Omaha', 'country' => 'United States', 'lat' => 41.3032, 'lng' => -95.8941, 'tz' => 'America/Chicago'],
+            ['iata' => 'RNO', 'name' => 'Reno-Tahoe International', 'city' => 'Reno', 'country' => 'United States', 'lat' => 39.4991, 'lng' => -119.7681, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'TUS', 'name' => 'Tucson International', 'city' => 'Tucson', 'country' => 'United States', 'lat' => 32.1161, 'lng' => -110.9411, 'tz' => 'America/Phoenix'],
+            ['iata' => 'ELP', 'name' => 'El Paso International', 'city' => 'El Paso', 'country' => 'United States', 'lat' => 31.8072, 'lng' => -106.3778, 'tz' => 'America/Denver'],
+            ['iata' => 'MEM', 'name' => 'Memphis International', 'city' => 'Memphis', 'country' => 'United States', 'lat' => 35.0424, 'lng' => -89.9767, 'tz' => 'America/Chicago'],
+            ['iata' => 'RIC', 'name' => 'Richmond International', 'city' => 'Richmond', 'country' => 'United States', 'lat' => 37.5052, 'lng' => -77.3197, 'tz' => 'America/New_York'],
+            ['iata' => 'ORF', 'name' => 'Norfolk International', 'city' => 'Norfolk', 'country' => 'United States', 'lat' => 36.8946, 'lng' => -76.2012, 'tz' => 'America/New_York'],
+            ['iata' => 'SNA', 'name' => 'John Wayne', 'city' => 'Orange County', 'country' => 'United States', 'lat' => 33.6757, 'lng' => -117.8682, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'BUR', 'name' => 'Hollywood Burbank', 'city' => 'Burbank', 'country' => 'United States', 'lat' => 34.1975, 'lng' => -118.3586, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'ONT', 'name' => 'Ontario International', 'city' => 'Ontario', 'country' => 'United States', 'lat' => 34.0560, 'lng' => -117.6012, 'tz' => 'America/Los_Angeles'],
+            ['iata' => 'YTZ', 'name' => 'Billy Bishop Toronto City', 'city' => 'Toronto', 'country' => 'Canada', 'lat' => 43.6274, 'lng' => -79.3962, 'tz' => 'America/Toronto'],
+            ['iata' => 'YXU', 'name' => 'London International', 'city' => 'London', 'country' => 'Canada', 'lat' => 43.0356, 'lng' => -81.1539, 'tz' => 'America/Toronto'],
+
+            // =====================================================================
+            // Additional Middle East / Central Asia (10)
+            // =====================================================================
+            ['iata' => 'SLL', 'name' => 'Salalah', 'city' => 'Salalah', 'country' => 'Oman', 'lat' => 17.0387, 'lng' => 54.0913, 'tz' => 'Asia/Muscat'],
+            ['iata' => 'AQJ', 'name' => 'King Hussein International', 'city' => 'Aqaba', 'country' => 'Jordan', 'lat' => 29.6116, 'lng' => 35.0181, 'tz' => 'Asia/Amman'],
+            ['iata' => 'SKT', 'name' => 'Sialkot International', 'city' => 'Sialkot', 'country' => 'Pakistan', 'lat' => 32.5356, 'lng' => 74.3639, 'tz' => 'Asia/Karachi'],
+            ['iata' => 'FRU', 'name' => 'Manas International', 'city' => 'Bishkek', 'country' => 'Kyrgyzstan', 'lat' => 43.0613, 'lng' => 74.4776, 'tz' => 'Asia/Bishkek'],
+            ['iata' => 'DYU', 'name' => 'Dushanbe International', 'city' => 'Dushanbe', 'country' => 'Tajikistan', 'lat' => 38.5433, 'lng' => 68.8250, 'tz' => 'Asia/Dushanbe'],
+            ['iata' => 'ASB', 'name' => 'Ashgabat International', 'city' => 'Ashgabat', 'country' => 'Turkmenistan', 'lat' => 37.9868, 'lng' => 58.3610, 'tz' => 'Asia/Ashgabat'],
+            ['iata' => 'GNA', 'name' => 'Grodno', 'city' => 'Grodno', 'country' => 'Belarus', 'lat' => 53.6020, 'lng' => 24.0538, 'tz' => 'Europe/Minsk'],
+            ['iata' => 'MSQ', 'name' => 'Minsk National', 'city' => 'Minsk', 'country' => 'Belarus', 'lat' => 53.8825, 'lng' => 28.0307, 'tz' => 'Europe/Minsk'],
+            ['iata' => 'KIV', 'name' => 'Chișinău International', 'city' => 'Chișinău', 'country' => 'Moldova', 'lat' => 46.9277, 'lng' => 28.9310, 'tz' => 'Europe/Chisinau'],
+            ['iata' => 'CWL', 'name' => 'Cardiff', 'city' => 'Cardiff', 'country' => 'United Kingdom', 'lat' => 51.3967, 'lng' => -3.3433, 'tz' => 'Europe/London'],
+        ]);
+    }
+}

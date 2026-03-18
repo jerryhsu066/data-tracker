@@ -24,6 +24,17 @@ export const modules = [
             { id: 'settings', label: 'Settings', path: '/cashflow/settings' },
         ],
     },
+    {
+        id: 'flights',
+        label: 'Flights',
+        basePath: '/flights',
+        defaultTab: 'home',
+        tabs: [
+            { id: 'home',     label: 'Overview',    path: '/flights/home' },
+            { id: 'log',      label: 'Flight Log',  path: '/flights/log' },
+            { id: 'settings', label: 'Settings',    path: '/flights/settings' },
+        ],
+    },
 ];
 
 export function findModuleByPath(path) {

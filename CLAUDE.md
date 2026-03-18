@@ -92,13 +92,13 @@ docker compose exec app php artisan optimize:clear
 Standard Laravel MVC structure:
 - `app/Http/Controllers/` — request handlers
 - `app/Models/` — Eloquent models
-- `routes/api.php` — all API routes; auth under `/auth/*`, stocks under `/stocks/*`, cashflow under `/cashflow/*`
+- `routes/api.php` — all API routes; auth under `/auth/*`, stocks under `/stocks/*`, cashflow under `/cashflow/*`, flights under `/flights/*`
 - `database/migrations/` — schema migrations
 - `database/seeders/` — data seeders
 
 ### API Route Structure
 
-Two top-level prefixes: `/stocks` for the stock/portfolio module, `/cashflow` for the cashflow module. Static paths are declared before `{symbol}` wildcard routes to avoid conflicts.
+Three top-level prefixes: `/stocks` for the stock/portfolio module, `/cashflow` for the cashflow module, `/flights` for the flight tracker module. Static paths are declared before `{symbol}` wildcard routes to avoid conflicts.
 
 ```
 /auth/*               — register, login, logout, me, update profile
@@ -121,6 +121,13 @@ Two top-level prefixes: `/stocks` for the stock/portfolio module, `/cashflow` fo
 /cashflow/records     — cashflow record CRUD & bulk operations
 /cashflow/export      — export cashflow records (CSV or JSON)
 /cashflow/import      — import cashflow records (with /preview)
+
+/flights              — list / create / update / delete flights
+/flights/stats        — flight statistics (aggregate counts)
+/flights/lookup       — auto-fetch flight info by number + date
+/flights/settings     — API key configuration (AviationStack, AeroDataBox)
+/flights/export       — export flights (CSV or JSON)
+/flights/import       — import flights (with /preview)
 ```
 
 ## Docker Infrastructure
@@ -147,6 +154,7 @@ The `.env` file is pre-configured for Docker with `DB_HOST=mysql` (the Docker se
 - **Vue 3** (Composition API) with `<script setup>` — all views use `ref`, `computed`, `watchEffect`, `watch`, `nextTick`
 - **Tailwind CSS v4** — utility-first styling; use `h-9` for all form inputs/selects for consistent height
 - **Chart.js** — tree-shaken imports; register only the controllers/elements/plugins you use
+- **Leaflet** — interactive maps for the Flights module; OpenStreetMap (light) / CartoDB dark_all (dark mode) tiles
 - **Vite** — asset bundler; run via `npm run dev` or `npm run build` (inside the container or on host)
 
 Key frontend conventions:
@@ -166,6 +174,11 @@ Key frontend conventions:
 - `app/Policies/StockTransactionPolicy.php` — ownership gate for stock transaction update/delete
 - `app/Policies/ExposureBundlePolicy.php` — ownership gate for exposure bundle CRUD
 - `app/Http/Controllers/Concerns/ParsesImportFile.php` — shared CSV/JSON parsing trait for import controllers
+- `app/Services/FlightLookupService.php` — multi-source flight lookup (FR24, OpenSky, AviationStack, AeroDataBox)
+- `resources/js/data/airports.json` — static airport database (IATA codes, coordinates) for map and autocomplete
+- `resources/js/data/airportLookup.js` — airport utilities (search, distance, arc points, country lookup)
+- `resources/js/components/FlightMap.vue` — Leaflet map with great-circle route arcs (dark mode support)
+- `resources/js/components/AirportAutocomplete.vue` — IATA airport picker with search
 
 ### Key naming conventions
 
@@ -178,6 +191,8 @@ Models, controllers, tables, and columns are prefixed with their module to avoid
 | Cashflow | `cashflow_records` | `CashflowRecord` | `CashflowRecordController` |
 | Cashflow | `cashflow_types` | `CashflowType` | `CashflowSettingsController` |
 | Cashflow | `cashflow_subtypes` | `CashflowSubtype` | `CashflowSettingsController` |
+| Flights | `flights` | `Flight` | `FlightController` |
+| Flights | `flight_settings` | `FlightSetting` | `FlightController` |
 
 Cashflow foreign key columns: `cashflow_type_id`, `cashflow_subtype_id` (not `type_id` / `subtype_id`).
 

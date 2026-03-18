@@ -919,3 +919,132 @@ POST /cashflow/import
 - Handling fees follow Taiwan brokerage standard: **0.1425%** of trade value, minimum NT$20, reduced by `handling_fee_discount`.
 - Transaction tax applies to **sell** orders only: **0.3%** of trade value.
 - All models use **soft deletes** — deleted records are excluded from normal queries and can be restored.
+
+---
+
+## Flights Module
+
+### List Flights
+```
+GET /flights?year={year}
+```
+Returns user's flights, optionally filtered by year. Ordered by flight_date desc.
+
+### Create Flight
+```
+POST /flights
+```
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `flight_date` | date | required |
+| `airline` | string | required, max 100 |
+| `flight_number` | string | required, max 20 |
+| `departure_airport` | string | required, exactly 3 chars (IATA) |
+| `arrival_airport` | string | required, exactly 3 chars (IATA) |
+| `departure_time` | datetime | nullable |
+| `arrival_time` | datetime | nullable |
+| `aircraft_type` | string | nullable, max 50 |
+| `seat_class` | string | nullable, max 20 (economy/business/first) |
+| `seat_number` | string | nullable, max 10 |
+| `booking_reference` | string | nullable, max 20 |
+| `ticket_price` | decimal | nullable, min 0 |
+| `tail_number` | string | nullable, max 20 |
+| `notes` | text | nullable |
+
+### Update Flight
+```
+PATCH /flights/{flight}
+```
+Same fields as create (all optional). Ownership check: 403 if not owner.
+
+### Delete Flight
+```
+DELETE /flights/{flight}
+```
+Soft delete. Ownership check: 403 if not owner.
+
+### Flight Stats
+```
+GET /flights/stats
+```
+**Response `200`**
+```json
+{
+  "total_flights": 15,
+  "unique_airports": 8,
+  "unique_airlines": 3,
+  "most_visited_airport": "TPE",
+  "flights_by_year": {"2025": 5, "2026": 10},
+  "flights_by_class": {"economy": 10, "business": 5}
+}
+```
+
+### Flight Lookup
+```
+POST /flights/lookup
+```
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `flight_number` | string | required |
+| `flight_date` | date | required |
+
+Tries multiple sources in order: FlightRadar24 (free), OpenSky (free), AviationStack (key required), AeroDataBox (key required). Returns first successful result.
+
+**Response `200`**
+```json
+{
+  "airline": "China Airlines",
+  "departure_airport": "TPE",
+  "arrival_airport": "NRT",
+  "departure_time": "2026-03-15T08:30:00+08:00",
+  "arrival_time": "2026-03-15T12:45:00+09:00",
+  "aircraft_type": "A333",
+  "source": "flightradar24"
+}
+```
+
+### Flight Settings (API Keys)
+```
+GET /flights/settings
+PATCH /flights/settings
+```
+**PATCH Body**
+| Field | Type | Rules |
+|---|---|---|
+| `aviationstack_key` | string | nullable, max 255 |
+| `aerodatabox_key` | string | nullable, max 255 |
+
+Keys are encrypted at rest. GET returns `has_aviationstack_key` and `has_aerodatabox_key` booleans only.
+
+### Export Flights
+```
+GET /flights/export?format=csv|json
+```
+Returns CSV or JSON download. Empty export includes example row.
+
+### Preview Flight Import
+```
+POST /flights/import/preview
+```
+**Body** (multipart)
+| Field | Type |
+|---|---|
+| `file` | file (CSV or JSON) |
+| `format` | csv or json |
+
+**Response `200`**: `{ total, valid, invalid: [{row, reason}], duplicates: [{row, label}] }`
+
+### Import Flights
+```
+POST /flights/import
+```
+**Body** (multipart)
+| Field | Type |
+|---|---|
+| `file` | file |
+| `format` | csv or json |
+| `skip_duplicates` | boolean (default true) |
+
+Duplicates detected by: `(user_id, flight_date, flight_number, departure_airport, arrival_airport)`

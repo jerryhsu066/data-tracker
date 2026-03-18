@@ -35,6 +35,18 @@ const router = createRouter({
                 { path: 'settings', component: () => import('./views/CashflowSettingsView.vue') },
             ],
         },
+
+        // Flights module
+        {
+            path: '/flights',
+            component: () => import('./layouts/ModuleLayout.vue'),
+            meta: { auth: true, module: 'flights' },
+            children: [
+                { path: 'home', component: () => import('./views/FlightsHomeView.vue') },
+                { path: 'log', component: () => import('./views/FlightsLogView.vue') },
+                { path: 'settings', component: () => import('./views/FlightsSettingsView.vue') },
+            ],
+        },
     ],
 });
 
