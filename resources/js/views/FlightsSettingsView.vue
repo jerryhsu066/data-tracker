@@ -30,6 +30,40 @@
             </div>
         </div>
 
+        <!-- Flightradar24 Import -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4">
+            <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Flightradar24 Import</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500">
+                Import your flight history from your public Flightradar24 profile (my.flightradar24.com).
+            </p>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">FR24 Username</label>
+                <div class="flex gap-2">
+                    <input v-model="fr24Username" type="text" placeholder="your-fr24-username"
+                        class="h-9 flex-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <button @click="saveFr24Username" :disabled="savingFr24"
+                        class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50">
+                        {{ savingFr24 ? 'Saving…' : 'Save' }}
+                    </button>
+                </div>
+                <p v-if="fr24Saved" class="text-xs text-emerald-500 mt-1">Saved</p>
+            </div>
+
+            <div class="flex items-center gap-3 flex-wrap">
+                <button @click="doFr24Import" :disabled="fr24Importing || !settings.fr24_username"
+                    class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50">
+                    {{ fr24Importing ? 'Fetching flights from FR24…' : 'Import from FR24' }}
+                </button>
+                <button @click="doFr24Delete" :disabled="fr24Deleting"
+                    class="h-9 px-4 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50">
+                    {{ fr24Deleting ? 'Deleting…' : 'Delete FR24 Imports' }}
+                </button>
+            </div>
+            <span v-if="fr24Result" class="text-sm font-medium text-emerald-500">{{ fr24Result }}</span>
+            <span v-if="fr24Error" class="text-sm text-red-500">{{ fr24Error }}</span>
+        </div>
+
         <!-- API Keys -->
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4">
             <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">API Keys (Optional)</h2>
@@ -99,15 +133,24 @@ const preview = ref(null);
 let importFile = null;
 let importFormat = '';
 
-const settings = ref({ has_aviationstack_key: false, has_aerodatabox_key: false });
+const settings = ref({ has_aviationstack_key: false, has_aerodatabox_key: false, fr24_username: null });
 const apiKeys = ref({ aviationstack_key: '', aerodatabox_key: '' });
 const savingKeys = ref(false);
 const keysSaved = ref(false);
+
+const fr24Username = ref('');
+const savingFr24 = ref(false);
+const fr24Saved = ref(false);
+const fr24Importing = ref(false);
+const fr24Deleting = ref(false);
+const fr24Result = ref('');
+const fr24Error = ref('');
 
 async function fetchSettings() {
     try {
         const { data } = await api.get('/flights/settings');
         settings.value = data;
+        fr24Username.value = data.fr24_username || '';
     } catch {}
 }
 
@@ -174,6 +217,50 @@ async function removeKey(key) {
         settings.value = data;
     } finally {
         savingKeys.value = false;
+    }
+}
+
+async function saveFr24Username() {
+    savingFr24.value = true;
+    fr24Saved.value = false;
+    try {
+        const { data } = await api.patch('/flights/settings', {
+            fr24_username: fr24Username.value || null,
+        });
+        settings.value = data;
+        fr24Saved.value = true;
+        setTimeout(() => { fr24Saved.value = false; }, 2000);
+    } catch {} finally {
+        savingFr24.value = false;
+    }
+}
+
+async function doFr24Import() {
+    fr24Importing.value = true;
+    fr24Result.value = '';
+    fr24Error.value = '';
+    try {
+        const { data } = await api.post('/flights/import/fr24');
+        fr24Result.value = `Imported ${data.imported} flights, ${data.skipped} skipped (duplicates)`;
+    } catch (err) {
+        fr24Error.value = err.response?.data?.message || 'FR24 import failed';
+    } finally {
+        fr24Importing.value = false;
+    }
+}
+
+async function doFr24Delete() {
+    if (!confirm('Delete all flights imported from FR24? This cannot be undone.')) return;
+    fr24Deleting.value = true;
+    fr24Result.value = '';
+    fr24Error.value = '';
+    try {
+        const { data } = await api.delete('/flights/import/fr24');
+        fr24Result.value = `Deleted ${data.deleted} flights`;
+    } catch (err) {
+        fr24Error.value = err.response?.data?.message || 'Delete failed';
+    } finally {
+        fr24Deleting.value = false;
     }
 }
 

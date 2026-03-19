@@ -28,6 +28,7 @@ class Flight extends Model
         'tail_number',
         'notes',
         'track_points',
+        'import_source',
     ];
 
     protected $casts = [

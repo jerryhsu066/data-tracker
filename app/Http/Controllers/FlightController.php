@@ -6,6 +6,7 @@ use App\Models\Flight;
 use App\Models\FlightSetting;
 use App\Services\AirportService;
 use App\Services\FlightLookupService;
+use App\Services\Fr24ImportService;
 use App\Services\TrackSimplifierService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -174,6 +175,7 @@ class FlightController extends Controller
         return response()->json([
             'has_aviationstack_key' => $settings?->aviationstack_key !== null,
             'has_aerodatabox_key'   => $settings?->aerodatabox_key !== null,
+            'fr24_username'         => $settings?->fr24_username,
         ]);
     }
 
@@ -182,6 +184,7 @@ class FlightController extends Controller
         $validated = $request->validate([
             'aviationstack_key' => ['nullable', 'string', 'max:255'],
             'aerodatabox_key'   => ['nullable', 'string', 'max:255'],
+            'fr24_username'     => ['nullable', 'string', 'max:100'],
         ]);
 
         $settings = FlightSetting::updateOrCreate(
@@ -192,7 +195,36 @@ class FlightController extends Controller
         return response()->json([
             'has_aviationstack_key' => $settings->aviationstack_key !== null,
             'has_aerodatabox_key'   => $settings->aerodatabox_key !== null,
+            'fr24_username'         => $settings->fr24_username,
         ]);
+    }
+
+    public function importFr24(Request $request, Fr24ImportService $service): JsonResponse
+    {
+        $settings = FlightSetting::where('user_id', $request->user()->id)->first();
+
+        if (!$settings?->fr24_username) {
+            return response()->json([
+                'message' => 'FR24 username is not configured. Please set it in settings first.',
+            ], 422);
+        }
+
+        $result = $service->import($settings->fr24_username, $request->user()->id);
+
+        return response()->json($result);
+    }
+
+    public function deleteFr24Imports(Request $request): JsonResponse
+    {
+        $deleted = Flight::where('user_id', $request->user()->id)
+            ->where('import_source', 'fr24')
+            ->count();
+
+        Flight::where('user_id', $request->user()->id)
+            ->where('import_source', 'fr24')
+            ->delete();
+
+        return response()->json(['deleted' => $deleted]);
     }
 
     public function uploadTrack(Request $request, Flight $flight, TrackSimplifierService $simplifier): JsonResponse

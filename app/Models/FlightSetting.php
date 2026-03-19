@@ -11,6 +11,7 @@ class FlightSetting extends Model
         'user_id',
         'aviationstack_key',
         'aerodatabox_key',
+        'fr24_username',
     ];
 
     protected $casts = [

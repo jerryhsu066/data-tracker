@@ -115,6 +115,8 @@ Route::prefix('flights')->middleware('auth:sanctum')->group(function () {
     Route::get('export', [FlightImportExportController::class, 'export']);
     Route::post('import/preview', [FlightImportExportController::class, 'preview']);
     Route::post('import', [FlightImportExportController::class, 'import']);
+    Route::post('import/fr24', [FlightController::class, 'importFr24']);
+    Route::delete('import/fr24', [FlightController::class, 'deleteFr24Imports']);
 
     Route::post('lookup', [FlightController::class, 'lookup']);
 
