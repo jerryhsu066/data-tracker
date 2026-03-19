@@ -148,6 +148,7 @@
                         <th class="portrait:hidden px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Arr</th>
                         <th class="portrait:hidden px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Seat</th>
                         <th class="portrait:hidden px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Class</th>
+                        <th class="portrait:hidden px-3 py-3 text-left font-medium text-slate-500 dark:text-slate-400">Track</th>
                         <th class="portrait:hidden px-3 py-3 text-right font-medium text-slate-500 dark:text-slate-400"></th>
                     </tr>
                 </thead>
@@ -203,6 +204,16 @@
                         <td class="portrait:hidden px-3 py-2.5 text-slate-700 dark:text-slate-300">{{ f.seat_number || '—' }}</td>
                         <!-- Class -->
                         <td class="portrait:hidden px-3 py-2.5 text-slate-700 dark:text-slate-300 capitalize">{{ f.seat_class || '—' }}</td>
+                        <td class="portrait:hidden px-3 py-2.5 whitespace-nowrap">
+                            <template v-if="f.track_points">
+                                <span class="text-xs text-emerald-600 dark:text-emerald-400">{{ f.track_points.length }} pts</span>
+                                <button @click="removeTrack(f)" class="font-sans text-red-400 hover:text-red-600 text-xs ml-1">&times;</button>
+                            </template>
+                            <template v-else>
+                                <label :for="'track-' + f.id" class="font-sans text-indigo-500 hover:text-indigo-700 text-xs font-medium cursor-pointer">Upload</label>
+                                <input :id="'track-' + f.id" type="file" accept=".gpx,.kml" class="hidden" @change="e => uploadTrack(f, e)" />
+                            </template>
+                        </td>
                         <td class="portrait:hidden px-3 py-2.5 text-right">
                             <button @click="editFlight(f)" class="font-sans text-indigo-500 hover:text-indigo-700 text-xs font-medium">Edit</button>
                         </td>
@@ -375,6 +386,31 @@ async function deleteFlight(f) {
         editing.value = null;
         form.value = emptyForm();
         showForm.value = false;
+    }
+}
+
+async function uploadTrack(flight, event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('track', file);
+    try {
+        await api.post(`/flights/${flight.id}/track`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        await fetchFlights();
+    } catch (err) {
+        alert(err.response?.data?.message || 'Failed to upload track');
+    }
+    event.target.value = '';
+}
+
+async function removeTrack(flight) {
+    try {
+        await api.delete(`/flights/${flight.id}/track`);
+        await fetchFlights();
+    } catch (err) {
+        alert(err.response?.data?.message || 'Failed to remove track');
     }
 }
 

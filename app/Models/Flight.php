@@ -27,6 +27,7 @@ class Flight extends Model
         'ticket_price',
         'tail_number',
         'notes',
+        'track_points',
     ];
 
     protected $casts = [
@@ -34,6 +35,7 @@ class Flight extends Model
         'departure_time' => 'string',
         'arrival_time'   => 'string',
         'ticket_price'   => 'decimal:2',
+        'track_points'   => 'array',
     ];
 
     public function user(): BelongsTo

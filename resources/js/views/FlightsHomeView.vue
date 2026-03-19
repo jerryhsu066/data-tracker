@@ -11,8 +11,24 @@
         <div v-if="loading" class="text-center py-12 text-slate-400">Loading…</div>
 
         <template v-else>
-            <!-- Map -->
-            <FlightMap :flights="flights" :height="420" />
+            <!-- Inline map container — map lives here when not fullscreen -->
+            <div ref="inlineContainer"
+                 class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 portrait:aspect-[4/3] portrait:!h-auto"
+                 style="height: 420px">
+                <FlightMap ref="flightMapRef" :flights="flights">
+                    <button @click="toggleFullscreen"
+                            class="absolute top-3 right-3 z-[1001] h-8 w-8 flex items-center justify-center rounded-md bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300"
+                            :title="mapFullscreen ? 'Exit fullscreen' : 'Fullscreen'">
+                        <!-- Expand icon when inline, shrink icon when fullscreen -->
+                        <svg v-if="!mapFullscreen" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M3 3h4V1H1v6h2V3zm10-2v2h4v4h2V1h-6zM3 13H1v6h6v-2H3v-4zm14 4h-4v2h6v-6h-2v4z"/>
+                        </svg>
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M7 1v2H3v4H1V1h6zm6 0h6v6h-2V3h-4V1zM1 13h2v4h4v2H1v-6zm12 4h4v-4h2v6h-6v-2z"/>
+                        </svg>
+                    </button>
+                </FlightMap>
+            </div>
 
             <!-- Stats cards -->
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -47,17 +63,30 @@
             </div>
         </template>
     </div>
+
+    <!-- Fullscreen overlay — teleported to body for z-index independence -->
+    <Teleport to="body">
+        <div v-show="mapFullscreen"
+             ref="fullscreenContainer"
+             class="fixed z-[35]"
+             :style="{ ...fullscreenStyle, opacity: fsOpacity, transform: fsTransform, transition: 'left 0.2s ease, opacity 0.25s ease, transform 0.25s ease' }">
+            <!-- Map gets reparented here via DOM manipulation -->
+        </div>
+    </Teleport>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, h } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, h, nextTick } from 'vue';
 import api from '../api';
 import { ensureLoaded, getDistance, getUniqueCountries } from '../data/airportLookup';
+import { useSidebar } from '../stores/sidebar';
 import FlightMap from '../components/FlightMap.vue';
+
+// ── Data ─────────────────────────────────────────────────────────────────
 
 const loading = ref(true);
 const flights = ref([]);
-const allFlights = ref([]); // unfiltered, used for building year list
+const allFlights = ref([]);
 
 const currentYear = new Date().getFullYear();
 const selectedYear = ref('');
@@ -68,10 +97,8 @@ const years = computed(() => {
     return [...yrs].sort((a, b) => b - a);
 });
 
-// All stats derived client-side from filtered flights so year selection is instantly reactive
 const stats = computed(() => {
     const fs = flights.value;
-
     const airportCounts = {};
     const airlineSet = new Set();
     const byYear = {};
@@ -98,7 +125,6 @@ const stats = computed(() => {
     };
 });
 
-// Simple stat card component
 const StatCard = {
     props: { label: String, value: [String, Number] },
     setup(props) {
@@ -111,26 +137,17 @@ const StatCard = {
 
 const totalDistance = computed(() => {
     let total = 0;
-    for (const f of flights.value) {
-        total += getDistance(f.departure_airport, f.arrival_airport);
-    }
+    for (const f of flights.value) total += getDistance(f.departure_airport, f.arrival_airport);
     return total;
 });
 
-const totalDistanceFormatted = computed(() => {
-    const km = Math.round(totalDistance.value);
-    return `${km.toLocaleString()} km`;
-});
+const totalDistanceFormatted = computed(() => `${Math.round(totalDistance.value).toLocaleString()} km`);
 
 const uniqueCountries = computed(() => {
     const codes = new Set();
-    for (const f of flights.value) {
-        codes.add(f.departure_airport);
-        codes.add(f.arrival_airport);
-    }
+    for (const f of flights.value) { codes.add(f.departure_airport); codes.add(f.arrival_airport); }
     return getUniqueCountries(codes).size;
 });
-
 
 async function fetchData() {
     loading.value = true;
@@ -145,7 +162,6 @@ async function fetchData() {
 
 onMounted(async () => {
     await ensureLoaded();
-    // Load all flights once to populate year dropdown, then filter
     const { data } = await api.get('/flights');
     allFlights.value = data;
     flights.value = data;
@@ -153,4 +169,70 @@ onMounted(async () => {
 });
 
 watch(selectedYear, fetchData);
+
+// ── Fullscreen (single map instance, DOM reparenting) ────────────────────
+
+const { collapsed } = useSidebar();
+const mapFullscreen = ref(false);
+const inlineContainer = ref(null);
+const fullscreenContainer = ref(null);
+const flightMapRef = ref(null);
+const fsOpacity = ref('0');
+const fsTransform = ref('scale(0.97)');
+
+const fullscreenStyle = computed(() => {
+    const left = window.innerWidth >= 768 ? (collapsed.value ? '64px' : '220px') : '0';
+    return { top: '48px', bottom: '0', right: '0', left };
+});
+
+function toggleFullscreen() {
+    if (mapFullscreen.value) {
+        exitFullscreen();
+    } else {
+        enterFullscreen();
+    }
+}
+
+function enterFullscreen() {
+    fsOpacity.value = '0';
+    fsTransform.value = 'scale(0.97)';
+    mapFullscreen.value = true;
+    nextTick(() => {
+        // Move the map component's root element into the fullscreen container
+        if (flightMapRef.value?.$el && fullscreenContainer.value) {
+            fullscreenContainer.value.insertBefore(flightMapRef.value.$el, fullscreenContainer.value.firstChild);
+            nextTick(() => {
+                flightMapRef.value?.invalidate?.();
+                // Animate in on next frame
+                requestAnimationFrame(() => {
+                    fsOpacity.value = '1';
+                    fsTransform.value = 'scale(1)';
+                });
+            });
+        }
+    });
+}
+
+function exitFullscreen() {
+    fsOpacity.value = '0';
+    fsTransform.value = 'scale(0.97)';
+    // Wait for transition to finish, then move map back
+    setTimeout(() => {
+        if (flightMapRef.value?.$el && inlineContainer.value) {
+            inlineContainer.value.appendChild(flightMapRef.value.$el);
+            nextTick(() => {
+                flightMapRef.value?.invalidate?.();
+            });
+        }
+        mapFullscreen.value = false;
+    }, 250);
+}
+
+function onKeydown(e) {
+    if (e.key === 'Escape' && mapFullscreen.value) exitFullscreen();
+}
+
+onMounted(() => { document.addEventListener('keydown', onKeydown); });
+onUnmounted(() => { document.removeEventListener('keydown', onKeydown); });
 </script>
+

@@ -6,6 +6,7 @@ use App\Models\Flight;
 use App\Models\FlightSetting;
 use App\Services\AirportService;
 use App\Services\FlightLookupService;
+use App\Services\TrackSimplifierService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -192,6 +193,45 @@ class FlightController extends Controller
             'has_aviationstack_key' => $settings->aviationstack_key !== null,
             'has_aerodatabox_key'   => $settings->aerodatabox_key !== null,
         ]);
+    }
+
+    public function uploadTrack(Request $request, Flight $flight, TrackSimplifierService $simplifier): JsonResponse
+    {
+        Gate::authorize('update', $flight);
+
+        $request->validate([
+            'track' => ['required', 'file', 'max:5120'],
+        ]);
+
+        $file = $request->file('track');
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        if (! in_array($extension, ['gpx', 'kml'])) {
+            return response()->json(['message' => 'File must be a .gpx or .kml file.', 'errors' => ['track' => ['File must be a .gpx or .kml file.']]], 422);
+        }
+
+        try {
+            $points = $simplifier->parseAndSimplify($file);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to parse track file.', 'errors' => ['track' => ['Failed to parse track file.']]], 422);
+        }
+
+        if (count($points) < 2) {
+            return response()->json(['message' => 'Track must contain at least 2 points.', 'errors' => ['track' => ['Track must contain at least 2 points.']]], 422);
+        }
+
+        $flight->update(['track_points' => $points]);
+
+        return response()->json($flight->fresh());
+    }
+
+    public function deleteTrack(Request $request, Flight $flight): JsonResponse
+    {
+        Gate::authorize('update', $flight);
+
+        $flight->update(['track_points' => null]);
+
+        return response()->json($flight->fresh());
     }
 
     /**
