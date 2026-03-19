@@ -10,7 +10,7 @@ import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTheme } from '../stores/theme';
-import { getAirport, getArcPoints } from '../data/airportLookup';
+import { getAirport, getArcPoints, ensureLoaded } from '../data/airportLookup';
 
 const props = defineProps({
     flights: { type: Array, default: () => [] },
@@ -171,8 +171,9 @@ function initMap() {
 
 // ── Draw ─────────────────────────────────────────────────────────────────
 
-function drawFlights() {
+async function drawFlights() {
     if (!map || !routesGroup || !markersGroup || !hitGroup) return;
+    await ensureLoaded();
     routesGroup.clearLayers();
     markersGroup.clearLayers();
     hitGroup.clearLayers();

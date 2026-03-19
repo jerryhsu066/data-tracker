@@ -16,6 +16,7 @@ Commands:
   restart     Restart all services
   stop        Stop all services (keep volumes)
   update      Pull latest code, rebuild images, run new migrations, restart
+  deploy      Same as update (alias for production use)
 
   logs [svc]  Tail logs (all services, or a specific one: app, nginx, worker, scheduler, mysql, node)
   shell       Open a bash shell in the app container
@@ -84,11 +85,22 @@ cmd_update() {
   echo "==> Restarting services..."
   $COMPOSE up -d
 
-  echo "==> Running new migrations..."
-  $COMPOSE exec app php artisan migrate --ansi
+  echo "==> Running new migrations and seeders..."
+  $COMPOSE exec app php artisan migrate --force --ansi
+  $COMPOSE exec app php artisan db:seed --force --ansi
 
   echo "==> Clearing caches..."
   $COMPOSE exec app php artisan optimize:clear --ansi
+
+  echo "==> Building frontend assets..."
+  $COMPOSE run --rm node npm run build
+
+  echo "==> Syncing systemd service state..."
+  sudo systemctl restart data-tracker 2>/dev/null || true
+
+  echo "==> Stopping node dev server..."
+  $COMPOSE stop node
+  $COMPOSE exec app rm -f public/hot
 
   echo "Done."
 }
@@ -129,7 +141,7 @@ case "$COMMAND" in
   start)    cmd_start ;;
   restart)  cmd_restart ;;
   stop)     cmd_stop ;;
-  update)   cmd_update ;;
+  update|deploy) cmd_update ;;
   logs)     cmd_logs "${1:-}" ;;
   shell)    cmd_shell ;;
   test)     cmd_test "$@" ;;
