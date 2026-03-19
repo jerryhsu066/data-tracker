@@ -32,6 +32,9 @@ let routesByKey = {};      // "AAA-BBB" → polyline[]
 let airportsByKey = {};    // "AAA-BBB" → [iata, iata]
 let allRoutes = [];
 let markersByAirport = {}; // iata → circleMarker[] (visible markers)
+let infoTooltips = {};     // iata → L.tooltip[] (airport info popups)
+let routeInfoTooltips = {}; // routeKey → L.tooltip (route info popup)
+let flightsByKey = {};     // routeKey → [{flight_date, flight_number, ...}]
 
 // Labels for collision detection
 let iataLabels = [];  // { labels: [{label, iata}], lat, lng, count }
@@ -47,6 +50,26 @@ const HIGHLIGHT_COLOR = '#f59e0b';       // amber for routes
 const AIRPORT_HIGHLIGHT_COLOR = '#38bdf8'; // sky blue for airports
 
 function getTileUrl() { return dark.value ? DARK_TILES : LIGHT_TILES; }
+
+function countryCodeToFlag(cc) {
+    if (!cc || cc.length !== 2) return '';
+    return String.fromCodePoint(...[...cc.toUpperCase()].map(c => 0x1f1e6 + c.charCodeAt(0) - 65));
+}
+
+function airlineLogo(flightNumber) {
+    if (!flightNumber) return '';
+    const match = flightNumber.match(/^([A-Z]{2})/i);
+    return match ? `https://www.gstatic.com/flights/airline_logos/70px/${match[1].toUpperCase()}.png` : '';
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    const yy = String(d.getFullYear()).slice(2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yy}/${mm}/${dd}`;
+}
 
 // ── Track smoothing ──────────────────────────────────────────────────────
 
@@ -145,6 +168,9 @@ function drawFlights() {
     airportsByKey = {};
     allRoutes = [];
     markersByAirport = {};
+    infoTooltips = {};
+    routeInfoTooltips = {};
+    flightsByKey = {};
     hovered = null;
     locked = null;
 
@@ -164,14 +190,16 @@ function drawFlights() {
     // ── 1. Draw visible routes (non-interactive) ──
     const drawnRoutes = new Set();
     for (const f of props.flights) {
-        const key = [f.departure_airport, f.arrival_airport].sort().join('-');
         const airports = [f.departure_airport, f.arrival_airport];
-        if (!routesByKey[key]) routesByKey[key] = [];
-        if (!airportsByKey[key]) airportsByKey[key] = airports;
 
         let coordSets = [];
+        let hitKey; // key used for hover/click highlighting
 
         if (f.track_points && f.track_points.length >= 2) {
+            hitKey = `flight-${f.id}`;
+            if (!routesByKey[hitKey]) routesByKey[hitKey] = [];
+            if (!airportsByKey[hitKey]) airportsByKey[hitKey] = airports;
+
             const dep = getAirport(f.departure_airport);
             const arr = getAirport(f.arrival_airport);
             const pts = [...f.track_points];
@@ -186,7 +214,7 @@ function drawFlights() {
                 }).addTo(routesGroup);
                 line._origStyle = { color: routeColor, weight: 2, opacity: 0.7 };
                 allRoutes.push(line);
-                routesByKey[key].push(line);
+                routesByKey[hitKey].push(line);
                 for (const iata of airports) {
                     if (!routesByAirport[iata]) routesByAirport[iata] = [];
                     routesByAirport[iata].push(line);
@@ -194,8 +222,12 @@ function drawFlights() {
                 coordSets.push(coords);
             }
         } else {
-            if (drawnRoutes.has(key)) continue;
-            drawnRoutes.add(key);
+            hitKey = [f.departure_airport, f.arrival_airport].sort().join('-');
+            if (!routesByKey[hitKey]) routesByKey[hitKey] = [];
+            if (!airportsByKey[hitKey]) airportsByKey[hitKey] = airports;
+
+            if (drawnRoutes.has(hitKey)) continue;
+            drawnRoutes.add(hitKey);
             const points = getArcPoints(f.departure_airport, f.arrival_airport, 50);
             if (points.length < 2) continue;
             for (const off of WORLD_OFFSETS) {
@@ -206,7 +238,7 @@ function drawFlights() {
                 }).addTo(routesGroup);
                 line._origStyle = { color: routeColor, weight: 1.5, opacity: 0.5 };
                 allRoutes.push(line);
-                routesByKey[key].push(line);
+                routesByKey[hitKey].push(line);
                 for (const iata of airports) {
                     if (!routesByAirport[iata]) routesByAirport[iata] = [];
                     routesByAirport[iata].push(line);
@@ -215,14 +247,45 @@ function drawFlights() {
             }
         }
 
+        // Store flight info for this key
+        if (!flightsByKey[hitKey]) flightsByKey[hitKey] = [];
+        flightsByKey[hitKey].push(f);
+
         // Route hit targets (invisible, wide, interactive)
         for (const coords of coordSets) {
             const hit = L.polyline(coords, {
                 weight: 16, opacity: 0, interactive: true,
             }).addTo(hitGroup);
             hit._hitType = 'route';
-            hit._hitKey = key;
+            hit._hitKey = hitKey;
         }
+    }
+
+    // ── Route info tooltips (positioned at midpoint of route) ──
+    for (const [key, flights] of Object.entries(flightsByKey)) {
+        const lines = routesByKey[key];
+        if (!lines || !lines.length) continue;
+
+        // Find the primary line (offset=0) midpoint
+        const latlngs = lines[0].getLatLngs();
+        const mid = latlngs[Math.floor(latlngs.length / 2)];
+        if (!mid) continue;
+
+        // Build tooltip content — list all flights for this route
+        const rows = flights.map(f => {
+            const logo = airlineLogo(f.flight_number);
+            const logoImg = logo ? `<img src="${logo}" class="route-info-logo" onerror="this.style.display='none'">` : '';
+            return `<div class="route-info-row"><div class="route-info-line1">${logoImg}<b>${f.flight_number || '—'}</b></div><div class="route-info-route"><span>${f.departure_airport}</span><span class="route-info-arrow">→</span><span>${f.arrival_airport}</span></div><div class="route-info-date">${formatDate(f.flight_date)}</div></div>`;
+        }).join('');
+
+        const tip = L.tooltip({
+            permanent: true,
+            interactive: false,
+            direction: 'top',
+            offset: [0, -8],
+            className: 'route-info-tooltip' + (isDark ? ' route-info-tooltip-dark' : ''),
+        }).setContent(rows).setLatLng(mid);
+        routeInfoTooltips[key] = tip;
     }
 
     // ── 2. Draw visible markers + labels (non-interactive) ──
@@ -261,10 +324,20 @@ function drawFlights() {
             }).addTo(hitGroup);
             hit._hitType = 'airport';
             hit._hitKey = iata;
-            hit.bindTooltip(`<b>${iata}</b> ${airport.city}<br>${count} visit${count > 1 ? 's' : ''}`, {
-                className: isDark ? 'dark-tooltip' : '',
-                offset: [-(markerRadius + 5), 0], // shift tooltip closer to the visible marker
-            });
+
+            // Info tooltip (shown on hover/click, managed by applyStyles)
+            const flag = countryCodeToFlag(airport.country_code);
+            const infoTip = L.tooltip({
+                permanent: true,
+                interactive: false,
+                direction: 'top',
+                offset: [0, -(markerRadius + 6)],
+                className: 'airport-info-tooltip' + (isDark ? ' airport-info-tooltip-dark' : ''),
+            }).setContent(`<span class="airport-info-flag">${flag}</span> <b>${iata}</b> ${airport.city}<br><span class="airport-info-sub">${count} visit${count > 1 ? 's' : ''}</span>`)
+              .setLatLng([airport.lat, airport.lng + off]);
+            // Don't add to map yet — will be shown/hidden by applyStyles
+            if (!infoTooltips[iata]) infoTooltips[iata] = [];
+            infoTooltips[iata].push(infoTip);
         }
         iataLabels.push({ labels, lat: airport.lat, lng: airport.lng, count });
         bounds.push([airport.lat, airport.lng]);
@@ -329,12 +402,31 @@ function applyStyles() {
             m.setStyle(m._origStyle);
         }
     }
+    // Hide all info tooltips
+    for (const iata in infoTooltips) {
+        for (const tip of infoTooltips[iata]) {
+            if (map.hasLayer(tip)) map.removeLayer(tip);
+        }
+    }
+    for (const k in routeInfoTooltips) {
+        if (map.hasLayer(routeInfoTooltips[k])) map.removeLayer(routeInfoTooltips[k]);
+    }
 
     if (!active) return;
 
     const [type, key] = active.split(':');
 
     // Highlight routes
+    let routeKeysToShow = [];
+    if (type === 'airport') {
+        // Collect all route keys connected to this airport
+        for (const [rk, airports] of Object.entries(airportsByKey)) {
+            if (airports.includes(key)) routeKeysToShow.push(rk);
+        }
+    } else {
+        routeKeysToShow.push(key);
+    }
+
     const lines = type === 'airport' ? routesByAirport[key] : routesByKey[key];
     if (lines) {
         for (const line of lines) {
@@ -342,12 +434,18 @@ function applyStyles() {
         }
     }
 
-    // Highlight airport markers
+    // Show route info tooltips
+    for (const rk of routeKeysToShow) {
+        const tip = routeInfoTooltips[rk];
+        if (!tip) continue;
+        map.addLayer(tip);
+    }
+
+    // Highlight airport markers + show info tooltips
     const airportsToHighlight = new Set();
     if (type === 'airport') {
         airportsToHighlight.add(key);
     } else {
-        // Route selected — highlight both endpoints
         const pair = airportsByKey[key];
         if (pair) pair.forEach(a => airportsToHighlight.add(a));
     }
@@ -357,7 +455,14 @@ function applyStyles() {
         for (const m of markers) {
             m.setStyle({ fillColor: AIRPORT_HIGHLIGHT_COLOR, color: AIRPORT_HIGHLIGHT_COLOR, weight: 2.5 });
         }
+        const tips = infoTooltips[iata];
+        if (tips) {
+            for (const tip of tips) map.addLayer(tip);
+        }
     }
+
+    // Resolve collisions between all visible info tooltips
+    nextTick(() => resolveInfoTooltips());
 }
 
 // ── Label collision detection ────────────────────────────────────────────
@@ -378,6 +483,44 @@ function resolveLabels() {
             if (el) el.style.display = overlaps ? 'none' : '';
         }
         if (!overlaps) placed.push(pt);
+    }
+}
+
+function resolveInfoTooltips() {
+    if (!map) return;
+    // Collect all currently visible info tooltips (airport + route)
+    const allTips = [];
+    for (const iata in infoTooltips) {
+        for (const tip of infoTooltips[iata]) {
+            if (map.hasLayer(tip)) allTips.push(tip);
+        }
+    }
+    for (const k in routeInfoTooltips) {
+        if (map.hasLayer(routeInfoTooltips[k])) allTips.push(routeInfoTooltips[k]);
+    }
+
+    const placed = []; // [{x, y, w, h}]
+    for (const tip of allTips) {
+        const el = tip.getElement?.() ?? tip._container;
+        if (!el) continue;
+        el.style.display = '';
+        const rect = el.getBoundingClientRect();
+        const mapRect = map.getContainer().getBoundingClientRect();
+        const box = {
+            x: rect.left - mapRect.left,
+            y: rect.top - mapRect.top,
+            w: rect.width,
+            h: rect.height,
+        };
+        const overlaps = placed.some(p =>
+            box.x < p.x + p.w && box.x + box.w > p.x &&
+            box.y < p.y + p.h && box.y + box.h > p.y
+        );
+        if (overlaps) {
+            el.style.display = 'none';
+        } else {
+            placed.push(box);
+        }
     }
 }
 
@@ -445,5 +588,101 @@ onUnmounted(() => {
 }
 .leaflet-interactive:focus {
     outline: none !important;
+}
+.airport-info-tooltip,
+.route-info-tooltip,
+.iata-label {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+.airport-info-tooltip {
+    background: #fff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+    padding: 8px 12px !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    color: #1e293b !important;
+    white-space: nowrap !important;
+    pointer-events: none !important;
+}
+.airport-info-tooltip::before {
+    border-top-color: #cbd5e1 !important;
+}
+.airport-info-tooltip-dark {
+    background: #475569 !important;
+    border-color: #64748b !important;
+    color: #f1f5f9 !important;
+}
+.airport-info-tooltip-dark::before {
+    border-top-color: #64748b !important;
+}
+.airport-info-flag {
+    font-size: 17px !important;
+    vertical-align: middle !important;
+}
+.airport-info-sub {
+    font-size: 12px !important;
+    color: #94a3b8 !important;
+}
+.route-info-tooltip {
+    background: #fff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+    padding: 6px 10px !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    color: #1e293b !important;
+    white-space: nowrap !important;
+    pointer-events: none !important;
+}
+.route-info-tooltip::before {
+    border-top-color: #cbd5e1 !important;
+}
+.route-info-tooltip-dark {
+    background: #475569 !important;
+    border-color: #64748b !important;
+    color: #f1f5f9 !important;
+}
+.route-info-tooltip-dark::before {
+    border-top-color: #64748b !important;
+}
+.route-info-row {
+    display: flex !important;
+    flex-direction: column !important;
+}
+.route-info-row + .route-info-row {
+    margin-top: 4px !important;
+    padding-top: 4px !important;
+    border-top: 1px solid rgba(148,163,184,0.2) !important;
+}
+.route-info-line1 {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+.route-info-route {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    margin-top: 2px !important;
+}
+.route-info-arrow {
+    margin: 0 4px !important;
+}
+.route-info-date {
+    font-size: 11px !important;
+    color: #94a3b8 !important;
+    margin-top: 2px !important;
+    text-align: center !important;
+}
+.route-info-logo {
+    width: 20px !important;
+    height: 20px !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
 }
 </style>
