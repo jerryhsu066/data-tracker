@@ -249,7 +249,7 @@ function drawFlights() {
 
             if (drawnRoutes.has(hitKey)) continue;
             drawnRoutes.add(hitKey);
-            const points = getArcPoints(f.departure_airport, f.arrival_airport, 50);
+            const points = unwrapLongitudes(getArcPoints(f.departure_airport, f.arrival_airport, 50));
             if (points.length < 2) continue;
             for (const off of WORLD_OFFSETS) {
                 const coords = offsetPts(points, off);
