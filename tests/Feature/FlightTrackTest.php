@@ -157,6 +157,24 @@ XML;
         $response->assertForbidden();
     }
 
+    public function test_can_preview_gpx_track(): void
+    {
+        $file = $this->makeUploadedFile($this->validGpx(), 'flight.gpx');
+
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/flights/{$this->flight->id}/track/preview", ['track' => $file]);
+
+        $response->assertOk()
+            ->assertJsonStructure(['points']);
+
+        $this->assertIsArray($response->json('points'));
+        $this->assertGreaterThanOrEqual(2, count($response->json('points')));
+
+        // Preview should NOT save to the flight
+        $this->flight->refresh();
+        $this->assertNull($this->flight->track_points);
+    }
+
     public function test_upload_simplifies_track(): void
     {
         // Generate a GPX with many points — should be simplified

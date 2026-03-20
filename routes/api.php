@@ -127,6 +127,7 @@ Route::prefix('flights')->middleware('auth:sanctum')->group(function () {
     Route::post('/', [FlightController::class, 'store']);
     Route::patch('{flight}', [FlightController::class, 'update']);
     Route::delete('{flight}', [FlightController::class, 'destroy']);
+    Route::post('{flight}/track/preview', [FlightController::class, 'previewTrack']);
     Route::post('{flight}/track', [FlightController::class, 'uploadTrack']);
     Route::delete('{flight}/track', [FlightController::class, 'deleteTrack']);
 });

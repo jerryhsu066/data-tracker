@@ -153,8 +153,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="f in flights" :key="f.id"
-                        class="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                    <tr v-for="(f, i) in flights" :key="f.id"
+                        class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+                        :class="todayBorderClass(f, i)">
                         <!-- Date -->
                         <td class="px-4 py-2.5 text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ f.flight_date?.split('T')[0] }}</td>
                         <!-- Flight: airline logo + number -->
@@ -206,13 +207,13 @@
                         <td class="portrait:hidden px-3 py-2.5 text-slate-700 dark:text-slate-300 capitalize">{{ f.seat_class || '—' }}</td>
                         <td class="portrait:hidden px-3 py-2.5 whitespace-nowrap">
                             <template v-if="f.track_points">
-                                <span class="text-xs text-emerald-600 dark:text-emerald-400">{{ f.track_points.length }} pts</span>
-                                <button @click="removeTrack(f)" class="font-sans text-red-400 hover:text-red-600 text-xs ml-1">&times;</button>
+                                <button @click="viewTrack(f)" class="font-sans text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 text-xs font-medium">View</button>
                             </template>
-                            <template v-else>
+                            <template v-else-if="!isFuture(f)">
                                 <label :for="'track-' + f.id" class="font-sans text-indigo-500 hover:text-indigo-700 text-xs font-medium cursor-pointer">Upload</label>
-                                <input :id="'track-' + f.id" type="file" accept=".gpx,.kml" class="hidden" @change="e => uploadTrack(f, e)" />
+                                <input :id="'track-' + f.id" type="file" accept=".gpx,.kml" class="hidden" @change="e => previewTrack(f, e)" />
                             </template>
+                            <span v-else class="text-xs text-slate-400 dark:text-slate-500">—</span>
                         </td>
                         <td class="portrait:hidden px-3 py-2.5 text-right">
                             <button @click="editFlight(f)" class="font-sans text-indigo-500 hover:text-indigo-700 text-xs font-medium">Edit</button>
@@ -221,6 +222,17 @@
                 </tbody>
             </table>
         </div>
+        <!-- Track Map Modal -->
+        <TrackMapModal v-if="trackModal"
+            :points="trackModal.points"
+            :departure-airport="trackModal.flight.departure_airport"
+            :arrival-airport="trackModal.flight.arrival_airport"
+            :mode="trackModal.mode"
+            :confirming="trackUploading"
+            @close="trackModal = null"
+            @confirm="confirmTrackUpload"
+            @delete="deleteTrackFromModal"
+        />
     </div>
 </template>
 
@@ -230,6 +242,7 @@ import api from '../api';
 import { usePrivacy } from '../stores/privacy';
 import { getAirport, ensureLoaded, reloadAirports } from '../data/airportLookup';
 import AirportAutocomplete from '../components/AirportAutocomplete.vue';
+import TrackMapModal from '../components/TrackMapModal.vue';
 
 const { hidden } = usePrivacy();
 
@@ -241,6 +254,10 @@ const saving = ref(false);
 const lookingUp = ref(false);
 const lookupMsg = ref('');
 const deleteTarget = ref(null);
+
+// Track modal state
+const trackModal = ref(null); // { flight, points, mode: 'preview'|'view', file? }
+const trackUploading = ref(false);
 
 const currentYear = new Date().getFullYear();
 const years = computed(() => {
@@ -389,29 +406,80 @@ async function deleteFlight(f) {
     }
 }
 
-async function uploadTrack(flight, event) {
+function patchFlight(updated) {
+    const idx = flights.value.findIndex(f => f.id === updated.id);
+    if (idx !== -1) flights.value[idx] = updated;
+}
+
+async function previewTrack(flight, event) {
     const file = event.target.files[0];
     if (!file) return;
+    event.target.value = '';
     const formData = new FormData();
     formData.append('track', file);
     try {
-        await api.post(`/flights/${flight.id}/track`, formData, {
+        const { data } = await api.post(`/flights/${flight.id}/track/preview`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
-        await fetchFlights();
+        trackModal.value = { flight, points: data.points, mode: 'preview', file };
+    } catch (err) {
+        alert(err.response?.data?.message || 'Failed to parse track');
+    }
+}
+
+async function confirmTrackUpload() {
+    if (!trackModal.value || trackModal.value.mode !== 'preview') return;
+    const { flight, file } = trackModal.value;
+    trackUploading.value = true;
+    const formData = new FormData();
+    formData.append('track', file);
+    try {
+        const { data } = await api.post(`/flights/${flight.id}/track`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        patchFlight(data);
+        trackModal.value = null;
     } catch (err) {
         alert(err.response?.data?.message || 'Failed to upload track');
+    } finally {
+        trackUploading.value = false;
     }
-    event.target.value = '';
+}
+
+function viewTrack(flight) {
+    trackModal.value = { flight, points: flight.track_points, mode: 'view' };
 }
 
 async function removeTrack(flight) {
     try {
-        await api.delete(`/flights/${flight.id}/track`);
-        await fetchFlights();
+        const { data } = await api.delete(`/flights/${flight.id}/track`);
+        patchFlight(data);
     } catch (err) {
         alert(err.response?.data?.message || 'Failed to remove track');
     }
+}
+
+async function deleteTrackFromModal() {
+    if (!trackModal.value) return;
+    await removeTrack(trackModal.value.flight);
+    trackModal.value = null;
+}
+
+const today = new Date().toISOString().slice(0, 10);
+
+function isFuture(f) {
+    return f.flight_date?.split('T')[0] > today;
+}
+
+function todayBorderClass(f, i) {
+    const thisDate = f.flight_date?.split('T')[0];
+    const nextFlight = flights.value[i + 1];
+    const nextDate = nextFlight?.flight_date?.split('T')[0];
+    // Thick border between the last future flight and the first past/today flight
+    if (thisDate > today && nextDate && nextDate <= today) {
+        return 'border-b-2 border-slate-300 dark:border-slate-500';
+    }
+    return 'border-b border-slate-100 dark:border-slate-700/50';
 }
 
 function airportCity(iata) {

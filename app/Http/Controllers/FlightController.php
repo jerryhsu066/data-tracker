@@ -227,6 +227,34 @@ class FlightController extends Controller
         return response()->json(['deleted' => $deleted]);
     }
 
+    public function previewTrack(Request $request, Flight $flight, TrackSimplifierService $simplifier): JsonResponse
+    {
+        Gate::authorize('update', $flight);
+
+        $request->validate([
+            'track' => ['required', 'file', 'max:5120'],
+        ]);
+
+        $file = $request->file('track');
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        if (! in_array($extension, ['gpx', 'kml'])) {
+            return response()->json(['message' => 'File must be a .gpx or .kml file.', 'errors' => ['track' => ['File must be a .gpx or .kml file.']]], 422);
+        }
+
+        try {
+            $points = $simplifier->parseAndSimplify($file);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to parse track file.', 'errors' => ['track' => ['Failed to parse track file.']]], 422);
+        }
+
+        if (count($points) < 2) {
+            return response()->json(['message' => 'Track must contain at least 2 points.', 'errors' => ['track' => ['Track must contain at least 2 points.']]], 422);
+        }
+
+        return response()->json(['points' => $points]);
+    }
+
     public function uploadTrack(Request $request, Flight $flight, TrackSimplifierService $simplifier): JsonResponse
     {
         Gate::authorize('update', $flight);
