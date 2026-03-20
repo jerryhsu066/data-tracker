@@ -182,11 +182,17 @@ onMounted(() => {
     const unwrapped = unwrapLongitudes(pts);
     const smoothed = catmullRomSmooth(unwrapped);
 
-    // Draw track polyline
+    // Draw track polyline with animated dashes to show direction
     const trackColor = '#6366f1'; // indigo
     const polyline = L.polyline(smoothed, {
         color: trackColor, weight: 2.5, opacity: 0.85,
+        dashArray: '8 6',
     }).addTo(map);
+    // Apply dash flow animation after polyline is rendered
+    requestAnimationFrame(() => {
+        const pathEl = polyline.getElement?.();
+        if (pathEl) pathEl.classList.add('track-dash-anim');
+    });
 
     // Snap an airport longitude to be nearest to a reference longitude (handles antimeridian)
     const trackStart = unwrapped[0];
@@ -253,5 +259,11 @@ onUnmounted(() => {
 }
 .track-label::before {
     border-top-color: rgba(0, 0, 0, 0.7) !important;
+}
+.track-dash-anim {
+    animation: track-dash-flow 0.6s linear infinite;
+}
+@keyframes track-dash-flow {
+    to { stroke-dashoffset: -14; }
 }
 </style>

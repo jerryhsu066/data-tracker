@@ -50,6 +50,11 @@ const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OS
 const HIGHLIGHT_COLOR = '#f59e0b';       // amber for routes
 const AIRPORT_HIGHLIGHT_COLOR = '#38bdf8'; // sky blue for airports
 
+// ── Dash animation config (adjust to change direction indicator) ─────────
+const DASH_PATTERN = '8 6';       // dash-length gap-length (px)
+const DASH_CYCLE = 14;            // dash + gap total — must match pattern sum
+const DASH_DURATION = '0.6s';     // time per cycle (controls flow speed)
+
 function getTileUrl() { return dark.value ? DARK_TILES : LIGHT_TILES; }
 
 function countryCodeToFlag(cc) {
@@ -417,6 +422,11 @@ function applyStyles() {
     // Restore all routes to original style
     for (const line of allRoutes) {
         line.setStyle(line._origStyle);
+        const pathEl = line.getElement?.();
+        if (pathEl) {
+            pathEl.classList.remove('route-dash-anim');
+            pathEl.style.strokeDasharray = '';
+        }
     }
     // Restore all markers to original style
     for (const iata in markersByAirport) {
@@ -443,6 +453,18 @@ function applyStyles() {
     if (lines) {
         for (const line of lines) {
             line.setStyle({ color: HIGHLIGHT_COLOR, weight: line._origStyle.weight + 1, opacity: 1 });
+            // Animated dashes to indicate direction of travel (route selection only)
+            const pathEl = line.getElement?.();
+            if (pathEl) {
+                pathEl.classList.remove('route-dash-anim');
+                if (type === 'route') {
+                    pathEl.style.strokeDasharray = DASH_PATTERN;
+                    pathEl.style.setProperty('--dash-duration', DASH_DURATION);
+                    // Force reflow so removing + re-adding the class restarts the animation
+                    void pathEl.offsetWidth;
+                    pathEl.classList.add('route-dash-anim');
+                }
+            }
         }
     }
 
@@ -1040,5 +1062,12 @@ onUnmounted(() => {
     height: 20px !important;
     object-fit: contain !important;
     flex-shrink: 0 !important;
+}
+/* Animated dashes flowing along the route to indicate direction */
+.route-dash-anim {
+    animation: route-dash-flow var(--dash-duration, 0.6s) linear infinite;
+}
+@keyframes route-dash-flow {
+    to { stroke-dashoffset: -14; /* must equal DASH_CYCLE (dash + gap) */ }
 }
 </style>
