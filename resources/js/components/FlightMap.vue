@@ -560,14 +560,24 @@ function resolveInfoTooltips() {
         if (!pair) return;
         const aptA = getAirport(pair[0]), aptB = getAirport(pair[1]);
         if (!aptA || !aptB) return;
+
+        // Unwrap airport B longitude relative to A for consistent coordinates
+        let lngBu = aptB.lng;
+        while (lngBu - aptA.lng > 180) lngBu -= 360;
+        while (lngBu - aptA.lng < -180) lngBu += 360;
+
+        // Geographic straight midpoint between airports
+        const geoStraightLat = (aptA.lat + aptB.lat) / 2;
+        const geoStraightLng = (aptA.lng + lngBu) / 2;
+
+        // Is the route primarily horizontal or vertical?
+        const isVertical = Math.abs(aptB.lat - aptA.lat) > Math.abs(lngBu - aptA.lng);
+
+        // Project airports with unwrapped B for consistent pixel positions
         const pxA = visiblePx(aptA.lat, aptA.lng);
-        const pxB = visiblePx(aptB.lat, aptB.lng);
+        const pxB = visiblePx(aptB.lat, lngBu);
         const dx = pxB.x - pxA.x;
         const dy = pxB.y - pxA.y;
-        const isVertical = Math.abs(dy) > Math.abs(dx);
-
-        const straightMidX = (pxA.x + pxB.x) / 2;
-        const straightMidY = (pxA.y + pxB.y) / 2;
 
         // Get route half-weight for edge gap calculation
         const rLines = routesByKey[key];
@@ -578,20 +588,33 @@ function resolveInfoTooltips() {
         const worldPxWidth = map.latLngToContainerPoint([0, centerLng + 180]).x
                            - map.latLngToContainerPoint([0, centerLng - 180]).x;
 
-        // Walk polyline for the visual midpoint — unwrap lngs sequentially
-        let baseVisMidX = straightMidX, baseVisMidY = straightMidY;
-        if (rLines && rLines.length) {
-            const latlngs = rLines[0].getLatLngs();
-            const unwrapped = [];
-            for (let i = 0; i < latlngs.length; i++) {
-                let lng = latlngs[i].lng;
+        // Walk route in pixel space to find the visual midpoint (50% of pixel distance).
+        // Use original geographic coordinates (not unwrapped polyline lngs) to avoid
+        // projection errors for antimeridian-crossing routes.
+        let geoPoints;
+        if (key.startsWith('flight-')) {
+            const flights = flightsByKey[key];
+            if (flights && flights.length && flights[0].track_points)
+                geoPoints = flights[0].track_points;
+        }
+        if (!geoPoints) geoPoints = getArcPoints(pair[0], pair[1], 50);
+
+        const straightMidPx = L.point((pxA.x + pxB.x) / 2, (pxA.y + pxB.y) / 2);
+        let visMidX = straightMidPx.x, visMidY = straightMidPx.y;
+
+        if (geoPoints && geoPoints.length >= 2) {
+            // Project points to pixels, unwrapping lngs relative to map center
+            let prevLng = visibleLng(geoPoints[0][1]);
+            const pixels = [];
+            for (let i = 0; i < geoPoints.length; i++) {
+                let lng = i === 0 ? prevLng : geoPoints[i][1];
                 if (i > 0) {
-                    while (lng - unwrapped[i - 1] > 180) lng -= 360;
-                    while (lng - unwrapped[i - 1] < -180) lng += 360;
+                    while (lng - prevLng > 180) lng -= 360;
+                    while (lng - prevLng < -180) lng += 360;
                 }
-                unwrapped.push(lng);
+                pixels.push(map.latLngToContainerPoint([geoPoints[i][0], lng]));
+                prevLng = lng;
             }
-            const pixels = latlngs.map((ll, i) => map.latLngToContainerPoint([ll.lat, unwrapped[i]]));
             let totalLen = 0;
             for (let i = 1; i < pixels.length; i++) {
                 totalLen += Math.sqrt((pixels[i].x - pixels[i-1].x) ** 2 + (pixels[i].y - pixels[i-1].y) ** 2);
@@ -601,8 +624,8 @@ function resolveInfoTooltips() {
                 const segLen = Math.sqrt((pixels[i].x - pixels[i-1].x) ** 2 + (pixels[i].y - pixels[i-1].y) ** 2);
                 if (walked + segLen >= half) {
                     const t = segLen > 0 ? (half - walked) / segLen : 0;
-                    baseVisMidX = pixels[i-1].x + t * (pixels[i].x - pixels[i-1].x);
-                    baseVisMidY = pixels[i-1].y + t * (pixels[i].y - pixels[i-1].y);
+                    visMidX = pixels[i-1].x + t * (pixels[i].x - pixels[i-1].x);
+                    visMidY = pixels[i-1].y + t * (pixels[i].y - pixels[i-1].y);
                     break;
                 }
                 walked += segLen;
@@ -612,19 +635,19 @@ function resolveInfoTooltips() {
         // Route box direction: place on opposite side of arc curvature
         let routeDir;
         if (isVertical) {
-            routeDir = baseVisMidX > straightMidX ? 'left' : 'right';
+            routeDir = visMidX > straightMidPx.x ? 'left' : 'right';
         } else {
-            routeDir = baseVisMidY > straightMidY ? 'top' : 'bottom';
+            routeDir = visMidY > straightMidPx.y ? 'top' : 'bottom';
         }
 
         // Airport box directions based on line orientation
         let aptDirA, aptDirB;
         if (isVertical) {
-            aptDirA = pxA.y <= pxB.y ? 'top' : 'bottom';
-            aptDirB = pxA.y <= pxB.y ? 'bottom' : 'top';
+            aptDirA = aptA.lat >= aptB.lat ? 'top' : 'bottom';
+            aptDirB = aptA.lat >= aptB.lat ? 'bottom' : 'top';
         } else {
-            aptDirA = pxA.x <= pxB.x ? 'left' : 'right';
-            aptDirB = pxA.x <= pxB.x ? 'right' : 'left';
+            aptDirA = aptA.lng <= lngBu ? 'left' : 'right';
+            aptDirB = aptA.lng <= lngBu ? 'right' : 'left';
         }
 
         // 1. Place route tooltips (pixel-positioned DOM elements)
@@ -642,9 +665,8 @@ function resolveInfoTooltips() {
 
             // Shift from visible copy to this world copy
             const pxShift = (WORLD_OFFSETS[tipIdx] / 360) * worldPxWidth;
-            const copyStraightMidX = straightMidX + pxShift;
-            const copyVisMidX = baseVisMidX + pxShift;
-            const copyVisMidY = baseVisMidY;
+            const copyVisMidX = visMidX + pxShift;
+            const copyVisMidY = visMidY;
 
             // Set direction class for arrow (custom classes to avoid Leaflet CSS interference)
             allRouteDirCls.forEach(c => el.classList.remove(c));
@@ -658,10 +680,10 @@ function resolveInfoTooltips() {
             const offset = Math.ceil(routeHalfWeight) + arrowH;
             let x, y;
             switch (routeDir) {
-                case 'top':    x = copyStraightMidX - bw / 2; y = copyVisMidY - bh - offset; break;
-                case 'bottom': x = copyStraightMidX - bw / 2; y = copyVisMidY + offset; break;
-                case 'left':   x = copyVisMidX - bw - offset; y = straightMidY - bh / 2; break;
-                case 'right':  x = copyVisMidX + offset;      y = straightMidY - bh / 2; break;
+                case 'top':    x = copyVisMidX - bw / 2; y = copyVisMidY - bh - offset; break;
+                case 'bottom': x = copyVisMidX - bw / 2; y = copyVisMidY + offset; break;
+                case 'left':   x = copyVisMidX - bw - offset; y = copyVisMidY - bh / 2; break;
+                case 'right':  x = copyVisMidX + offset;      y = copyVisMidY - bh / 2; break;
             }
             el.style.left = Math.round(x) + 'px';
             el.style.top = Math.round(y) + 'px';
