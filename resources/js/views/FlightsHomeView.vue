@@ -13,7 +13,7 @@
         <template v-else>
             <!-- Inline map container — map lives here when not fullscreen -->
             <div ref="inlineContainer"
-                 class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 portrait:aspect-[4/3] portrait:!h-auto"
+                 class="rounded-xl overflow-hidden isolate border border-slate-200 dark:border-slate-700 portrait:aspect-[4/3] portrait:!h-auto"
                  style="height: 420px">
                 <FlightMap ref="flightMapRef" :flights="flights">
                     <button @click="toggleFullscreen"
