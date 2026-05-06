@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\PublicFlightController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\StockSplitController;
 use App\Http\Controllers\WebauthnAuthController;
@@ -48,6 +49,9 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::get('settings', [AdminSettingsController::class, 'show']);
     Route::patch('settings', [AdminSettingsController::class, 'update']);
 });
+
+// Public flights (no auth — serves the flight.jerry.tw subdomain)
+Route::get('public/flights', [PublicFlightController::class, 'index']);
 
 // Stocks module — all routes share the /stocks prefix.
 // Static paths must be declared before the {symbol} wildcard to take priority.

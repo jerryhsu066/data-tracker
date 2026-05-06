@@ -2,6 +2,24 @@
     <div class="max-w-4xl space-y-4">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Flight Settings</h1>
 
+        <!-- Public Profile (admin only) -->
+        <div v-if="isAdmin" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4">
+            <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Public Profile</h2>
+            <p class="text-xs text-slate-400 dark:text-slate-500">
+                Whose flights are shown on <span class="font-mono">flight.jerry.tw</span>. Defaults to user ID 1.
+            </p>
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">User ID</label>
+                <input v-model.number="publicUserId" type="number" min="1"
+                    class="h-9 w-28 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <button @click="savePublicUserId" :disabled="savingPublicUserId"
+                    class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50">
+                    {{ savingPublicUserId ? 'Saving…' : 'Save' }}
+                </button>
+                <span v-if="publicUserIdSaved" class="text-sm text-emerald-500">Saved</span>
+            </div>
+        </div>
+
         <!-- Import / Export -->
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4">
             <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Import / Export</h2>
@@ -119,10 +137,38 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import api from '../api';
+import { useAuth } from '../stores/auth';
 import { downloadExport, previewImport, uploadImport } from '../utils/importExport';
 import ImportPreviewModal from '../components/ImportPreviewModal.vue';
+
+const { state: authState } = useAuth();
+const isAdmin = computed(() => authState.user?.is_admin === true);
+
+const publicUserId = ref(1);
+const savingPublicUserId = ref(false);
+const publicUserIdSaved = ref(false);
+
+async function fetchAdminSettings() {
+    if (!isAdmin.value) return;
+    try {
+        const { data } = await api.get('/admin/settings');
+        publicUserId.value = data.public_flight_user_id ?? 1;
+    } catch {}
+}
+
+async function savePublicUserId() {
+    savingPublicUserId.value = true;
+    publicUserIdSaved.value = false;
+    try {
+        await api.patch('/admin/settings', { public_flight_user_id: publicUserId.value });
+        publicUserIdSaved.value = true;
+        setTimeout(() => { publicUserIdSaved.value = false; }, 2000);
+    } catch {} finally {
+        savingPublicUserId.value = false;
+    }
+}
 
 const fileInputRef = ref(null);
 const previewing = ref(false);
@@ -264,5 +310,8 @@ async function doFr24Delete() {
     }
 }
 
-onMounted(fetchSettings);
+onMounted(() => {
+    fetchSettings();
+    fetchAdminSettings();
+});
 </script>

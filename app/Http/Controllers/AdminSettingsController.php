@@ -12,7 +12,7 @@ class AdminSettingsController extends Controller
     {
         abort_unless($request->user()->is_admin, 403);
 
-        return response()->json(AppSetting::get()->only(['registration_enabled']));
+        return response()->json(AppSetting::get()->only(['registration_enabled', 'public_flight_user_id']));
     }
 
     public function update(Request $request): JsonResponse
@@ -20,12 +20,13 @@ class AdminSettingsController extends Controller
         abort_unless($request->user()->is_admin, 403);
 
         $validated = $request->validate([
-            'registration_enabled' => ['required', 'boolean'],
+            'registration_enabled'  => ['sometimes', 'boolean'],
+            'public_flight_user_id' => ['sometimes', 'integer', 'min:1'],
         ]);
 
         $settings = AppSetting::get();
         $settings->update($validated);
 
-        return response()->json($settings->only(['registration_enabled']));
+        return response()->json($settings->only(['registration_enabled', 'public_flight_user_id']));
     }
 }

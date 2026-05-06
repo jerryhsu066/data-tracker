@@ -48,10 +48,17 @@ const router = createRouter({
                 { path: 'settings', component: () => import('./views/FlightsSettingsView.vue') },
             ],
         },
+
+        // Public subdomain — no auth required
+        { path: '/public/flights', component: () => import('./views/PublicFlightsView.vue') },
     ],
 });
 
 router.beforeEach((to) => {
+    if (window.location.hostname === 'flight.jerry.tw') {
+        if (to.path !== '/public/flights') return '/public/flights';
+        return;
+    }
     const token = localStorage.getItem('token');
     if (to.meta.auth && !token) return '/login';
     if (to.meta.guest && token) return '/stocks/home';
