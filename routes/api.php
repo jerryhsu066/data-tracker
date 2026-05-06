@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\StockSplitController;
 use App\Http\Controllers\CashflowImportExportController;
 use App\Http\Controllers\CashflowRecordController;
 use App\Http\Controllers\CashflowSettingsController;
@@ -79,6 +80,11 @@ Route::prefix('stocks')->group(function () {
         Route::delete('{symbol}', [StockController::class, 'destroy']);
         Route::post('{symbol}/fetch', [StockController::class, 'fetch']);
         Route::get('{symbol}/transactions', [StockController::class, 'transactions']);
+
+        // Splits (use {stock:symbol} for automatic model binding by symbol column)
+        Route::get('{stock:symbol}/splits', [StockSplitController::class, 'index']);
+        Route::post('{stock:symbol}/splits', [StockSplitController::class, 'store']);
+        Route::delete('{stock:symbol}/splits/{split}', [StockSplitController::class, 'destroy']);
     });
 });
 

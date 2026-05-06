@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Stock;
 use App\Models\StockPriceHistory;
+use App\Models\StockSplit;
 use App\Models\StockTransaction;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class PortfolioController extends Controller
 {
@@ -17,7 +19,10 @@ class PortfolioController extends Controller
 
         $discount = (float) ($request->user()->handling_fee_discount ?? 0);
 
-        $positions = Stock::with(['transactions' => fn ($q) => $q->where('user_id', $userId)])
+        $positions = Stock::with([
+                'transactions' => fn ($q) => $q->where('user_id', $userId),
+                'splits',
+            ])
             ->whereHas('transactions', fn ($q) => $q->where('user_id', $userId))
             ->get()
             ->map(fn (Stock $stock) => $this->buildPosition($stock, $discount))
@@ -31,7 +36,6 @@ class PortfolioController extends Controller
     {
         $userId = $request->user()->id;
 
-        // All transactions for this user, ordered by date
         $transactions = StockTransaction::where('user_id', $userId)
             ->with('stock')
             ->orderBy('transacted_at')
@@ -43,7 +47,6 @@ class PortfolioController extends Controller
 
         $stockIds = $transactions->pluck('stock_id')->unique()->values();
 
-        // All price history records for the relevant stocks
         $histories = StockPriceHistory::whereIn('stock_id', $stockIds)
             ->orderBy('date')
             ->get()
@@ -53,17 +56,20 @@ class PortfolioController extends Controller
             return response()->json([]);
         }
 
+        // Load all splits grouped by stock_id
+        $splitsByStock = StockSplit::whereIn('stock_id', $stockIds)
+            ->orderBy('split_date')
+            ->get()
+            ->groupBy('stock_id');
+
         $today = Carbon::today('Asia/Taipei')->toDateString();
 
-        // Build a sorted list of all available dates across all stocks, up to and including today.
         $allDates = $histories->flatten()
             ->pluck('date')
             ->map(fn ($d) => (string) $d)
             ->filter(fn ($d) => $d <= $today)
             ->unique()->sort()->values();
 
-        // Pre-build a sorted price array per stock: [['date' => '...', 'price' => 0.0], ...]
-        // This allows O(1) carry-forward lookup per (stock, date) pair instead of O(n) re-scan.
         $priceIndex = [];
         foreach ($stockIds as $stockId) {
             $priceIndex[$stockId] = ($histories[$stockId] ?? collect())
@@ -73,13 +79,9 @@ class PortfolioController extends Controller
                 ->all();
         }
 
-        // Pre-group transactions by stock_id to avoid O(n²) re-scanning
         $txByStock = $transactions->groupBy('stock_id');
 
-        // For each date, compute sum(sharesHeld × closePrice) for each stock
         $result = [];
-
-        // Cursor per stock pointing to the last known price index position
         $cursors = array_fill_keys($stockIds->all(), 0);
 
         foreach ($allDates as $date) {
@@ -87,21 +89,37 @@ class PortfolioController extends Controller
             $totalCostBasis = 0.0;
 
             foreach ($stockIds as $stockId) {
+                $splits = $splitsByStock[$stockId] ?? collect();
+
                 $txUpToDate = ($txByStock[$stockId] ?? collect())
                     ->filter(fn ($t) => (string) $t->transacted_at <= $date);
 
-                $buysUpToDate  = $txUpToDate->where('type', 'buy');
-                $sellsUpToDate = $txUpToDate->where('type', 'sell');
+                // Apply date-scoped split multiplier per transaction
+                $netShares       = 0.0;
+                $totalBuyShares  = 0.0;
+                $totalBuyCost    = 0.0;
 
-                $totalBuyShares  = (float) $buysUpToDate->sum('shares');
-                $totalSellShares = (float) $sellsUpToDate->sum('shares');
-                $netShares = $totalBuyShares - $totalSellShares;
+                foreach ($txUpToDate as $tx) {
+                    $multiplier = Stock::splitMultiplierBetween(
+                        (string) $tx->transacted_at,
+                        $date,
+                        $splits
+                    );
+                    $adjusted = (float) $tx->shares * $multiplier;
+
+                    if ($tx->type === 'buy') {
+                        $netShares      += $adjusted;
+                        $totalBuyShares += $adjusted;
+                        $totalBuyCost   += (float) $tx->shares * (float) $tx->price_per_share + (float) $tx->handling_fee;
+                    } else {
+                        $netShares -= $adjusted;
+                    }
+                }
 
                 if ($netShares <= 0) {
                     continue;
                 }
 
-                // Advance the cursor to the last price record on or before $date
                 $prices = $priceIndex[$stockId];
                 $cursor = $cursors[$stockId];
                 while ($cursor + 1 < count($prices) && $prices[$cursor + 1]['date'] <= $date) {
@@ -116,7 +134,6 @@ class PortfolioController extends Controller
                 if ($latestPrice !== null) {
                     $totalValue += $netShares * $latestPrice;
 
-                    $totalBuyCost = $buysUpToDate->sum(fn ($t) => (float) $t->shares * (float) $t->price_per_share + (float) $t->handling_fee);
                     $avgCost = $totalBuyShares > 0 ? $totalBuyCost / $totalBuyShares : 0;
                     $totalCostBasis += $avgCost * $netShares;
                 }
@@ -137,24 +154,35 @@ class PortfolioController extends Controller
     private function buildPosition(Stock $stock, float $discount): array
     {
         $transactions = $stock->transactions;
+        $splits       = $stock->splits;
 
-        $buys = $transactions->where('type', 'buy');
-        $sells = $transactions->where('type', 'sell');
+        $netShares      = 0.0;
+        $totalBuyShares = 0.0;
+        $totalBuyCost   = 0.0;
 
-        $totalBuyShares = $buys->sum('shares');
-        $totalBuyCost = $buys->sum(fn ($t) => (float) $t->shares * (float) $t->price_per_share + (float) $t->handling_fee);
+        $totalSellShares  = 0.0;
+        $totalSellRevenue = 0.0;
 
-        $totalSellShares = $sells->sum('shares');
-        $totalSellRevenue = $sells->sum(fn ($t) => (float) $t->shares * (float) $t->price_per_share - (float) $t->handling_fee - (float) $t->transaction_tax);
+        foreach ($transactions as $tx) {
+            $multiplier = Stock::splitMultiplierSince((string) $tx->transacted_at, $splits);
+            $adjusted   = (float) $tx->shares * $multiplier;
 
-        $netShares = $totalBuyShares - $totalSellShares;
+            if ($tx->type === 'buy') {
+                $netShares      += $adjusted;
+                $totalBuyShares += $adjusted;
+                $totalBuyCost   += (float) $tx->shares * (float) $tx->price_per_share + (float) $tx->handling_fee;
+            } else {
+                $netShares       -= $adjusted;
+                $totalSellShares += $adjusted;
+                $totalSellRevenue += (float) $tx->shares * (float) $tx->price_per_share - (float) $tx->handling_fee - (float) $tx->transaction_tax;
+            }
+        }
 
         $averageCost = $totalBuyShares > 0 ? $totalBuyCost / $totalBuyShares : 0;
 
         $currentPrice = (float) ($stock->current_price ?? 0);
         $currentValue = $netShares * $currentPrice;
 
-        // Deduct estimated sell fees from unrealized gain so it reflects actual net proceeds.
         $unrealizedGain = 0.0;
         if ($netShares > 0 && $currentPrice > 0) {
             $minFee = $netShares >= 1000 && fmod($netShares, 1000) == 0 ? 20 : 1;
@@ -166,12 +194,12 @@ class PortfolioController extends Controller
         $realizedGain = $totalSellRevenue - ($totalSellShares * $averageCost);
 
         return [
-            'stock' => $stock->only(['id', 'symbol', 'name', 'current_price', 'change_percent', 'last_fetched_at']),
-            'net_shares' => number_format($netShares, 4, '.', ''),
-            'average_cost' => number_format($averageCost, 4, '.', ''),
-            'current_value' => number_format($currentValue, 4, '.', ''),
+            'stock'          => $stock->only(['id', 'symbol', 'name', 'current_price', 'change_percent', 'last_fetched_at']),
+            'net_shares'     => number_format($netShares, 4, '.', ''),
+            'average_cost'   => number_format($averageCost, 4, '.', ''),
+            'current_value'  => number_format($currentValue, 4, '.', ''),
             'unrealized_gain' => number_format($unrealizedGain, 4, '.', ''),
-            'realized_gain' => number_format($realizedGain, 4, '.', ''),
+            'realized_gain'  => number_format($realizedGain, 4, '.', ''),
         ];
     }
 }
