@@ -52,6 +52,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
 // Public flights (no auth — serves the flight.jerry.tw subdomain)
 Route::get('public/flights', [PublicFlightController::class, 'index']);
+Route::get('public/flights/airports', [AirportController::class, 'index']);
 
 // Stocks module — all routes share the /stocks prefix.
 // Static paths must be declared before the {symbol} wildcard to take priority.

@@ -15,9 +15,12 @@ api.interceptors.response.use(
     (res) => res,
     (err) => {
         if (err.response?.status === 401) {
+            const wasAuthenticated = !!localStorage.getItem('token');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            if (wasAuthenticated) {
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(err);
     },

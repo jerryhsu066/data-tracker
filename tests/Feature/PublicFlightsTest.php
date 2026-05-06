@@ -70,4 +70,9 @@ class PublicFlightsTest extends TestCase
             ->patchJson('/api/admin/settings', ['public_flight_user_id' => $this->owner->id])
             ->assertForbidden();
     }
+
+    public function test_public_airports_returns_airport_list_without_auth(): void
+    {
+        $this->getJson('/api/public/flights/airports')->assertOk()->assertJsonIsArray();
+    }
 }

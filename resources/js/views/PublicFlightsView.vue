@@ -92,7 +92,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, h, nextTick } from 'vue';
 import api from '../api';
-import { ensureLoaded, getDistance, getUniqueCountries } from '../data/airportLookup';
+import { ensureLoadedPublic, getDistance, getUniqueCountries } from '../data/airportLookup';
 import { useTheme } from '../stores/theme';
 import FlightMap from '../components/FlightMap.vue';
 
@@ -177,7 +177,7 @@ async function fetchData() {
 }
 
 onMounted(async () => {
-    await ensureLoaded();
+    await ensureLoadedPublic();
     const { data } = await api.get('/public/flights');
     allFlights.value = data;
     flights.value = data;

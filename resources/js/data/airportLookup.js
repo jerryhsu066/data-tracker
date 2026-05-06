@@ -22,6 +22,20 @@ export async function ensureLoaded() {
     await loadAirports();
 }
 
+export async function ensureLoadedPublic() {
+    if (!airportsPromise) {
+        airportsPromise = api.get('/public/flights/airports').then(({ data }) => {
+            airportMap = new Map(data.map(a => [a.iata, a]));
+            return airportMap;
+        }).catch(() => {
+            airportsPromise = null;
+            airportMap = new Map();
+            return airportMap;
+        });
+    }
+    return airportsPromise;
+}
+
 /**
  * Reload airports from the API (e.g. after a new airport was fetched on-demand).
  */
