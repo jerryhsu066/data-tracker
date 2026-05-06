@@ -131,15 +131,17 @@
             <p v-else class="text-sm text-slate-400 dark:text-slate-500">No passkeys registered yet.</p>
 
             <!-- Add passkey -->
-            <div class="flex items-center gap-3 flex-wrap pt-1">
-                <input v-model="newPasskeyName" type="text" placeholder="Device name (e.g. iPhone 15)"
-                    class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-md px-3 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                <button @click="addPasskey" :disabled="addingPasskey"
-                    class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-md transition-colors">
-                    {{ addingPasskey ? 'Registering…' : '+ Add Passkey' }}
-                </button>
-                <span v-if="passkeyError" class="text-sm text-red-500 break-words min-w-0 w-full">{{ passkeyError }}</span>
-                <span v-if="passkeySuccess" class="text-sm text-emerald-500">Passkey added ✓</span>
+            <div class="space-y-2 pt-1">
+                <div class="flex items-center gap-3">
+                    <input v-model="newPasskeyName" type="text" placeholder="Device name (e.g. iPhone 15)"
+                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-md px-3 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <button @click="addPasskey" :disabled="addingPasskey"
+                        class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-md transition-colors">
+                        {{ addingPasskey ? 'Registering…' : '+ Add Passkey' }}
+                    </button>
+                </div>
+                <p v-if="passkeyError" class="text-sm text-red-500">{{ passkeyError }}</p>
+                <p v-if="passkeySuccess" class="text-sm text-emerald-500">Passkey added ✓</p>
             </div>
         </div>
 
