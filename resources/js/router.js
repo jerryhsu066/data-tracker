@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { nextTick } from 'vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -56,6 +57,32 @@ router.beforeEach((to) => {
     if (to.meta.guest && token) return '/stocks/home';
 });
 
-export {};
+// Resets the iOS CSS viewport after native overlays (Face ID, keyboard) can
+// leave it reporting a wrong width, causing md:/sm: breakpoints to misfire.
+//
+// Why width=1: it forces iOS to fully discard the current viewport calculation
+// and rebuild it from device dimensions when the original value is restored.
+//
+// Why opacity=0 first: iOS forces a paint immediately when the viewport meta
+// changes, before requestAnimationFrame runs. Hiding the page ensures the
+// zoomed-in intermediate frame (width=1 with default scale) is never visible.
+// Opacity is restored in the same rAF that also restores the correct viewport,
+// so the user sees one clean transition with no zoom flash.
+export function resetCssViewport() {
+    const vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) return;
+    const original = vp.getAttribute('content');
+    document.documentElement.style.opacity = '0';
+    vp.setAttribute('content', 'width=1');
+    requestAnimationFrame(() => {
+        vp.setAttribute('content', original);
+        document.documentElement.style.opacity = '';
+    });
+}
+
+router.afterEach(async () => {
+    await nextTick();
+    resetCssViewport();
+});
 
 export default router;

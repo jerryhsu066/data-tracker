@@ -218,6 +218,7 @@ import api from '../api';
 import { useAuth } from '../stores/auth';
 import { isWebauthnSupported, registerPasskey } from '../utils/webauthn';
 import { usePwa } from '../stores/pwa';
+import { resetCssViewport } from '../router';
 
 const auth = useAuth();
 const pwa  = usePwa();
@@ -294,6 +295,7 @@ async function addPasskey() {
         }
     } finally {
         addingPasskey.value = false;
+        resetCssViewport();
     }
 }
 
