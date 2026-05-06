@@ -291,7 +291,7 @@ async function addPasskey() {
         if (e.name === 'NotAllowedError') {
             passkeyError.value = 'Cancelled or not allowed.';
         } else {
-            passkeyError.value = 'Registration failed. Please try again.';
+            passkeyError.value = e.response?.data?.message ?? 'Registration failed. Please try again.';
         }
     } finally {
         addingPasskey.value = false;

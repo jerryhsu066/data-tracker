@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class WebauthnRegisterController extends Controller
 {
@@ -33,11 +34,23 @@ class WebauthnRegisterController extends Controller
 
         abort_unless($optionsJson, 422, 'Registration session expired. Please try again.');
 
-        $record = $service->verifyRegistration(
-            $request->input('credential'),
-            $optionsJson,
-            parse_url(config('webauthn.origin'), PHP_URL_HOST)
-        );
+        try {
+            $record = $service->verifyRegistration(
+                $request->input('credential'),
+                $optionsJson,
+                parse_url(config('webauthn.origin'), PHP_URL_HOST)
+            );
+        } catch (\Throwable $e) {
+            Log::error('WebAuthn registration failed', [
+                'user_id' => $user->id,
+                'error'   => $e->getMessage(),
+                'class'   => get_class($e),
+            ]);
+
+            return response()->json([
+                'message' => 'Registration failed: ' . $e->getMessage(),
+            ], 422);
+        }
 
         $credential = WebauthnCredential::create([
             'user_id'         => $user->id,

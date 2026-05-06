@@ -45,7 +45,7 @@ function prepareCreationOptions(options) {
             challenge:  base64urlToBuffer(options.challenge),
             user: {
                 ...options.user,
-                id: new TextEncoder().encode(options.user.id),
+                id: base64urlToBuffer(options.user.id),
             },
             excludeCredentials: (options.excludeCredentials ?? []).map(c => ({
                 ...c,
