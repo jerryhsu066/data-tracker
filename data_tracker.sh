@@ -85,6 +85,9 @@ cmd_update() {
   echo "==> Restarting services..."
   $COMPOSE up -d
 
+  echo "==> Installing PHP dependencies..."
+  $COMPOSE exec app composer install --no-interaction --prefer-dist --optimize-autoloader
+
   echo "==> Running new migrations and seeders..."
   $COMPOSE exec app php artisan migrate --force --ansi
   $COMPOSE exec app php artisan db:seed --force --ansi
