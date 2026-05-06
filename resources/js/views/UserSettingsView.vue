@@ -138,7 +138,7 @@
                     class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-md transition-colors">
                     {{ addingPasskey ? 'Registering…' : '+ Add Passkey' }}
                 </button>
-                <span v-if="passkeyError" class="text-sm text-red-500">{{ passkeyError }}</span>
+                <span v-if="passkeyError" class="text-sm text-red-500 break-words min-w-0 w-full">{{ passkeyError }}</span>
                 <span v-if="passkeySuccess" class="text-sm text-emerald-500">Passkey added ✓</span>
             </div>
         </div>
@@ -288,10 +288,12 @@ async function addPasskey() {
         if (e.name === 'NotAllowedError') {
             passkeyError.value = 'Cancelled or not allowed.';
         } else {
-            passkeyError.value = e.response?.data?.message ?? 'Failed to register passkey.';
+            passkeyError.value = 'Registration failed. Please try again.';
         }
     } finally {
         addingPasskey.value = false;
+        // Force iOS WebKit to reset cached scroll width after native dialog
+        window.scrollTo(0, 0);
     }
 }
 
