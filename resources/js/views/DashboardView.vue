@@ -9,13 +9,13 @@
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
             <p class="text-sm text-slate-500 dark:text-slate-400">Unrealized Gain</p>
-            <p class="text-2xl font-bold mt-1" :class="totalUnrealized >= 0 ? 'text-emerald-600' : 'text-red-500'">
+            <p class="text-2xl font-bold mt-1" :class="gainClass(totalUnrealized)">
                 {{ hidden ? '••••' : (sign(totalUnrealized) + fmt(Math.abs(totalUnrealized))) }}
             </p>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
             <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss %</p>
-            <p class="text-2xl font-bold mt-1" :class="gainPct >= 0 ? 'text-emerald-600' : 'text-red-500'">
+            <p class="text-2xl font-bold mt-1" :class="gainClass(gainPct)">
                 {{ sign(gainPct) }}{{ Math.abs(gainPct).toFixed(2) }}%
             </p>
         </div>
@@ -109,15 +109,15 @@
                         <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(pos.average_cost) }}</td>
                         <td class="px-4 py-3 text-right">
                             <div class="text-slate-900 dark:text-slate-100">{{ fmt(pos.stock.current_price) }}</div>
-                            <div v-if="pos.stock.change_percent" class="text-xs" :class="pos.stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                            <div v-if="pos.stock.change_percent" class="text-xs" :class="gainClass(pos.stock.change_percent)">
                                 {{ pos.stock.change_percent >= 0 ? '+' : '' }}{{ Number(pos.stock.change_percent).toFixed(2) }}%
                             </div>
                         </td>
                         <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">{{ hidden ? '••••' : fmt(pos.current_value) }}</td>
-                        <td class="px-4 py-3 text-right font-medium" :class="pos.unrealized_gain >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                        <td class="px-4 py-3 text-right font-medium" :class="gainClass(pos.unrealized_gain)">
                             {{ hidden ? '••••' : (sign(pos.unrealized_gain) + fmt(Math.abs(pos.unrealized_gain))) }}
                         </td>
-                        <td class="px-4 py-3 text-right font-medium" :class="pos.realized_gain >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                        <td class="px-4 py-3 text-right font-medium" :class="gainClass(pos.realized_gain)">
                             {{ hidden ? '••••' : (sign(pos.realized_gain) + fmt(Math.abs(pos.realized_gain))) }}
                         </td>
                     </tr>
@@ -134,6 +134,7 @@ import { Chart, DoughnutController, BarController, LineController, ArcElement, B
 import api from '../api';
 import { useTheme } from '../stores/theme';
 import { usePrivacy } from '../stores/privacy';
+import { useGainColor } from '../stores/gainColor';
 
 Chart.register(DoughnutController, BarController, LineController, ArcElement, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler, Legend);
 
@@ -170,6 +171,7 @@ const totalCostBasis  = computed(() => positions.value.reduce((s, p) => s + Numb
 const gainPct         = computed(() => totalCostBasis.value > 0 ? (totalUnrealized.value / totalCostBasis.value) * 100 : 0);
 
 const { hidden } = usePrivacy();
+const { gainClass, gainHex, gainIsRed } = useGainColor();
 
 function chartColors() {
     const dark = document.documentElement.classList.contains('dark');
@@ -353,7 +355,7 @@ function renderCharts() {
                 ctx.textAlign = 'left';
                 chart.getDatasetMeta(0).data.forEach((bar, i) => {
                     const pct = pcts[i];
-                    ctx.fillStyle = gains[i] >= 0 ? '#10b981' : '#ef4444';
+                    ctx.fillStyle = gainHex(gains[i]);
                     const xPos = Math.max(bar.x, zeroX) + 5;
                     ctx.fillText(`${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`, xPos, bar.y);
                 });
@@ -367,7 +369,7 @@ function renderCharts() {
                 labels: pos.map(p => p.stock.symbol),
                 datasets: [{
                     data: gains,
-                    backgroundColor: gains.map(g => g >= 0 ? '#10b981' : '#ef4444'),
+                    backgroundColor: gains.map(g => gainHex(g)),
                     borderRadius: 4,
                     barThickness: 18,
                 }],
@@ -412,6 +414,7 @@ function renderCharts() {
 const { dark } = useTheme();
 watch(selectedPeriod, () => nextTick(renderLineChart));
 watch(dark, () => nextTick(() => { renderCharts(); renderLineChart(); }));
+watch(gainIsRed, () => nextTick(renderCharts));
 
 onMounted(async () => {
     try {

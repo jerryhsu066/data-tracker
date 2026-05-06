@@ -30,9 +30,9 @@
             </div>
         </div>
 
-        <!-- Brokerage Fees -->
+        <!-- Brokerage Fees & Display -->
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-6">
-            <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Brokerage Fees</h2>
+            <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Brokerage Fees &amp; Display</h2>
 
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Handling Fee Discount</label>
@@ -48,6 +48,31 @@
                         placeholder="0"
                     />
                     <span class="text-sm text-slate-500 dark:text-slate-400">% off</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Gain / Loss Color Convention</label>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">
+                    US markets use green for gains and red for losses. Taiwan markets use the opposite.
+                </p>
+                <div class="flex gap-2">
+                    <button
+                        @click="gainIsRed = false"
+                        :class="!gainIsRed
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'"
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                        <span class="text-emerald-500 font-bold">▲</span> US (green = gain)
+                    </button>
+                    <button
+                        @click="gainIsRed = true"
+                        :class="gainIsRed
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'"
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                        <span class="text-red-500 font-bold">▲</span> TW (red = gain)
+                    </button>
                 </div>
             </div>
 
@@ -83,11 +108,13 @@ const { state, updateUser } = useAuth();
 const STANDARD_RATE = 0.1425;
 
 const discountPercent = ref(Math.round(Number(state.user?.handling_fee_discount ?? 0) * 100));
+const gainIsRed = ref(!!state.user?.gain_is_red);
 
 onMounted(async () => {
     try {
         const { data } = await api.get('/stocks/settings');
         discountPercent.value = Math.round(Number(data.handling_fee_discount ?? 0) * 100);
+        gainIsRed.value = !!data.gain_is_red;
     } catch {}
 });
 const saving = ref(false);
@@ -188,8 +215,9 @@ async function save() {
     try {
         const { data } = await api.patch('/stocks/settings', {
             handling_fee_discount: discountPercent.value / 100,
+            gain_is_red: gainIsRed.value,
         });
-        updateUser({ handling_fee_discount: data.handling_fee_discount });
+        updateUser({ handling_fee_discount: data.handling_fee_discount, gain_is_red: data.gain_is_red });
         saved.value = true;
         setTimeout(() => { saved.value = false; }, 2000);
     } catch (e) {

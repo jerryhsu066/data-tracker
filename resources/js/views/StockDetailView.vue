@@ -10,7 +10,7 @@
             <div class="ml-auto text-right">
                 <div v-if="stock.current_price">
                     <div class="text-3xl font-semibold text-slate-900 dark:text-slate-100">{{ fmt(stock.current_price) }}</div>
-                    <div v-if="stock.change_percent" class="text-sm font-medium mt-0.5" :class="stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                    <div v-if="stock.change_percent" class="text-sm font-medium mt-0.5" :class="gainClass(stock.change_percent)">
                         {{ stock.change_percent >= 0 ? '+' : '' }}{{ Number(stock.change_percent).toFixed(2) }}%
                     </div>
                 </div>
@@ -296,6 +296,7 @@ import { useRoute } from 'vue-router';
 import api from '../api';
 import { useAuth } from '../stores/auth';
 import { usePrivacy } from '../stores/privacy';
+import { useGainColor } from '../stores/gainColor';
 import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, Tooltip, CategoryScale } from 'chart.js';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Filler, Tooltip, CategoryScale);
@@ -303,6 +304,7 @@ Chart.register(LineController, LineElement, PointElement, LinearScale, Filler, T
 const PERIODS = ['1M', '3M', '6M', '1Y', 'All'];
 
 const { hidden } = usePrivacy();
+const { gainClass } = useGainColor();
 const route = useRoute();
 const symbol = computed(() => route.params.symbol);
 

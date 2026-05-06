@@ -43,7 +43,7 @@
                     <p class="font-semibold text-sm text-slate-900 dark:text-slate-100">{{ idx.stock.name }}</p>
                     <div class="flex items-baseline gap-2 mb-3">
                         <span class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ fmtPrice(idx.stock.current_price) }}</span>
-                        <span v-if="idx.stock.change_percent" class="text-xs font-medium" :class="idx.stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                        <span v-if="idx.stock.change_percent" class="text-xs font-medium" :class="gainClass(idx.stock.change_percent)">
                             {{ idx.stock.change_percent >= 0 ? '+' : '' }}{{ Number(idx.stock.change_percent).toFixed(2) }}%
                         </span>
                     </div>
@@ -64,13 +64,13 @@
             </div>
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                 <p class="text-sm text-slate-500 dark:text-slate-400">Unrealized Gain</p>
-                <p class="text-2xl font-bold mt-1" :class="totalUnrealized >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                <p class="text-2xl font-bold mt-1" :class="gainClass(totalUnrealized)">
                     {{ hidden ? '••••' : (sign(totalUnrealized) + fmt(Math.abs(totalUnrealized))) }}
                 </p>
             </div>
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                 <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss %</p>
-                <p class="text-2xl font-bold mt-1" :class="gainPct >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                <p class="text-2xl font-bold mt-1" :class="gainClass(gainPct)">
                     {{ sign(gainPct) }}{{ Math.abs(gainPct).toFixed(2) }}%
                 </p>
             </div>
@@ -100,7 +100,7 @@
                         </div>
                         <div>
                             <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss</p>
-                            <p class="text-2xl font-bold mt-1" :class="b.stats.gainLossPct >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                            <p class="text-2xl font-bold mt-1" :class="gainClass(b.stats.gainLossPct)">
                                 {{ b.stats.gainLossPct >= 0 ? '+' : '' }}{{ b.stats.gainLossPct.toFixed(2) }}%
                             </p>
                         </div>
@@ -139,11 +139,13 @@ import { Chart, LineController, LineElement, PointElement, CategoryScale, Linear
 import api from '../api';
 import { useTheme } from '../stores/theme';
 import { usePrivacy } from '../stores/privacy';
+import { useGainColor } from '../stores/gainColor';
 
 Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip);
 
 const PERIODS = ['1M', '3M', '6M', '1Y', 'All'];
 const { hidden } = usePrivacy();
+const { gainClass } = useGainColor();
 
 const PALETTE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'];
 

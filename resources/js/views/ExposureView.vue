@@ -79,7 +79,7 @@
                 </div>
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                     <p class="text-sm text-slate-500 dark:text-slate-400">Gain / Loss</p>
-                    <p class="text-2xl font-bold mt-1" :class="gainLoss >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                    <p class="text-2xl font-bold mt-1" :class="gainClass(gainLoss)">
                         {{ gainLoss >= 0 ? '+' : '' }}{{ gainLossPct.toFixed(2) }}%
                     </p>
                 </div>
@@ -384,6 +384,7 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import api from '../api';
 import { usePrivacy } from '../stores/privacy';
+import { useGainColor } from '../stores/gainColor';
 
 const PALETTE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'];
 
@@ -611,6 +612,7 @@ onMounted(async () => {
 });
 
 const { hidden } = usePrivacy();
+const { gainClass } = useGainColor();
 
 function fmt(v) {
     if (v == null) return '—';

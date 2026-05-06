@@ -115,7 +115,7 @@
             <div>
                 <div v-if="stock.current_price" class="flex items-baseline gap-2">
                     <span class="text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ fmt(stock.current_price) }}</span>
-                    <span v-if="stock.change_percent" class="text-sm font-medium" :class="stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                    <span v-if="stock.change_percent" class="text-sm font-medium" :class="gainClass(stock.change_percent)">
                         {{ stock.change_percent >= 0 ? '+' : '' }}{{ Number(stock.change_percent).toFixed(2) }}%
                     </span>
                 </div>
@@ -149,8 +149,10 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import api from '../api';
 import { usePrivacy } from '../stores/privacy';
+import { useGainColor } from '../stores/gainColor';
 
 const { hidden } = usePrivacy();
+const { gainClass } = useGainColor();
 const stocks = ref([]);
 const loading = ref(true);
 const showForm = ref(false);
