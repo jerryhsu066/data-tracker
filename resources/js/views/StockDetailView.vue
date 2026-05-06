@@ -133,6 +133,58 @@
         <p v-if="txError" class="mt-2 text-sm text-red-500">{{ txError }}</p>
     </div>
 
+    <!-- Stock Splits -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Stock Splits</h2>
+        </div>
+        <div class="p-6 space-y-4">
+            <!-- Existing splits -->
+            <div v-if="splits.length > 0" class="space-y-2">
+                <div v-for="split in splits" :key="split.id"
+                    class="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ split.split_date }}</span>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
+                            {{ split.ratio_from }}:{{ split.ratio_to }}
+                        </span>
+                    </div>
+                    <button @click="deleteSplit(split.id)"
+                        class="text-slate-300 dark:text-slate-600 hover:text-red-400 transition-colors text-sm">✕</button>
+                </div>
+            </div>
+            <p v-else class="text-sm text-slate-400 dark:text-slate-500">No splits recorded.</p>
+            <!-- Add split form -->
+            <form @submit.prevent="addSplit" class="flex flex-wrap gap-3 items-end border-t border-slate-100 dark:border-slate-700 pt-4">
+                <div>
+                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Split Date</label>
+                    <input v-model="splitForm.split_date" type="date" required
+                        class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <p class="h-[1.1rem] text-xs text-red-500">{{ splitErrors.split_date?.[0] ?? '' }}</p>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Ratio (from : to)</label>
+                    <div class="flex items-center gap-2">
+                        <input v-model="splitForm.ratio_from" type="number" min="1" step="1" required placeholder="1"
+                            class="h-9 w-16 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                        <span class="text-slate-400">:</span>
+                        <input v-model="splitForm.ratio_to" type="number" min="1" step="1" required placeholder="2"
+                            class="h-9 w-16 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                    <p class="h-[1.1rem] text-xs text-red-500">{{ splitErrors.ratio_from?.[0] ?? splitErrors.ratio_to?.[0] ?? '' }}</p>
+                </div>
+                <div>
+                    <label class="block text-xs mb-1 invisible">_</label>
+                    <button type="submit" :disabled="addingSplit"
+                        class="h-9 px-4 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors">
+                        {{ addingSplit ? '…' : 'Add Split' }}
+                    </button>
+                    <p class="h-[1.1rem]"></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Transaction history -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700">
@@ -204,10 +256,17 @@
                     <tr v-else class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                         <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ tx.transacted_at }}</td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-0.5 rounded-full text-xs font-medium"
-                                :class="tx.type === 'buy' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400'">
-                                {{ tx.type.toUpperCase() }}
-                            </span>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="tx.type === 'buy' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400'">
+                                    {{ tx.type.toUpperCase() }}
+                                </span>
+                                <span v-if="txSplitBadge(tx)"
+                                    class="px-1.5 py-0.5 rounded text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
+                                    :title="`Adjusted ×${txSplitMultiplier(tx)} by subsequent split(s)`">
+                                    ×{{ txSplitMultiplier(tx) }}
+                                </span>
+                            </div>
                         </td>
                         <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ Number(tx.shares).toLocaleString() }}</td>
                         <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ hidden ? '••••' : fmt(tx.price_per_share) }}</td>
@@ -250,6 +309,7 @@ const symbol = computed(() => route.params.symbol);
 const stock = ref(null);
 const priceHistory = ref([]);
 const transactions = ref([]);
+const splits = ref([]);
 const chartCanvas = ref(null);
 const selectedPeriod = ref('3M');
 let chartInstance = null;
@@ -284,6 +344,10 @@ const refreshing = ref(false);
 const editingId = ref(null);
 const editForm = ref({});
 const saving = ref(false);
+
+const splitForm = ref({ split_date: '', ratio_from: 1, ratio_to: 2 });
+const splitErrors = ref({});
+const addingSplit = ref(false);
 
 // Auto-calculate fees whenever trade value or rates change.
 // feeRates is destructured BEFORE the early return so Vue always tracks it
@@ -320,16 +384,52 @@ function fmt(v) {
 }
 
 async function load() {
-    const [stockRes, historyRes, txRes] = await Promise.all([
+    const [stockRes, historyRes, txRes, splitsRes] = await Promise.all([
         api.get(`/stocks/${symbol.value}`),
         api.get(`/stocks/${symbol.value}/prices`),
         api.get(`/stocks/${symbol.value}/transactions`),
+        api.get(`/stocks/${symbol.value}/splits`),
     ]);
     stock.value = stockRes.data;
     priceHistory.value = historyRes.data;
     transactions.value = txRes.data;
+    splits.value = splitsRes.data;
     await nextTick();
     renderChart();
+}
+
+// Returns the cumulative split multiplier for a transaction (splits after tx date).
+function txSplitMultiplier(tx) {
+    const txDate = String(tx.transacted_at).slice(0, 10);
+    let m = 1;
+    for (const s of splits.value) {
+        if (s.split_date > txDate) m *= s.ratio_to / s.ratio_from;
+    }
+    return m;
+}
+
+function txSplitBadge(tx) {
+    return txSplitMultiplier(tx) !== 1;
+}
+
+async function addSplit() {
+    splitErrors.value = {};
+    addingSplit.value = true;
+    try {
+        const { data } = await api.post(`/stocks/${symbol.value}/splits`, splitForm.value);
+        splits.value = [...splits.value, data].sort((a, b) => a.split_date.localeCompare(b.split_date));
+        splitForm.value = { split_date: '', ratio_from: 1, ratio_to: 2 };
+    } catch (e) {
+        if (e.response?.status === 422) splitErrors.value = e.response.data.errors ?? {};
+    } finally {
+        addingSplit.value = false;
+    }
+}
+
+async function deleteSplit(id) {
+    if (!confirm('Delete this split record? Portfolio calculations will revert.')) return;
+    await api.delete(`/stocks/${symbol.value}/splits/${id}`);
+    splits.value = splits.value.filter(s => s.id !== id);
 }
 
 function renderChart() {
