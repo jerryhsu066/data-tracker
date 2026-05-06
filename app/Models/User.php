@@ -32,6 +32,7 @@ class User extends Authenticatable
         'handling_fee_discount',
         'privacy_lock',
         'gain_is_red',
+        'is_admin',
     ];
 
     /**
@@ -57,6 +58,7 @@ class User extends Authenticatable
             'handling_fee_discount' => 'decimal:4',
             'privacy_lock' => 'boolean',
             'gain_is_red'  => 'boolean',
+            'is_admin'     => 'boolean',
         ];
     }
 }

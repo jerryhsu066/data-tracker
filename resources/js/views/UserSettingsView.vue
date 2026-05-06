@@ -59,6 +59,29 @@
             </label>
         </div>
 
+        <!-- App settings (admin only) -->
+        <div v-if="auth.state.user?.is_admin" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4">
+            <h2 class="text-sm font-semibold text-slate-600 dark:text-slate-300">App Settings</h2>
+            <label class="flex items-center justify-between gap-4 cursor-pointer">
+                <div>
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">Allow new registrations</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">When disabled, only existing accounts can log in.</p>
+                </div>
+                <button
+                    type="button"
+                    @click="toggleRegistration"
+                    :disabled="savingRegistration"
+                    class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    :class="registrationEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'"
+                >
+                    <span
+                        class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform"
+                        :class="registrationEnabled ? 'translate-x-5' : 'translate-x-0'"
+                    ></span>
+                </button>
+            </label>
+        </div>
+
         <!-- Change password -->
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4">
             <h2 class="text-sm font-semibold text-slate-600 dark:text-slate-300">Change Password</h2>
@@ -104,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import api from '../api';
 import { useAuth } from '../stores/auth';
 
@@ -114,6 +137,18 @@ const name         = ref(auth.state.user?.name ?? '');
 const email        = ref(auth.state.user?.email ?? '');
 const privacyLock  = ref(auth.state.user?.privacy_lock ?? false);
 const savingPrivacyLock = ref(false);
+
+const registrationEnabled = ref(true);
+const savingRegistration  = ref(false);
+
+onMounted(async () => {
+    if (auth.state.user?.is_admin) {
+        try {
+            const { data } = await api.get('/admin/settings');
+            registrationEnabled.value = data.registration_enabled;
+        } catch {}
+    }
+});
 
 const savingProfile = ref(false);
 const profileSaved  = ref(false);
@@ -126,6 +161,16 @@ const confirmPassword = ref('');
 const savingPassword = ref(false);
 const passwordSaved  = ref(false);
 const passwordError  = ref('');
+
+async function toggleRegistration() {
+    savingRegistration.value = true;
+    try {
+        const { data } = await api.patch('/admin/settings', { registration_enabled: !registrationEnabled.value });
+        registrationEnabled.value = data.registration_enabled;
+    } finally {
+        savingRegistration.value = false;
+    }
+}
 
 async function togglePrivacyLock() {
     savingPrivacyLock.value = true;

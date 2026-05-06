@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\StockSplitController;
 use App\Http\Controllers\CashflowImportExportController;
@@ -28,6 +29,12 @@ Route::prefix('auth')->group(function () {
         Route::post('verify-password', [AuthController::class, 'verifyPassword']);
         Route::post('logout', [AuthController::class, 'logout']);
     });
+});
+
+// Admin
+Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+    Route::get('settings', [AdminSettingsController::class, 'show']);
+    Route::patch('settings', [AdminSettingsController::class, 'update']);
 });
 
 // Stocks module — all routes share the /stocks prefix.

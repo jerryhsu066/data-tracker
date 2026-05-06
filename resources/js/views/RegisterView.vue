@@ -48,9 +48,13 @@
                     />
                 </div>
 
+                <p v-if="disabledError" class="text-sm text-center text-red-500 bg-red-50 dark:bg-red-900/30 rounded-lg px-3 py-2">
+                    Registration is currently disabled.
+                </p>
+
                 <button
                     type="submit"
-                    :disabled="loading"
+                    :disabled="loading || disabledError"
                     class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg py-2 text-sm font-medium transition-colors"
                 >
                     {{ loading ? 'Creating account…' : 'Create account' }}
@@ -76,15 +80,18 @@ const auth = useAuth();
 const form = ref({ name: '', email: '', password: '', password_confirmation: '' });
 const errors = ref({});
 const loading = ref(false);
+const disabledError = ref(false);
 
 async function submit() {
-    errors.value = {};
+    errors.value  = {};
+    disabledError.value = false;
     loading.value = true;
     try {
         await auth.register(form.value.name, form.value.email, form.value.password, form.value.password_confirmation);
         router.push('/stocks/home');
     } catch (e) {
         if (e.response?.status === 422) errors.value = e.response.data.errors ?? {};
+        else if (e.response?.status === 403) disabledError.value = true;
     } finally {
         loading.value = false;
     }

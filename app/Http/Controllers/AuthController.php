@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\SeedDefaultCashflowTypes;
+use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,13 +16,19 @@ class AuthController extends Controller
 {
     public function register(Request $request): JsonResponse
     {
+        $isFirstUser = User::count() === 0;
+
+        if (! $isFirstUser && ! AppSetting::get()->registration_enabled) {
+            return response()->json(['message' => 'Registration is currently disabled.'], 403);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $user = User::create($validated);
+        $user = User::create([...$validated, 'is_admin' => $isFirstUser]);
         (new SeedDefaultCashflowTypes)->run($user);
         $token = $user->createToken('api')->plainTextToken;
 
