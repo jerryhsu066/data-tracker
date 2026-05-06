@@ -88,27 +88,29 @@
             <!-- Allocation bar -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-6">
                 <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Allocation</h2>
+                <!-- Bar: grouped by leverage tier -->
                 <div class="flex h-8 rounded-lg overflow-hidden gap-px bg-slate-100 dark:bg-slate-700">
                     <div
-                        v-for="(seg, i) in allocationSegments"
+                        v-for="seg in barSegments"
                         :key="seg.label"
-                        :style="{ width: seg.pct + '%', backgroundColor: PALETTE[i % PALETTE.length] }"
+                        :style="{ width: seg.pct + '%', backgroundColor: seg.color }"
                         :title="`${seg.label}: ${seg.pct.toFixed(1)}%`"
                         class="relative flex items-center justify-center transition-all duration-300 overflow-hidden"
                     >
                         <span
                             v-if="seg.pct >= 7"
                             class="text-white text-xs font-semibold leading-none select-none drop-shadow"
-                        >{{ seg.pct.toFixed(1) }}%</span>
+                        >{{ seg.label }}</span>
                     </div>
                 </div>
+                <!-- Legend: per individual position -->
                 <ul class="flex flex-wrap gap-x-4 gap-y-1 mt-3">
                     <li
-                        v-for="(seg, i) in allocationSegments"
+                        v-for="seg in legendSegments"
                         :key="seg.label"
                         class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400"
                     >
-                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: PALETTE[i % PALETTE.length] }"></span>
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: seg.color }"></span>
                         <span>{{ seg.label }}</span>
                         <span class="text-slate-400 dark:text-slate-500">{{ seg.pct.toFixed(1) }}%</span>
                     </li>
@@ -465,16 +467,54 @@ const investValue = computed(() => {
 const gainLoss = computed(() => totalValue.value - investValue.value);
 const gainLossPct = computed(() => investValue.value > 0 ? (gainLoss.value / investValue.value) * 100 : 0);
 
-const allocationSegments = computed(() => {
+// Bar: one segment per leverage tier (1×, 2×, …) plus cash, colors assigned in leverage order.
+const barSegments = computed(() => {
     if (!active.value || totalValue.value === 0) return [];
+
+    const leverageMap = new Map();
+    for (const e of active.value.entries) {
+        if (e.is_cash) continue;
+        const lev = Number(e.leverage);
+        leverageMap.set(lev, (leverageMap.get(lev) || 0) + Number(e.net_shares) * Number(e.stock.current_price));
+    }
+
+    const segs = [...leverageMap.entries()]
+        .sort(([a], [b]) => a - b)
+        .map(([lev, value], i) => ({
+            label: `${lev}×`,
+            pct: (value / totalValue.value) * 100,
+            color: PALETTE[i % PALETTE.length],
+            leverage: lev,
+        }));
+
+    const cashProxy = active.value.entries
+        .filter(e => e.is_cash)
+        .reduce((sum, e) => sum + Number(e.net_shares) * Number(e.stock.current_price), 0);
+    const totalCash = (active.value.cash || 0) + cashProxy;
+    if (totalCash > 0) {
+        segs.push({ label: 'Cash', pct: (totalCash / totalValue.value) * 100, color: '#94a3b8', leverage: null });
+    }
+
+    return segs;
+});
+
+// Legend: one entry per position, colored to match its leverage tier's bar segment.
+const legendSegments = computed(() => {
+    if (!active.value || totalValue.value === 0) return [];
+
+    const colorByLeverage = Object.fromEntries(barSegments.value.map(s => [s.leverage, s.color]));
+
     const segs = active.value.entries.map(e => ({
         label: e.stock.symbol,
         pct: (Number(e.net_shares) * Number(e.stock.current_price) / totalValue.value) * 100,
+        color: e.is_cash ? '#94a3b8' : (colorByLeverage[Number(e.leverage)] ?? PALETTE[0]),
     }));
+
     const cash = active.value.cash || 0;
     if (cash > 0) {
-        segs.push({ label: 'Cash', pct: (cash / totalValue.value) * 100 });
+        segs.push({ label: 'Cash', pct: (cash / totalValue.value) * 100, color: '#94a3b8' });
     }
+
     return segs;
 });
 
