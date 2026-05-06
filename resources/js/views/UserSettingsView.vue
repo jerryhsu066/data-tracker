@@ -111,7 +111,7 @@
         </div>
 
         <!-- Passkeys -->
-        <div v-if="webauthnSupported" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4">
+        <div v-if="webauthnSupported" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4 overflow-x-hidden">
             <h2 class="text-sm font-semibold text-slate-600 dark:text-slate-300">Passkeys (Face ID / Fingerprint)</h2>
             <p class="text-xs text-slate-500 dark:text-slate-400">Sign in with biometrics instead of your password. Passkeys are stored on your device and work on iOS, Android, and desktop.</p>
 
@@ -213,7 +213,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import api from '../api';
 import { useAuth } from '../stores/auth';
 import { isWebauthnSupported, registerPasskey } from '../utils/webauthn';
@@ -294,8 +294,14 @@ async function addPasskey() {
         }
     } finally {
         addingPasskey.value = false;
-        // Force iOS WebKit to reset cached scroll width after native dialog
-        window.scrollTo(0, 0);
+        // After the native dialog closes, force iOS to recalculate element
+        // widths against the actual viewport — the Face ID sheet can leave
+        // the layout viewport in a drifted state.
+        await nextTick();
+        const w = window.innerWidth + 'px';
+        document.documentElement.style.width = w;
+        document.documentElement.offsetWidth; // synchronous reflow
+        document.documentElement.style.width = '';
     }
 }
 

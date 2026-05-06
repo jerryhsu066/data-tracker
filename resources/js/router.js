@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { nextTick } from 'vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -61,10 +62,12 @@ router.beforeEach((to) => {
 // causing a cached scrollWidth wider than the actual viewport. Pinning
 // <html> to window.innerWidth and immediately releasing it triggers a full
 // style+layout recalculation against the correct viewport width.
-router.afterEach(() => {
+router.afterEach(async () => {
+    // Wait for the incoming page's DOM to render before recalculating.
+    await nextTick();
     const w = window.innerWidth + 'px';
     document.documentElement.style.width = w;
-    document.documentElement.offsetWidth; // force synchronous reflow
+    document.documentElement.offsetWidth; // synchronous reflow
     document.documentElement.style.width = '';
 });
 
