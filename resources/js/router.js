@@ -56,4 +56,18 @@ router.beforeEach((to) => {
     if (to.meta.guest && token) return '/stocks/home';
 });
 
+// On every navigation, reset the scroll position and force iOS WebKit to
+// recalculate the layout viewport width. This corrects the "stuck wide"
+// state that can occur after native overlays (Face ID, keyboard) temporarily
+// change the viewport and iOS PWA does not fully restore the scroll area.
+router.afterEach(() => {
+    window.scrollTo(0, 0);
+    // Toggling overflow forces a style recalculation which flushes iOS
+    // WebKit's cached scrollWidth back to the actual content width.
+    document.documentElement.style.overflowX = 'hidden';
+    requestAnimationFrame(() => {
+        document.documentElement.style.overflowX = '';
+    });
+});
+
 export default router;
