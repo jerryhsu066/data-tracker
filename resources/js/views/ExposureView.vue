@@ -89,18 +89,18 @@
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-6">
                 <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">Allocation</h2>
                 <!-- Bar: grouped by leverage tier -->
-                <div class="flex h-8 rounded-lg overflow-hidden gap-px bg-slate-100 dark:bg-slate-700">
+                <div class="flex h-10 rounded-lg overflow-hidden gap-px">
                     <div
                         v-for="seg in barSegments"
                         :key="seg.label"
                         :style="{ width: seg.pct + '%', backgroundColor: seg.color }"
                         :title="`${seg.label}: ${seg.pct.toFixed(1)}%`"
-                        class="relative flex items-center justify-center transition-all duration-300 overflow-hidden"
+                        class="flex flex-col items-center justify-center overflow-hidden transition-all duration-300"
                     >
-                        <span
-                            v-if="seg.pct >= 7"
-                            class="text-white text-xs font-semibold leading-none select-none drop-shadow"
-                        >{{ seg.label }}</span>
+                        <template v-if="seg.pct >= 8">
+                            <span class="text-sm font-bold text-white leading-none drop-shadow">{{ seg.label }}</span>
+                            <span class="text-sm font-semibold text-white leading-none mt-0.5 drop-shadow">{{ seg.pct.toFixed(0) }}%</span>
+                        </template>
                     </div>
                 </div>
                 <!-- Legend: per individual position -->
@@ -492,7 +492,7 @@ const barSegments = computed(() => {
         .reduce((sum, e) => sum + Number(e.net_shares) * Number(e.stock.current_price), 0);
     const totalCash = (active.value.cash || 0) + cashProxy;
     if (totalCash > 0) {
-        segs.push({ label: 'Cash', pct: (totalCash / totalValue.value) * 100, color: '#94a3b8', leverage: null });
+        segs.push({ label: 'Cash', pct: (totalCash / totalValue.value) * 100, color: PALETTE[segs.length % PALETTE.length], leverage: null });
     }
 
     return segs;
@@ -503,16 +503,18 @@ const legendSegments = computed(() => {
     if (!active.value || totalValue.value === 0) return [];
 
     const colorByLeverage = Object.fromEntries(barSegments.value.map(s => [s.leverage, s.color]));
+    const cashColor = barSegments.value.find(s => s.label === 'Cash')?.color ?? '#94a3b8';
 
     const segs = active.value.entries.map(e => ({
         label: e.stock.symbol,
         pct: (Number(e.net_shares) * Number(e.stock.current_price) / totalValue.value) * 100,
-        color: e.is_cash ? '#94a3b8' : (colorByLeverage[Number(e.leverage)] ?? PALETTE[0]),
+        color: e.is_cash ? cashColor : (colorByLeverage[Number(e.leverage)] ?? PALETTE[0]),
     }));
 
+    const cashBarSeg = barSegments.value.find(s => s.label === 'Cash');
     const cash = active.value.cash || 0;
     if (cash > 0) {
-        segs.push({ label: 'Cash', pct: (cash / totalValue.value) * 100, color: '#94a3b8' });
+        segs.push({ label: 'Cash', pct: (cash / totalValue.value) * 100, color: cashBarSeg?.color ?? '#94a3b8' });
     }
 
     return segs;
