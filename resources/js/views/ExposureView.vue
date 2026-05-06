@@ -62,10 +62,14 @@
 
         <template v-if="active">
             <!-- Summary cards -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                     <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
                     <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(investValue) }}</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Current Value</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(totalValue) }}</p>
                 </div>
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
                     <p class="text-sm text-slate-500 dark:text-slate-400">Market Exposure</p>
