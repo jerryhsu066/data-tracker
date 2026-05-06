@@ -60,24 +60,19 @@ router.beforeEach((to) => {
 // Resets the iOS CSS viewport after native overlays (Face ID, keyboard) can
 // leave it reporting a wrong width, causing md:/sm: breakpoints to misfire.
 //
-// Why width=1: it forces iOS to fully discard the current viewport calculation
-// and rebuild it from device dimensions when the original value is restored.
-//
-// Why opacity=0 first: iOS forces a paint immediately when the viewport meta
-// changes, before requestAnimationFrame runs. Hiding the page ensures the
-// zoomed-in intermediate frame (width=1 with default scale) is never visible.
-// Opacity is restored in the same rAF that also restores the correct viewport,
-// so the user sees one clean transition with no zoom flash.
+// Why screen.width instead of width=1:
+//   width=1 forces a 440x zoom that iOS does not properly undo when restoring
+//   initial-scale=1.0 in a drifted-viewport state — the page stays zoomed.
+//   screen.width gives the device's actual CSS pixel width (e.g. 440 on
+//   iPhone 16 Pro Max). Switching from the 'device-width' keyword to this
+//   concrete number forces iOS to flush its cached viewport value without
+//   changing the effective width or zoom at all. No opacity trick needed.
 export function resetCssViewport() {
     const vp = document.querySelector('meta[name="viewport"]');
     if (!vp) return;
     const original = vp.getAttribute('content');
-    document.documentElement.style.opacity = '0';
-    vp.setAttribute('content', 'width=1');
-    requestAnimationFrame(() => {
-        vp.setAttribute('content', original);
-        document.documentElement.style.opacity = '';
-    });
+    vp.setAttribute('content', `width=${screen.width}, initial-scale=1`);
+    requestAnimationFrame(() => vp.setAttribute('content', original));
 }
 
 router.afterEach(async () => {
