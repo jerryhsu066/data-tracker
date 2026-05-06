@@ -59,6 +59,39 @@
             </label>
         </div>
 
+        <!-- Passkeys -->
+        <div v-if="webauthnSupported" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4">
+            <h2 class="text-sm font-semibold text-slate-600 dark:text-slate-300">Passkeys (Face ID / Fingerprint)</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Sign in with biometrics instead of your password. Passkeys are stored on your device and work on iOS, Android, and desktop.</p>
+
+            <!-- Existing passkeys -->
+            <div v-if="passkeys.length > 0" class="space-y-2">
+                <div v-for="pk in passkeys" :key="pk.id"
+                    class="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ pk.name }}</p>
+                        <p class="text-xs text-slate-400 dark:text-slate-500">
+                            {{ pk.last_used_at ? 'Last used ' + new Date(pk.last_used_at).toLocaleDateString() : 'Never used' }}
+                        </p>
+                    </div>
+                    <button @click="deletePasskey(pk.id)" class="text-slate-300 dark:text-slate-600 hover:text-red-400 transition-colors text-sm">✕</button>
+                </div>
+            </div>
+            <p v-else class="text-sm text-slate-400 dark:text-slate-500">No passkeys registered yet.</p>
+
+            <!-- Add passkey -->
+            <div class="flex items-center gap-3 flex-wrap pt-1">
+                <input v-model="newPasskeyName" type="text" placeholder="Device name (e.g. iPhone 15)"
+                    class="h-9 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 rounded-md px-3 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <button @click="addPasskey" :disabled="addingPasskey"
+                    class="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-md transition-colors">
+                    {{ addingPasskey ? 'Registering…' : '+ Add Passkey' }}
+                </button>
+                <span v-if="passkeyError" class="text-sm text-red-500">{{ passkeyError }}</span>
+                <span v-if="passkeySuccess" class="text-sm text-emerald-500">Passkey added ✓</span>
+            </div>
+        </div>
+
         <!-- App settings (admin only) -->
         <div v-if="auth.state.user?.is_admin" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 space-y-4">
             <h2 class="text-sm font-semibold text-slate-600 dark:text-slate-300">App Settings</h2>
@@ -130,6 +163,7 @@
 import { ref, onMounted } from 'vue';
 import api from '../api';
 import { useAuth } from '../stores/auth';
+import { isWebauthnSupported, registerPasskey } from '../utils/webauthn';
 
 const auth = useAuth();
 
@@ -141,11 +175,24 @@ const savingPrivacyLock = ref(false);
 const registrationEnabled = ref(true);
 const savingRegistration  = ref(false);
 
+const webauthnSupported = isWebauthnSupported();
+const passkeys          = ref([]);
+const newPasskeyName    = ref('');
+const addingPasskey     = ref(false);
+const passkeyError      = ref('');
+const passkeySuccess    = ref(false);
+
 onMounted(async () => {
     if (auth.state.user?.is_admin) {
         try {
             const { data } = await api.get('/admin/settings');
             registrationEnabled.value = data.registration_enabled;
+        } catch {}
+    }
+    if (webauthnSupported) {
+        try {
+            const { data } = await api.get('/auth/webauthn/credentials');
+            passkeys.value = data;
         } catch {}
     }
 });
@@ -161,6 +208,38 @@ const confirmPassword = ref('');
 const savingPassword = ref(false);
 const passwordSaved  = ref(false);
 const passwordError  = ref('');
+
+async function addPasskey() {
+    passkeyError.value   = '';
+    passkeySuccess.value = false;
+    addingPasskey.value  = true;
+    try {
+        const { data: options } = await api.post('/auth/webauthn/register/options');
+        const credentialJson    = await registerPasskey(options);
+        const { data }          = await api.post('/auth/webauthn/register', {
+            credential: credentialJson,
+            name: newPasskeyName.value || 'Passkey',
+        });
+        passkeys.value.push(data);
+        newPasskeyName.value = '';
+        passkeySuccess.value = true;
+        setTimeout(() => { passkeySuccess.value = false; }, 3000);
+    } catch (e) {
+        if (e.name === 'NotAllowedError') {
+            passkeyError.value = 'Cancelled or not allowed.';
+        } else {
+            passkeyError.value = e.response?.data?.message ?? 'Failed to register passkey.';
+        }
+    } finally {
+        addingPasskey.value = false;
+    }
+}
+
+async function deletePasskey(id) {
+    if (!confirm('Remove this passkey?')) return;
+    await api.delete(`/auth/webauthn/credentials/${id}`);
+    passkeys.value = passkeys.value.filter(p => p.id !== id);
+}
 
 async function toggleRegistration() {
     savingRegistration.value = true;

@@ -3,6 +3,8 @@
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\StockSplitController;
+use App\Http\Controllers\WebauthnAuthController;
+use App\Http\Controllers\WebauthnRegisterController;
 use App\Http\Controllers\CashflowImportExportController;
 use App\Http\Controllers\CashflowRecordController;
 use App\Http\Controllers\CashflowSettingsController;
@@ -23,11 +25,21 @@ Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register'])->middleware('throttle:10,1');
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
+    // Passkey authentication (guest — no token needed)
+    Route::post('webauthn/authenticate/options', [WebauthnAuthController::class, 'options'])->middleware('throttle:10,1');
+    Route::post('webauthn/authenticate', [WebauthnAuthController::class, 'authenticate'])->middleware('throttle:10,1');
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::patch('me', [AuthController::class, 'updateMe']);
         Route::post('verify-password', [AuthController::class, 'verifyPassword']);
         Route::post('logout', [AuthController::class, 'logout']);
+
+        // Passkey registration (requires existing session)
+        Route::post('webauthn/register/options', [WebauthnRegisterController::class, 'options']);
+        Route::post('webauthn/register', [WebauthnRegisterController::class, 'register']);
+        Route::get('webauthn/credentials', [WebauthnRegisterController::class, 'index']);
+        Route::delete('webauthn/credentials/{credential}', [WebauthnRegisterController::class, 'destroy']);
     });
 });
 

@@ -41,5 +41,9 @@ export function useAuth() {
         localStorage.setItem('user', JSON.stringify(state.user));
     }
 
-    return { state: readonly(state), login, register, logout, updateUser };
+    function setSession(token, user) {
+        _persist({ token, user });
+    }
+
+    return { state: readonly(state), login, register, logout, updateUser, setSession };
 }

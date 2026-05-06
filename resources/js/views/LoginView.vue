@@ -38,6 +38,21 @@
                 </button>
             </form>
 
+            <!-- Passkey sign-in -->
+            <div v-if="webauthnSupported" class="mt-4">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+                    <span class="text-xs text-slate-400">or</span>
+                    <div class="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+                </div>
+                <button @click="signInWithPasskey" :disabled="passkeyLoading"
+                    class="w-full border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 disabled:opacity-50 text-slate-700 dark:text-slate-300 rounded-lg py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                    <span>🔑</span>
+                    {{ passkeyLoading ? 'Authenticating…' : 'Sign in with Passkey' }}
+                </button>
+                <p v-if="passkeyError" class="mt-2 text-sm text-red-500 text-center">{{ passkeyError }}</p>
+            </div>
+
             <p class="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
                 No account?
                 <RouterLink to="/register" class="text-indigo-600 hover:underline font-medium">Register</RouterLink>
@@ -50,6 +65,8 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../stores/auth';
+import { isWebauthnSupported, authenticateWithPasskey } from '../utils/webauthn';
+import api from '../api';
 
 const router = useRouter();
 const auth = useAuth();
@@ -58,6 +75,10 @@ const form = ref({ email: '', password: '' });
 const errors = ref({});
 const generalError = ref('');
 const loading = ref(false);
+
+const webauthnSupported = isWebauthnSupported();
+const passkeyLoading    = ref(false);
+const passkeyError      = ref('');
 
 async function submit() {
     errors.value = {};
@@ -71,6 +92,29 @@ async function submit() {
         else generalError.value = e.response?.data?.message ?? 'Login failed.';
     } finally {
         loading.value = false;
+    }
+}
+
+async function signInWithPasskey() {
+    passkeyError.value  = '';
+    passkeyLoading.value = true;
+    try {
+        const { data: options }  = await api.post('/auth/webauthn/authenticate/options');
+        const credentialJson     = await authenticateWithPasskey(options);
+        const { data }           = await api.post('/auth/webauthn/authenticate', {
+            credential: credentialJson,
+            session_id: options.session_id,
+        });
+        auth.setSession(data.token, data.user);
+        router.push('/stocks/home');
+    } catch (e) {
+        if (e.name === 'NotAllowedError') {
+            passkeyError.value = 'Cancelled or no passkey found for this site.';
+        } else {
+            passkeyError.value = e.response?.data?.message ?? 'Passkey sign-in failed.';
+        }
+    } finally {
+        passkeyLoading.value = false;
     }
 }
 </script>
