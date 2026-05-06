@@ -57,18 +57,25 @@ router.beforeEach((to) => {
     if (to.meta.guest && token) return '/stocks/home';
 });
 
-// On every navigation, force iOS WebKit to recalculate element widths.
-// After native overlays (Face ID, keyboard) the visual viewport can drift,
-// causing a cached scrollWidth wider than the actual viewport. Pinning
-// <html> to window.innerWidth and immediately releasing it triggers a full
-// style+layout recalculation against the correct viewport width.
+// After native overlays (Face ID, keyboard) iOS can report a wrong CSS
+// viewport width, causing md:/sm: breakpoints to fire incorrectly.
+// Manipulating the viewport meta tag is the only way to force iOS to
+// recalculate the CSS viewport from the actual device dimensions.
+// We do NOT use window.innerWidth because it may itself be returning
+// the wrong value after the viewport drift.
+function resetCssViewport() {
+    const vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) return;
+    const original = vp.getAttribute('content');
+    vp.setAttribute('content', 'width=1');
+    requestAnimationFrame(() => vp.setAttribute('content', original));
+}
+
 router.afterEach(async () => {
-    // Wait for the incoming page's DOM to render before recalculating.
     await nextTick();
-    const w = window.innerWidth + 'px';
-    document.documentElement.style.width = w;
-    document.documentElement.offsetWidth; // synchronous reflow
-    document.documentElement.style.width = '';
+    resetCssViewport();
 });
+
+export { resetCssViewport };
 
 export default router;

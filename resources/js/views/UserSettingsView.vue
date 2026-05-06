@@ -218,6 +218,7 @@ import api from '../api';
 import { useAuth } from '../stores/auth';
 import { isWebauthnSupported, registerPasskey } from '../utils/webauthn';
 import { usePwa } from '../stores/pwa';
+import { resetCssViewport } from '../router';
 
 const auth = useAuth();
 const pwa  = usePwa();
@@ -294,14 +295,12 @@ async function addPasskey() {
         }
     } finally {
         addingPasskey.value = false;
-        // After the native dialog closes, force iOS to recalculate element
-        // widths against the actual viewport — the Face ID sheet can leave
-        // the layout viewport in a drifted state.
+        // The Face ID dialog can leave iOS reporting a wrong CSS viewport
+        // width, causing responsive breakpoints (md:, sm:) to misfire.
+        // Resetting the viewport meta tag forces iOS to recalculate from
+        // actual device dimensions. Must run after the dialog is gone.
         await nextTick();
-        const w = window.innerWidth + 'px';
-        document.documentElement.style.width = w;
-        document.documentElement.offsetWidth; // synchronous reflow
-        document.documentElement.style.width = '';
+        resetCssViewport();
     }
 }
 
