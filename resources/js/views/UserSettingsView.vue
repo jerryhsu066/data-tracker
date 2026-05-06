@@ -213,12 +213,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted } from 'vue';
 import api from '../api';
 import { useAuth } from '../stores/auth';
 import { isWebauthnSupported, registerPasskey } from '../utils/webauthn';
 import { usePwa } from '../stores/pwa';
-import { resetCssViewport } from '../router';
 
 const auth = useAuth();
 const pwa  = usePwa();
@@ -295,12 +294,6 @@ async function addPasskey() {
         }
     } finally {
         addingPasskey.value = false;
-        // The Face ID dialog can leave iOS reporting a wrong CSS viewport
-        // width, causing responsive breakpoints (md:, sm:) to misfire.
-        // Resetting the viewport meta tag forces iOS to recalculate from
-        // actual device dimensions. Must run after the dialog is gone.
-        await nextTick();
-        resetCssViewport();
     }
 }
 

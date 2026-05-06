@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { nextTick } from 'vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -57,25 +56,6 @@ router.beforeEach((to) => {
     if (to.meta.guest && token) return '/stocks/home';
 });
 
-// After native overlays (Face ID, keyboard) iOS can report a wrong CSS
-// viewport width, causing md:/sm: breakpoints to fire incorrectly.
-// Manipulating the viewport meta tag is the only way to force iOS to
-// recalculate the CSS viewport from the actual device dimensions.
-// We do NOT use window.innerWidth because it may itself be returning
-// the wrong value after the viewport drift.
-function resetCssViewport() {
-    const vp = document.querySelector('meta[name="viewport"]');
-    if (!vp) return;
-    const original = vp.getAttribute('content');
-    vp.setAttribute('content', 'width=1');
-    requestAnimationFrame(() => vp.setAttribute('content', original));
-}
-
-router.afterEach(async () => {
-    await nextTick();
-    resetCssViewport();
-});
-
-export { resetCssViewport };
+export {};
 
 export default router;
