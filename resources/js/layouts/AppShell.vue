@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen bg-slate-50 dark:bg-gray-950 text-slate-900 dark:text-slate-100">
+    <div class="min-h-screen overflow-x-hidden bg-slate-50 dark:bg-gray-950 text-slate-900 dark:text-slate-100">
         <TopBar @toggle-drawer="drawerOpen = !drawerOpen" />
         <AppSidebar class="hidden md:flex" />
         <MobileDrawer v-model:open="drawerOpen" class="md:hidden" />
