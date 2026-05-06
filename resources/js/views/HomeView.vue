@@ -91,7 +91,15 @@
                 >
                     <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">{{ b.name }}</h3>
 
-                    <div class="grid grid-cols-3 gap-x-4 mb-4">
+                    <div class="grid grid-cols-4 gap-x-4 mb-4">
+                        <div>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
+                            <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(b.stats.investValue) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Current Value</p>
+                            <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(b.stats.totalVal) }}</p>
+                        </div>
                         <div>
                             <p class="text-sm text-slate-500 dark:text-slate-400">Exposure Rate</p>
                             <p class="text-2xl font-bold mt-1" :class="b.stats.exposureRatioPct > 100 ? 'text-amber-500' : 'text-indigo-500 dark:text-indigo-400'">
@@ -103,10 +111,6 @@
                             <p class="text-2xl font-bold mt-1" :class="gainClass(b.stats.gainLossPct)">
                                 {{ b.stats.gainLossPct >= 0 ? '+' : '' }}{{ b.stats.gainLossPct.toFixed(2) }}%
                             </p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">Invest Value</p>
-                            <p class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{{ hidden ? '••••' : fmt(b.stats.investValue) }}</p>
                         </div>
                     </div>
 
