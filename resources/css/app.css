@@ -17,6 +17,15 @@ body {
 @source '../**/*.js';
 @source '../**/*.vue';
 
+/* Prevent iOS Safari from auto-zooming when an input is focused.
+   iOS zooms in whenever the focused element's font-size is below 16px.
+   Only applied on iOS (webkit-touch-callout is iOS-only). */
+@supports (-webkit-touch-callout: none) {
+    input, select, textarea {
+        font-size: 16px;
+    }
+}
+
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: none;
