@@ -145,7 +145,7 @@ Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearS
 
 const PERIODS = ['1M', '3M', '6M', '1Y', 'All'];
 const { hidden } = usePrivacy();
-const { gainClass } = useGainColor();
+const { gainClass, gainHex, gainIsRed } = useGainColor();
 
 const PALETTE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'];
 
@@ -245,7 +245,7 @@ function renderIndexCharts() {
 
         const prices = history.map(p => Number(p.close_price));
         const rising = prices[prices.length - 1] >= prices[0];
-        const color  = rising ? '#059669' : '#ef4444';
+        const color  = gainHex(rising ? 1 : -1);
         const colors = chartColors();
 
         const syncLeavePlugin = {
@@ -348,6 +348,7 @@ watch(indexPeriod, () => nextTick(renderIndexCharts));
 
 const { dark } = useTheme();
 watch(dark, () => nextTick(renderIndexCharts));
+watch(gainIsRed, () => nextTick(renderIndexCharts));
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 // Full precision for index prices (they don't need k/M abbreviation)
