@@ -53,4 +53,38 @@ class StockSettingsTest extends TestCase
         $this->getJson('/api/stocks/settings')->assertUnauthorized();
         $this->patchJson('/api/stocks/settings', ['handling_fee_discount' => 0.4])->assertUnauthorized();
     }
+
+    public function test_gain_is_red_defaults_to_false(): void
+    {
+        $this->actingAs($this->user)->getJson('/api/stocks/settings')
+            ->assertOk()
+            ->assertJson(['gain_is_red' => false]);
+    }
+
+    public function test_can_enable_gain_is_red(): void
+    {
+        $this->actingAs($this->user)->patchJson('/api/stocks/settings', ['gain_is_red' => true])
+            ->assertOk()
+            ->assertJson(['gain_is_red' => true]);
+
+        $this->assertDatabaseHas('users', ['id' => $this->user->id, 'gain_is_red' => true]);
+    }
+
+    public function test_can_disable_gain_is_red(): void
+    {
+        $this->user->update(['gain_is_red' => true]);
+
+        $this->actingAs($this->user)->patchJson('/api/stocks/settings', ['gain_is_red' => false])
+            ->assertOk()
+            ->assertJson(['gain_is_red' => false]);
+    }
+
+    public function test_can_update_gain_is_red_without_touching_discount(): void
+    {
+        $this->user->update(['handling_fee_discount' => 0.4]);
+
+        $this->actingAs($this->user)->patchJson('/api/stocks/settings', ['gain_is_red' => true])
+            ->assertOk()
+            ->assertJson(['handling_fee_discount' => '0.4000', 'gain_is_red' => true]);
+    }
 }

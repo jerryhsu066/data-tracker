@@ -31,6 +31,7 @@ class User extends Authenticatable
         'password',
         'handling_fee_discount',
         'privacy_lock',
+        'gain_is_red',
     ];
 
     /**
@@ -55,6 +56,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'handling_fee_discount' => 'decimal:4',
             'privacy_lock' => 'boolean',
+            'gain_is_red'  => 'boolean',
         ];
     }
 }
