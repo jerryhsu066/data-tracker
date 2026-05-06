@@ -270,7 +270,7 @@ function renderIndexCharts() {
                 datasets: [{
                     data: prices,
                     borderColor: color,
-                    backgroundColor: rising ? 'rgba(5,150,105,0.08)' : 'rgba(239,68,68,0.08)',
+                    backgroundColor: rising ? (gainIsRed.value ? 'rgba(239,68,68,0.08)' : 'rgba(5,150,105,0.08)') : (gainIsRed.value ? 'rgba(5,150,105,0.08)' : 'rgba(239,68,68,0.08)'),
                     fill: true,
                     tension: 0.3,
                     pointRadius: 0,

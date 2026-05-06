@@ -304,7 +304,7 @@ Chart.register(LineController, LineElement, PointElement, LinearScale, Filler, T
 const PERIODS = ['1M', '3M', '6M', '1Y', 'All'];
 
 const { hidden } = usePrivacy();
-const { gainClass } = useGainColor();
+const { gainClass, gainHex, gainIsRed } = useGainColor();
 const route = useRoute();
 const symbol = computed(() => route.params.symbol);
 
@@ -442,7 +442,7 @@ function renderChart() {
     const labels = history.map(p => p.date);
     const prices = history.map(p => Number(p.close_price));
     const rising = prices[prices.length - 1] >= prices[0];
-    const color = rising ? '#059669' : '#ef4444';
+    const color = gainHex(rising ? 1 : -1);
 
     // Overlay buy/sell markers at the close price on each transaction date.
     const buyData = labels.map((date, i) =>
@@ -460,7 +460,7 @@ function renderChart() {
                 {
                     data: prices,
                     borderColor: color,
-                    backgroundColor: rising ? 'rgba(5,150,105,0.08)' : 'rgba(239,68,68,0.08)',
+                    backgroundColor: rising ? (gainIsRed.value ? 'rgba(239,68,68,0.08)' : 'rgba(5,150,105,0.08)') : (gainIsRed.value ? 'rgba(5,150,105,0.08)' : 'rgba(239,68,68,0.08)'),
                     fill: true,
                     tension: 0.3,
                     pointRadius: 0,
@@ -602,4 +602,5 @@ async function saveEdit(id) {
 onMounted(load);
 watch(symbol, load);
 watch(selectedPeriod, () => nextTick(renderChart));
+watch(gainIsRed, () => nextTick(renderChart));
 </script>
