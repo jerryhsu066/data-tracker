@@ -6,8 +6,11 @@ const router = createRouter({
     routes: [
         { path: '/login', component: () => import('./views/LoginView.vue'), meta: { guest: true } },
         { path: '/register', component: () => import('./views/RegisterView.vue'), meta: { guest: true } },
-        { path: '/', redirect: '/stocks/home' },
         { path: '/user/settings', component: () => import('./views/UserSettingsView.vue'), meta: { auth: true } },
+
+        // Public subdomain routes — / and /log serve without auth; browser URL stays unchanged
+        { path: '/', component: () => import('./views/PublicFlightsView.vue') },
+        { path: '/log', component: () => import('./views/PublicFlightLogView.vue') },
 
         // Stocks module
         {
@@ -49,16 +52,15 @@ const router = createRouter({
             ],
         },
 
-        // Public subdomain — no auth required
-        { path: '/public/flights', component: () => import('./views/PublicFlightsView.vue') },
     ],
 });
 
 router.beforeEach((to) => {
     if (window.location.hostname === 'flight.jerry.tw') {
-        if (to.path !== '/public/flights') return '/public/flights';
+        if (to.path !== '/' && to.path !== '/log') return '/';
         return;
     }
+    if (to.path === '/') return '/stocks/home';
     const token = localStorage.getItem('token');
     if (to.meta.auth && !token) return '/login';
     if (to.meta.guest && token) return '/stocks/home';
